@@ -1,0 +1,28 @@
+PROJECT_NAME           = "PiPo"
+PROJECT_BRIEF          = "Plug In Plug Out / Plugin Interface for Processing Objects"
+
+# PROJECT_LOGO           = "some_pic.png"
+# PROJECT_VERSION        = "some version"
+
+INPUT                  = ../../src/modules \
+                         ../../src/collection \
+                         ../../include \
+                         ../doxygen/pipogroups.doxygen
+
+RECURSIVE              = YES
+
+EXCLUDE_PATTERNS       = */mimo/* \
+                         PiPoGraph.h \
+                         PiPoMeanStddev.h \
+                         PiPoMinMax.h \
+                         PiPoRms.h \
+
+OUTPUT_DIRECTORY       = ../../doc
+
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+
+LAYOUT_FILE            = ../doxygen/pipolayout.xml
+HTML_HEADER            = ../doxygen/pipoheader.html
+HTML_FOOTER            = ../doxygen/pipofooter.html
+HTML_EXTRA_STYLESHEET  = ../doxygen/pipostyle.css ../doxygen/pipotabs.css

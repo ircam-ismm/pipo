@@ -1,0 +1,8 @@
+.tabs, .tabs2, .tabs3 {
+  background-color: #F35757;
+  background-image: none;
+  width: 100%;
+  z-index: 101;
+  font-size: 13px;
+  font-family: 'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+}

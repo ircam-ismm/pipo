@@ -1,0 +1,27 @@
+/*********
+ * @defgroup pipoapi PiPo API 
+ * @defgroup pipopluginapi Plugin API
+ * @ingroup pipoapi
+ * @defgroup pipohostapi Host API
+ * @ingroup pipoapi
+ */
+
+/**
+ * @defgroup pipoapi PiPo API
+ * 
+ * @brief The PiPo API is composed of :
+ * <ul>
+ * <li>
+ * the core Plugin API (@ref PiPo.h, @ref PiPoSequence.h, @ref PiPoParallel.h
+ * and @ref RingBuffer.h)
+ * </li>
+ * <li>
+ * the Host API which is a superset of the Plugin API, containing all the files
+ * listed above.
+ * </li>
+ * </ul>
+ */
+
+/**
+ * @defgroup pipomodules PiPo Modules
+ */

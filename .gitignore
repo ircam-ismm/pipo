@@ -1,0 +1,14 @@
+**/.DS_Store
+**/xcuserdata/**
+
+**/CMakeLists.txt
+
+src/host/PiPoHost.cpp
+
+build/doxygen/pipo-long.doxygen
+build/doxygen/pipo-original.doxygen
+build/doxygen/pipo-sdk.doxygen
+
+doc/pipo-sdk.doxygen
+doc/pipo_long.doxygen
+doc/html/**

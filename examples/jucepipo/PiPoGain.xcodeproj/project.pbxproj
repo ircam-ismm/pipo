@@ -1,0 +1,390 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		311BA2131EDC05FA00244DAC /* PiPo.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA20F1EDC05FA00244DAC /* PiPo.h */; };
+		311BA2141EDC05FA00244DAC /* PiPoParallel.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2101EDC05FA00244DAC /* PiPoParallel.h */; };
+		311BA2151EDC05FA00244DAC /* PiPoSequence.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2111EDC05FA00244DAC /* PiPoSequence.h */; };
+		311BA2161EDC05FA00244DAC /* RingBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2121EDC05FA00244DAC /* RingBuffer.h */; };
+		311BA2191EDC061200244DAC /* PiPoCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2171EDC061200244DAC /* PiPoCollection.h */; };
+		311BA21A1EDC061200244DAC /* PiPoModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2181EDC061200244DAC /* PiPoModule.h */; };
+		31C6621A1DBE58EF00A543A8 /* PiPoGain.h in Sources */ = {isa = PBXBuildFile; fileRef = 31C662191DBE589900A543A8 /* PiPoGain.h */; };
+		31C6621D1DBE5A7700A543A8 /* PipoGain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		311BA20F1EDC05FA00244DAC /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../src/PiPo.h; sourceTree = "<group>"; };
+		311BA2101EDC05FA00244DAC /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../src/PiPoParallel.h; sourceTree = "<group>"; };
+		311BA2111EDC05FA00244DAC /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../src/PiPoSequence.h; sourceTree = "<group>"; };
+		311BA2121EDC05FA00244DAC /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../src/RingBuffer.h; sourceTree = "<group>"; };
+		311BA2171EDC061200244DAC /* PiPoCollection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoCollection.h; path = ../../src/collection/PiPoCollection.h; sourceTree = "<group>"; };
+		311BA2181EDC061200244DAC /* PiPoModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModule.h; path = ../../src/collection/PiPoModule.h; sourceTree = "<group>"; };
+		31C662191DBE589900A543A8 /* PiPoGain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PiPoGain.h; sourceTree = "<group>"; };
+		31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PipoGain.cpp; sourceTree = "<group>"; };
+		3B37A53F1DB105E9001FCA3C /* PipoGain.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = PipoGain.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3B37A5391DB105E9001FCA3C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		195DF8CFFE9D517E11CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3B37A53F1DB105E9001FCA3C /* PipoGain.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		20286C29FDCF999611CA2CEA /* juce_application */ = {
+			isa = PBXGroup;
+			children = (
+				31C662191DBE589900A543A8 /* PiPoGain.h */,
+				31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */,
+				31BD32B41DC0B59C0007CF1C /* include */,
+				31BD32B11DC0B53F0007CF1C /* collection */,
+				195DF8CFFE9D517E11CA2CBB /* Products */,
+			);
+			name = juce_application;
+			sourceTree = "<group>";
+		};
+		31BD32B11DC0B53F0007CF1C /* collection */ = {
+			isa = PBXGroup;
+			children = (
+				311BA2171EDC061200244DAC /* PiPoCollection.h */,
+				311BA2181EDC061200244DAC /* PiPoModule.h */,
+			);
+			name = collection;
+			sourceTree = "<group>";
+		};
+		31BD32B41DC0B59C0007CF1C /* include */ = {
+			isa = PBXGroup;
+			children = (
+				311BA20F1EDC05FA00244DAC /* PiPo.h */,
+				311BA2101EDC05FA00244DAC /* PiPoParallel.h */,
+				311BA2111EDC05FA00244DAC /* PiPoSequence.h */,
+				311BA2121EDC05FA00244DAC /* RingBuffer.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		3B37A53A1DB105E9001FCA3C /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				311BA21A1EDC061200244DAC /* PiPoModule.h in Headers */,
+				311BA2161EDC05FA00244DAC /* RingBuffer.h in Headers */,
+				311BA2151EDC05FA00244DAC /* PiPoSequence.h in Headers */,
+				311BA2131EDC05FA00244DAC /* PiPo.h in Headers */,
+				311BA2141EDC05FA00244DAC /* PiPoParallel.h in Headers */,
+				311BA2191EDC061200244DAC /* PiPoCollection.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		3B37A5351DB105E9001FCA3C /* PipoGain */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3B37A53C1DB105E9001FCA3C /* Build configuration list for PBXNativeTarget "PipoGain" */;
+			buildPhases = (
+				3B37A5361DB105E9001FCA3C /* Sources */,
+				3B37A5391DB105E9001FCA3C /* Frameworks */,
+				3B37A53A1DB105E9001FCA3C /* Headers */,
+				3B37A53B1DB105E9001FCA3C /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PipoGain;
+			productName = PipoBands.dylib;
+			productReference = 3B37A53F1DB105E9001FCA3C /* PipoGain.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		20286C28FDCF999611CA2CEA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+			};
+			buildConfigurationList = 84F30CC308FEAA620087E26C /* Build configuration list for PBXProject "PiPoGain" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 20286C29FDCF999611CA2CEA /* juce_application */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3B37A5351DB105E9001FCA3C /* PipoGain */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		3B37A53B1DB105E9001FCA3C /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto $BUILT_PRODUCTS_DIR/${TARGET_NAME}.${EXECUTABLE_EXTENSION} ./";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3B37A5361DB105E9001FCA3C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				31C6621D1DBE5A7700A543A8 /* PipoGain.cpp in Sources */,
+				31C6621A1DBE58EF00A543A8 /* PiPoGain.h in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3B37A53D1DB105E9001FCA3C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../src,
+					../../components/pipo/sdk/include,
+					../../components/pipo/sdk/host,
+					../../components/pipo/sdk/example,
+					../../components/pipo/modules,
+					../../components/pipo/modules/rta,
+					../../components/pipo/modules/rta/misc,
+					../../components/pipo/modules/rta/common,
+					../../components/pipo/modules/rta/psy,
+				);
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3B37A53E1DB105E9001FCA3C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../src,
+					../../components/pipo/sdk/include,
+					../../components/pipo/sdk/host,
+					../../components/pipo/sdk/example,
+					../../components/pipo/modules,
+					../../components/pipo/modules/rta,
+					../../components/pipo/modules/rta/misc,
+					../../components/pipo/modules/rta/common,
+					../../components/pipo/modules/rta/psy,
+				);
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		84F30CC408FEAA620087E26C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				COMPONENTS_DIR = ../../components;
+				COMPONENTS_HEADER_DIRS = "$(COMPONENTS_DIR)/pipo/src $(COMPONENTS_DIR)/pipo/modules $(COMPONENTS_DIR)/pipo/modules/rta $(COMMON_DIR)/pipo/modules/rta/common $(COMPONENTS_DIR)/pipo/modules/rta/misc /System/Library/Frameworks/Accelerate.framework/Headers";
+				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
+				HEADER_SEARCH_PATHS = (
+					../../src,
+					../../components/juce,
+					../../components/ImtrEditor/src,
+					../../components/ImtrEditor/src/components,
+					../../components/ImtrEditor/src/editors,
+					../../components/ImtrEditor/src/images,
+					../../components/ImtrEditor/src/tools,
+					../../components/sdif,
+					../../components/pipo/src,
+					../../components/pipo/modules,
+					../../components/mubu/src,
+					../../components/midifile/src,
+					../../components/pipo/sdk/include,
+					../../components/pipo/sdk/host,
+					../../components/pipo/modules,
+					../../components/pipo/modules/rta,
+					../../components/pipo/modules/rta/misc,
+					../../components/pipo/modules/rta/common,
+					../../components/pipo/modules/rta/psy,
+					/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
+					/System/Library/Frameworks/Accelerate.framework/Headers,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-D__MACOSX_CORE__",
+					"-mtune=native",
+				);
+				SYS_LINKER_FLAGS = "-lstdc++ -lmx -framework Accelerate -framework Carbon";
+				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
+			};
+			name = Debug;
+		};
+		84F30CC508FEAA620087E26C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				COMPONENTS_DIR = ../../components;
+				COMPONENTS_HEADER_DIRS = "$(COMPONENTS_DIR)/pipo/src $(COMPONENTS_DIR)/pipo/modules $(COMPONENTS_DIR)/pipo/modules/rta $(COMMON_DIR)/pipo/modules/rta/common $(COMPONENTS_DIR)/pipo/modules/rta/misc /System/Library/Frameworks/Accelerate.framework/Headers";
+				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
+				HEADER_SEARCH_PATHS = (
+					../../src,
+					../../components/juce,
+					../../components/ImtrEditor/src,
+					../../components/ImtrEditor/src/components,
+					../../components/ImtrEditor/src/editors,
+					../../components/ImtrEditor/src/images,
+					../../components/ImtrEditor/src/tools,
+					../../components/sdif,
+					../../components/pipo/src,
+					../../components/pipo/modules,
+					../../components/mubu/src,
+					../../components/midifile/src,
+					../../components/pipo/sdk/include,
+					../../components/pipo/sdk/host,
+					../../components/pipo/modules,
+					../../components/pipo/modules/rta,
+					../../components/pipo/modules/rta/misc,
+					../../components/pipo/modules/rta/common,
+					../../components/pipo/modules/rta/psy,
+					/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
+					/System/Library/Frameworks/Accelerate.framework/Headers,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-D__MACOSX_CORE__",
+					"-mtune=native",
+				);
+				SYS_LINKER_FLAGS = "-lstdc++ -lmx -framework Accelerate -framework Carbon";
+				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3B37A53C1DB105E9001FCA3C /* Build configuration list for PBXNativeTarget "PipoGain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3B37A53D1DB105E9001FCA3C /* Debug */,
+				3B37A53E1DB105E9001FCA3C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		84F30CC308FEAA620087E26C /* Build configuration list for PBXProject "PiPoGain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				84F30CC408FEAA620087E26C /* Debug */,
+				84F30CC508FEAA620087E26C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 20286C28FDCF999611CA2CEA /* Project object */;
+}

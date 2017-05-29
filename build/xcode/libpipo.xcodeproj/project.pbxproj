@@ -1,0 +1,983 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 47;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		5C411FD30DAC17B9006897CA /* doc */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5C411FD50DAC17BA006897CA /* Build configuration list for PBXAggregateTarget "doc" */;
+			buildPhases = (
+				5C411FD20DAC17B9006897CA /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = doc;
+			productName = doc;
+		};
+		5C8290DF0B8E439800766D9D /* all */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5C8290EA0B8E43C900766D9D /* Build configuration list for PBXAggregateTarget "all" */;
+			buildPhases = (
+			);
+			dependencies = (
+			);
+			name = all;
+			productName = all;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
+		311BA21E1EDC074E00244DAC /* PiPoHost.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA21D1EDC074E00244DAC /* PiPoHost.h */; };
+		311BA2231EDC075A00244DAC /* PiPo.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA21F1EDC075A00244DAC /* PiPo.h */; };
+		311BA2241EDC075A00244DAC /* PiPoParallel.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2201EDC075A00244DAC /* PiPoParallel.h */; };
+		311BA2251EDC075A00244DAC /* PiPoSequence.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2211EDC075A00244DAC /* PiPoSequence.h */; };
+		311BA2261EDC075A00244DAC /* RingBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2221EDC075A00244DAC /* RingBuffer.h */; };
+		311BA2291EDC085700244DAC /* bbpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2271EDC085700244DAC /* bbpr.cpp */; };
+		311BA22A1EDC085700244DAC /* bbpr.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2281EDC085700244DAC /* bbpr.h */; };
+		311BA22D1EDC086600244DAC /* finitedifferences.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA22B1EDC086600244DAC /* finitedifferences.c */; };
+		311BA22E1EDC086600244DAC /* finitedifferences.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA22C1EDC086600244DAC /* finitedifferences.h */; };
+		311BA2331EDC087300244DAC /* BayesianFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 311BA22F1EDC087300244DAC /* BayesianFilter.cpp */; };
+		311BA2341EDC087300244DAC /* BayesianFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2301EDC087300244DAC /* BayesianFilter.h */; };
+		311BA2351EDC087300244DAC /* filter_utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2311EDC087300244DAC /* filter_utilities.cpp */; };
+		311BA2361EDC087300244DAC /* filter_utilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2321EDC087300244DAC /* filter_utilities.h */; };
+		311BA2381EDC088C00244DAC /* rta_configuration.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2371EDC088C00244DAC /* rta_configuration.h */; };
+		311BA2461EDC08A500244DAC /* rta_bpf.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2391EDC08A500244DAC /* rta_bpf.c */; };
+		311BA2471EDC08A500244DAC /* rta_bpf.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA23A1EDC08A500244DAC /* rta_bpf.h */; };
+		311BA2481EDC08A500244DAC /* rta_complex.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA23B1EDC08A500244DAC /* rta_complex.h */; };
+		311BA2491EDC08A500244DAC /* rta_float.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA23C1EDC08A500244DAC /* rta_float.h */; };
+		311BA24A1EDC08A500244DAC /* rta_int.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA23D1EDC08A500244DAC /* rta_int.c */; };
+		311BA24B1EDC08A500244DAC /* rta_int.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA23E1EDC08A500244DAC /* rta_int.h */; };
+		311BA24C1EDC08A500244DAC /* rta_math.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA23F1EDC08A500244DAC /* rta_math.h */; };
+		311BA24D1EDC08A500244DAC /* rta_stdio.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2401EDC08A500244DAC /* rta_stdio.h */; };
+		311BA24E1EDC08A500244DAC /* rta_stdlib.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2411EDC08A500244DAC /* rta_stdlib.h */; };
+		311BA24F1EDC08A500244DAC /* rta_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2421EDC08A500244DAC /* rta_types.h */; };
+		311BA2501EDC08A500244DAC /* rta_util.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2431EDC08A500244DAC /* rta_util.c */; };
+		311BA2511EDC08A500244DAC /* rta_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2441EDC08A500244DAC /* rta_util.h */; };
+		311BA2521EDC08A500244DAC /* rta.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2451EDC08A500244DAC /* rta.h */; };
+		311BA2781EDC08B600244DAC /* rta_bands.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2531EDC08B600244DAC /* rta_bands.c */; };
+		311BA2791EDC08B600244DAC /* rta_bands.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2541EDC08B600244DAC /* rta_bands.h */; };
+		311BA27A1EDC08B600244DAC /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2551EDC08B600244DAC /* rta_biquad.c */; };
+		311BA27B1EDC08B600244DAC /* rta_biquad.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2561EDC08B600244DAC /* rta_biquad.h */; };
+		311BA27C1EDC08B600244DAC /* rta_correlation.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2571EDC08B600244DAC /* rta_correlation.c */; };
+		311BA27D1EDC08B600244DAC /* rta_correlation.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2581EDC08B600244DAC /* rta_correlation.h */; };
+		311BA27E1EDC08B600244DAC /* rta_cubic.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2591EDC08B600244DAC /* rta_cubic.c */; };
+		311BA27F1EDC08B600244DAC /* rta_cubic.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA25A1EDC08B600244DAC /* rta_cubic.h */; };
+		311BA2801EDC08B600244DAC /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA25B1EDC08B600244DAC /* rta_dct.c */; };
+		311BA2811EDC08B600244DAC /* rta_dct.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA25C1EDC08B600244DAC /* rta_dct.h */; };
+		311BA2821EDC08B600244DAC /* rta_delta.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA25D1EDC08B600244DAC /* rta_delta.c */; };
+		311BA2831EDC08B600244DAC /* rta_delta.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA25E1EDC08B600244DAC /* rta_delta.h */; };
+		311BA2841EDC08B600244DAC /* rta_fft.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA25F1EDC08B600244DAC /* rta_fft.c */; };
+		311BA2851EDC08B600244DAC /* rta_fft.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2601EDC08B600244DAC /* rta_fft.h */; };
+		311BA2861EDC08B600244DAC /* rta_filter.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2611EDC08B600244DAC /* rta_filter.h */; };
+		311BA2871EDC08B600244DAC /* rta_lifter.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2621EDC08B600244DAC /* rta_lifter.c */; };
+		311BA2881EDC08B600244DAC /* rta_lifter.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2631EDC08B600244DAC /* rta_lifter.h */; };
+		311BA2891EDC08B600244DAC /* rta_lpc.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2641EDC08B600244DAC /* rta_lpc.c */; };
+		311BA28A1EDC08B600244DAC /* rta_lpc.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2651EDC08B600244DAC /* rta_lpc.h */; };
+		311BA28B1EDC08B600244DAC /* rta_mean_variance.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2661EDC08B600244DAC /* rta_mean_variance.c */; };
+		311BA28C1EDC08B600244DAC /* rta_mean_variance.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2671EDC08B600244DAC /* rta_mean_variance.h */; };
+		311BA28D1EDC08B600244DAC /* rta_mel.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2681EDC08B600244DAC /* rta_mel.c */; };
+		311BA28E1EDC08B600244DAC /* rta_mel.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2691EDC08B600244DAC /* rta_mel.h */; };
+		311BA28F1EDC08B600244DAC /* rta_moments.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA26A1EDC08B600244DAC /* rta_moments.c */; };
+		311BA2901EDC08B600244DAC /* rta_moments.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA26B1EDC08B600244DAC /* rta_moments.h */; };
+		311BA2911EDC08B600244DAC /* rta_onepole.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA26C1EDC08B600244DAC /* rta_onepole.c */; };
+		311BA2921EDC08B600244DAC /* rta_onepole.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA26D1EDC08B600244DAC /* rta_onepole.h */; };
+		311BA2931EDC08B600244DAC /* rta_preemphasis.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA26E1EDC08B600244DAC /* rta_preemphasis.c */; };
+		311BA2941EDC08B600244DAC /* rta_preemphasis.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA26F1EDC08B600244DAC /* rta_preemphasis.h */; };
+		311BA2951EDC08B600244DAC /* rta_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2701EDC08B600244DAC /* rta_resample.c */; };
+		311BA2961EDC08B600244DAC /* rta_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2711EDC08B600244DAC /* rta_resample.h */; };
+		311BA2971EDC08B600244DAC /* rta_selection.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2721EDC08B600244DAC /* rta_selection.c */; };
+		311BA2981EDC08B600244DAC /* rta_selection.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2731EDC08B600244DAC /* rta_selection.h */; };
+		311BA2991EDC08B600244DAC /* rta_svd.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2741EDC08B600244DAC /* rta_svd.c */; };
+		311BA29A1EDC08B600244DAC /* rta_svd.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2751EDC08B600244DAC /* rta_svd.h */; };
+		311BA29B1EDC08B600244DAC /* rta_window.c in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2761EDC08B600244DAC /* rta_window.c */; };
+		311BA29C1EDC08B600244DAC /* rta_window.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA2771EDC08B600244DAC /* rta_window.h */; };
+		311BA29F1EDC09B500244DAC /* PiPoCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA29D1EDC09B500244DAC /* PiPoCollection.h */; };
+		311BA2A01EDC09B500244DAC /* PiPoModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA29E1EDC09B500244DAC /* PiPoModule.h */; };
+		311BA2A21EDC09D800244DAC /* PiPoCollection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2A11EDC09D800244DAC /* PiPoCollection.cpp */; };
+		31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */; };
+		31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE751ED71FCC002E9F6A /* test-main.cpp */; };
+		31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */; };
+		31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */; };
+		31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		31D2EE7A1ED72503002E9F6A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
+		3100CB9C1ED6E47600D08491 /* PiPoMvavrg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMvavrg.h; path = ../../src/modules/PiPoMvavrg.h; sourceTree = "<group>"; };
+		311BA21D1EDC074E00244DAC /* PiPoHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoHost.h; path = ../../src/host/PiPoHost.h; sourceTree = "<group>"; };
+		311BA21F1EDC075A00244DAC /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../src/include/PiPo.h; sourceTree = "<group>"; };
+		311BA2201EDC075A00244DAC /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../src/include/PiPoParallel.h; sourceTree = "<group>"; };
+		311BA2211EDC075A00244DAC /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../src/include/PiPoSequence.h; sourceTree = "<group>"; };
+		311BA2221EDC075A00244DAC /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../src/include/RingBuffer.h; sourceTree = "<group>"; };
+		311BA2271EDC085700244DAC /* bbpr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bbpr.cpp; path = ../../src/dependencies/lpcformants/bbpr.cpp; sourceTree = "<group>"; };
+		311BA2281EDC085700244DAC /* bbpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bbpr.h; path = ../../src/dependencies/lpcformants/bbpr.h; sourceTree = "<group>"; };
+		311BA22B1EDC086600244DAC /* finitedifferences.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = finitedifferences.c; path = ../../src/dependencies/finitedifferences/finitedifferences.c; sourceTree = "<group>"; };
+		311BA22C1EDC086600244DAC /* finitedifferences.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = finitedifferences.h; path = ../../src/dependencies/finitedifferences/finitedifferences.h; sourceTree = "<group>"; };
+		311BA22F1EDC087300244DAC /* BayesianFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BayesianFilter.cpp; path = ../../src/dependencies/bayesfilter/BayesianFilter.cpp; sourceTree = "<group>"; };
+		311BA2301EDC087300244DAC /* BayesianFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BayesianFilter.h; path = ../../src/dependencies/bayesfilter/BayesianFilter.h; sourceTree = "<group>"; };
+		311BA2311EDC087300244DAC /* filter_utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = filter_utilities.cpp; path = ../../src/dependencies/bayesfilter/filter_utilities.cpp; sourceTree = "<group>"; };
+		311BA2321EDC087300244DAC /* filter_utilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = filter_utilities.h; path = ../../src/dependencies/bayesfilter/filter_utilities.h; sourceTree = "<group>"; };
+		311BA2371EDC088C00244DAC /* rta_configuration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_configuration.h; path = ../../src/dependencies/rta/rta_configuration.h; sourceTree = "<group>"; };
+		311BA2391EDC08A500244DAC /* rta_bpf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_bpf.c; path = ../../src/dependencies/rta/common/rta_bpf.c; sourceTree = "<group>"; };
+		311BA23A1EDC08A500244DAC /* rta_bpf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_bpf.h; path = ../../src/dependencies/rta/common/rta_bpf.h; sourceTree = "<group>"; };
+		311BA23B1EDC08A500244DAC /* rta_complex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_complex.h; path = ../../src/dependencies/rta/common/rta_complex.h; sourceTree = "<group>"; };
+		311BA23C1EDC08A500244DAC /* rta_float.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_float.h; path = ../../src/dependencies/rta/common/rta_float.h; sourceTree = "<group>"; };
+		311BA23D1EDC08A500244DAC /* rta_int.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_int.c; path = ../../src/dependencies/rta/common/rta_int.c; sourceTree = "<group>"; };
+		311BA23E1EDC08A500244DAC /* rta_int.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_int.h; path = ../../src/dependencies/rta/common/rta_int.h; sourceTree = "<group>"; };
+		311BA23F1EDC08A500244DAC /* rta_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_math.h; path = ../../src/dependencies/rta/common/rta_math.h; sourceTree = "<group>"; };
+		311BA2401EDC08A500244DAC /* rta_stdio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_stdio.h; path = ../../src/dependencies/rta/common/rta_stdio.h; sourceTree = "<group>"; };
+		311BA2411EDC08A500244DAC /* rta_stdlib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_stdlib.h; path = ../../src/dependencies/rta/common/rta_stdlib.h; sourceTree = "<group>"; };
+		311BA2421EDC08A500244DAC /* rta_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_types.h; path = ../../src/dependencies/rta/common/rta_types.h; sourceTree = "<group>"; };
+		311BA2431EDC08A500244DAC /* rta_util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_util.c; path = ../../src/dependencies/rta/common/rta_util.c; sourceTree = "<group>"; };
+		311BA2441EDC08A500244DAC /* rta_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_util.h; path = ../../src/dependencies/rta/common/rta_util.h; sourceTree = "<group>"; };
+		311BA2451EDC08A500244DAC /* rta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta.h; path = ../../src/dependencies/rta/common/rta.h; sourceTree = "<group>"; };
+		311BA2531EDC08B600244DAC /* rta_bands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_bands.c; path = ../../src/dependencies/rta/misc/rta_bands.c; sourceTree = "<group>"; };
+		311BA2541EDC08B600244DAC /* rta_bands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_bands.h; path = ../../src/dependencies/rta/misc/rta_bands.h; sourceTree = "<group>"; };
+		311BA2551EDC08B600244DAC /* rta_biquad.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_biquad.c; path = ../../src/dependencies/rta/misc/rta_biquad.c; sourceTree = "<group>"; };
+		311BA2561EDC08B600244DAC /* rta_biquad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_biquad.h; path = ../../src/dependencies/rta/misc/rta_biquad.h; sourceTree = "<group>"; };
+		311BA2571EDC08B600244DAC /* rta_correlation.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_correlation.c; path = ../../src/dependencies/rta/misc/rta_correlation.c; sourceTree = "<group>"; };
+		311BA2581EDC08B600244DAC /* rta_correlation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_correlation.h; path = ../../src/dependencies/rta/misc/rta_correlation.h; sourceTree = "<group>"; };
+		311BA2591EDC08B600244DAC /* rta_cubic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_cubic.c; path = ../../src/dependencies/rta/misc/rta_cubic.c; sourceTree = "<group>"; };
+		311BA25A1EDC08B600244DAC /* rta_cubic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_cubic.h; path = ../../src/dependencies/rta/misc/rta_cubic.h; sourceTree = "<group>"; };
+		311BA25B1EDC08B600244DAC /* rta_dct.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_dct.c; path = ../../src/dependencies/rta/misc/rta_dct.c; sourceTree = "<group>"; };
+		311BA25C1EDC08B600244DAC /* rta_dct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_dct.h; path = ../../src/dependencies/rta/misc/rta_dct.h; sourceTree = "<group>"; };
+		311BA25D1EDC08B600244DAC /* rta_delta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_delta.c; path = ../../src/dependencies/rta/misc/rta_delta.c; sourceTree = "<group>"; };
+		311BA25E1EDC08B600244DAC /* rta_delta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_delta.h; path = ../../src/dependencies/rta/misc/rta_delta.h; sourceTree = "<group>"; };
+		311BA25F1EDC08B600244DAC /* rta_fft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_fft.c; path = ../../src/dependencies/rta/misc/rta_fft.c; sourceTree = "<group>"; };
+		311BA2601EDC08B600244DAC /* rta_fft.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_fft.h; path = ../../src/dependencies/rta/misc/rta_fft.h; sourceTree = "<group>"; };
+		311BA2611EDC08B600244DAC /* rta_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_filter.h; path = ../../src/dependencies/rta/misc/rta_filter.h; sourceTree = "<group>"; };
+		311BA2621EDC08B600244DAC /* rta_lifter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_lifter.c; path = ../../src/dependencies/rta/misc/rta_lifter.c; sourceTree = "<group>"; };
+		311BA2631EDC08B600244DAC /* rta_lifter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_lifter.h; path = ../../src/dependencies/rta/misc/rta_lifter.h; sourceTree = "<group>"; };
+		311BA2641EDC08B600244DAC /* rta_lpc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_lpc.c; path = ../../src/dependencies/rta/misc/rta_lpc.c; sourceTree = "<group>"; };
+		311BA2651EDC08B600244DAC /* rta_lpc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_lpc.h; path = ../../src/dependencies/rta/misc/rta_lpc.h; sourceTree = "<group>"; };
+		311BA2661EDC08B600244DAC /* rta_mean_variance.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_mean_variance.c; path = ../../src/dependencies/rta/misc/rta_mean_variance.c; sourceTree = "<group>"; };
+		311BA2671EDC08B600244DAC /* rta_mean_variance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_mean_variance.h; path = ../../src/dependencies/rta/misc/rta_mean_variance.h; sourceTree = "<group>"; };
+		311BA2681EDC08B600244DAC /* rta_mel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_mel.c; path = ../../src/dependencies/rta/misc/rta_mel.c; sourceTree = "<group>"; };
+		311BA2691EDC08B600244DAC /* rta_mel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_mel.h; path = ../../src/dependencies/rta/misc/rta_mel.h; sourceTree = "<group>"; };
+		311BA26A1EDC08B600244DAC /* rta_moments.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_moments.c; path = ../../src/dependencies/rta/misc/rta_moments.c; sourceTree = "<group>"; };
+		311BA26B1EDC08B600244DAC /* rta_moments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_moments.h; path = ../../src/dependencies/rta/misc/rta_moments.h; sourceTree = "<group>"; };
+		311BA26C1EDC08B600244DAC /* rta_onepole.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_onepole.c; path = ../../src/dependencies/rta/misc/rta_onepole.c; sourceTree = "<group>"; };
+		311BA26D1EDC08B600244DAC /* rta_onepole.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_onepole.h; path = ../../src/dependencies/rta/misc/rta_onepole.h; sourceTree = "<group>"; };
+		311BA26E1EDC08B600244DAC /* rta_preemphasis.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_preemphasis.c; path = ../../src/dependencies/rta/misc/rta_preemphasis.c; sourceTree = "<group>"; };
+		311BA26F1EDC08B600244DAC /* rta_preemphasis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_preemphasis.h; path = ../../src/dependencies/rta/misc/rta_preemphasis.h; sourceTree = "<group>"; };
+		311BA2701EDC08B600244DAC /* rta_resample.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_resample.c; path = ../../src/dependencies/rta/misc/rta_resample.c; sourceTree = "<group>"; };
+		311BA2711EDC08B600244DAC /* rta_resample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_resample.h; path = ../../src/dependencies/rta/misc/rta_resample.h; sourceTree = "<group>"; };
+		311BA2721EDC08B600244DAC /* rta_selection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_selection.c; path = ../../src/dependencies/rta/misc/rta_selection.c; sourceTree = "<group>"; };
+		311BA2731EDC08B600244DAC /* rta_selection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_selection.h; path = ../../src/dependencies/rta/misc/rta_selection.h; sourceTree = "<group>"; };
+		311BA2741EDC08B600244DAC /* rta_svd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_svd.c; path = ../../src/dependencies/rta/misc/rta_svd.c; sourceTree = "<group>"; };
+		311BA2751EDC08B600244DAC /* rta_svd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_svd.h; path = ../../src/dependencies/rta/misc/rta_svd.h; sourceTree = "<group>"; };
+		311BA2761EDC08B600244DAC /* rta_window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_window.c; path = ../../src/dependencies/rta/misc/rta_window.c; sourceTree = "<group>"; };
+		311BA2771EDC08B600244DAC /* rta_window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_window.h; path = ../../src/dependencies/rta/misc/rta_window.h; sourceTree = "<group>"; };
+		311BA29D1EDC09B500244DAC /* PiPoCollection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoCollection.h; path = ../../src/host/PiPoCollection.h; sourceTree = "<group>"; };
+		311BA29E1EDC09B500244DAC /* PiPoModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModule.h; path = ../../src/host/PiPoModule.h; sourceTree = "<group>"; };
+		311BA2A11EDC09D800244DAC /* PiPoCollection.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PiPoCollection.cpp; path = ../../src/host/PiPoCollection.cpp; sourceTree = "<group>"; };
+		315D052F1C4EF736004FAFFB /* libpipo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpipo.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		316D6A261ED5E1140087AA17 /* PiPoBands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBands.h; path = ../../src/modules/PiPoBands.h; sourceTree = "<group>"; };
+		316D6A271ED5E1140087AA17 /* PiPoBayesFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBayesFilter.h; path = ../../src/modules/PiPoBayesFilter.h; sourceTree = "<group>"; };
+		316D6A281ED5E1140087AA17 /* PiPoBiquad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBiquad.h; path = ../../src/modules/PiPoBiquad.h; sourceTree = "<group>"; };
+		316D6A291ED5E1140087AA17 /* PiPoChop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoChop.h; path = ../../src/modules/PiPoChop.h; sourceTree = "<group>"; };
+		316D6A2A1ED5E1140087AA17 /* PiPoConst.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoConst.h; path = ../../src/modules/PiPoConst.h; sourceTree = "<group>"; };
+		316D6A2B1ED5E1140087AA17 /* PiPoDct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDct.h; path = ../../src/modules/PiPoDct.h; sourceTree = "<group>"; };
+		316D6A2C1ED5E1140087AA17 /* PiPoDelta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDelta.h; path = ../../src/modules/PiPoDelta.h; sourceTree = "<group>"; };
+		316D6A2D1ED5E1140087AA17 /* PiPoFft.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoFft.h; path = ../../src/modules/PiPoFft.h; sourceTree = "<group>"; };
+		316D6A2E1ED5E1140087AA17 /* PiPoFiniteDif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoFiniteDif.h; path = ../../src/modules/PiPoFiniteDif.h; sourceTree = "<group>"; };
+		316D6A2F1ED5E1140087AA17 /* PiPoGate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoGate.h; path = ../../src/modules/PiPoGate.h; sourceTree = "<group>"; };
+		316D6A301ED5E1140087AA17 /* PiPoLpc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoLpc.h; path = ../../src/modules/PiPoLpc.h; sourceTree = "<group>"; };
+		316D6A311ED5E1140087AA17 /* PiPoLpcFormants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoLpcFormants.h; path = ../../src/modules/PiPoLpcFormants.h; sourceTree = "<group>"; };
+		316D6A321ED5E1140087AA17 /* PiPoMeanStddev.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMeanStddev.h; path = ../../src/modules/PiPoMeanStddev.h; sourceTree = "<group>"; };
+		316D6A331ED5E1140087AA17 /* PiPoMedian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMedian.h; path = ../../src/modules/PiPoMedian.h; sourceTree = "<group>"; };
+		316D6A341ED5E1140087AA17 /* PiPoMel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMel.h; path = ../../src/modules/PiPoMel.h; sourceTree = "<group>"; };
+		316D6A351ED5E1140087AA17 /* PiPoMfcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMfcc.h; path = ../../src/modules/PiPoMfcc.h; sourceTree = "<group>"; };
+		316D6A361ED5E1140087AA17 /* PiPoMinMax.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMinMax.h; path = ../../src/modules/PiPoMinMax.h; sourceTree = "<group>"; };
+		316D6A371ED5E1140087AA17 /* PiPoMoments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMoments.h; path = ../../src/modules/PiPoMoments.h; sourceTree = "<group>"; };
+		316D6A391ED5E1140087AA17 /* PiPoOnseg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoOnseg.h; path = ../../src/modules/PiPoOnseg.h; sourceTree = "<group>"; };
+		316D6A3A1ED5E1140087AA17 /* PiPoPeaks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoPeaks.h; path = ../../src/modules/PiPoPeaks.h; sourceTree = "<group>"; };
+		316D6A3B1ED5E1140087AA17 /* PiPoRms.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoRms.h; path = ../../src/modules/PiPoRms.h; sourceTree = "<group>"; };
+		316D6A3C1ED5E1140087AA17 /* PiPoScale.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoScale.h; path = ../../src/modules/PiPoScale.h; sourceTree = "<group>"; };
+		316D6A3D1ED5E1140087AA17 /* PiPoSelect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSelect.h; path = ../../src/modules/PiPoSelect.h; sourceTree = "<group>"; };
+		316D6A3E1ED5E1140087AA17 /* PiPoSlice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSlice.h; path = ../../src/modules/PiPoSlice.h; sourceTree = "<group>"; };
+		316D6A3F1ED5E1140087AA17 /* PiPoSum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSum.h; path = ../../src/modules/PiPoSum.h; sourceTree = "<group>"; };
+		316D6A401ED5E1140087AA17 /* TempMod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TempMod.h; path = ../../src/modules/TempMod.h; sourceTree = "<group>"; };
+		31D2EE6D1ED71FCC002E9F6A /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = ../../test/catch.hpp; sourceTree = "<group>"; };
+		31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "mimo-test.cpp"; path = "../../test/mimo-test.cpp"; sourceTree = "<group>"; };
+		31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-benchmark.cpp"; path = "../../test/pipo-benchmark.cpp"; sourceTree = "<group>"; };
+		31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-fft-test.cpp"; path = "../../test/pipo-fft-test.cpp"; sourceTree = "<group>"; };
+		31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-parallel-test.cpp"; path = "../../test/pipo-parallel-test.cpp"; sourceTree = "<group>"; };
+		31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-sequence-test.cpp"; path = "../../test/pipo-sequence-test.cpp"; sourceTree = "<group>"; };
+		31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-version-test.cpp"; path = "../../test/pipo-version-test.cpp"; sourceTree = "<group>"; };
+		31D2EE741ED71FCC002E9F6A /* PiPoTestReceiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoTestReceiver.h; path = ../../test/PiPoTestReceiver.h; sourceTree = "<group>"; };
+		31D2EE751ED71FCC002E9F6A /* test-main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "test-main.cpp"; path = "../../test/test-main.cpp"; sourceTree = "<group>"; };
+		31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-collection-test.cpp"; path = "../../test/pipo-collection-test.cpp"; sourceTree = "<group>"; };
+		31D2EE7C1ED72503002E9F6A /* pipo_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = pipo_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		31D2EEA71ED72EB9002E9F6A /* pipofooter.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = pipofooter.html; path = ../doxygen/pipofooter.html; sourceTree = "<group>"; };
+		31D2EEA81ED72EB9002E9F6A /* pipogroups.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipogroups.doxygen; path = ../doxygen/pipogroups.doxygen; sourceTree = "<group>"; };
+		31D2EEA91ED72EB9002E9F6A /* pipoheader.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = pipoheader.html; path = ../doxygen/pipoheader.html; sourceTree = "<group>"; };
+		31D2EEAA1ED72EB9002E9F6A /* pipolayout.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = pipolayout.xml; path = ../doxygen/pipolayout.xml; sourceTree = "<group>"; };
+		31D2EEAB1ED72EB9002E9F6A /* pipostyle.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = pipostyle.css; path = ../doxygen/pipostyle.css; sourceTree = "<group>"; };
+		31D2EEAC1ED72EB9002E9F6A /* pipotabs.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = pipotabs.css; path = ../doxygen/pipotabs.css; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		315D05281C4EF736004FAFFB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		31D2EE791ED72503002E9F6A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		311BA21B1EDC073A00244DAC /* include */ = {
+			isa = PBXGroup;
+			children = (
+				311BA21F1EDC075A00244DAC /* PiPo.h */,
+				311BA2201EDC075A00244DAC /* PiPoParallel.h */,
+				311BA2211EDC075A00244DAC /* PiPoSequence.h */,
+				311BA2221EDC075A00244DAC /* RingBuffer.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		311BA21C1EDC073F00244DAC /* host */ = {
+			isa = PBXGroup;
+			children = (
+				311BA21D1EDC074E00244DAC /* PiPoHost.h */,
+				311BA29E1EDC09B500244DAC /* PiPoModule.h */,
+				311BA29D1EDC09B500244DAC /* PiPoCollection.h */,
+				311BA2A11EDC09D800244DAC /* PiPoCollection.cpp */,
+			);
+			name = host;
+			sourceTree = "<group>";
+		};
+		315D04D61C4E5A97004FAFFB /* modules */ = {
+			isa = PBXGroup;
+			children = (
+				316D6A261ED5E1140087AA17 /* PiPoBands.h */,
+				316D6A271ED5E1140087AA17 /* PiPoBayesFilter.h */,
+				316D6A281ED5E1140087AA17 /* PiPoBiquad.h */,
+				316D6A291ED5E1140087AA17 /* PiPoChop.h */,
+				316D6A2A1ED5E1140087AA17 /* PiPoConst.h */,
+				316D6A2B1ED5E1140087AA17 /* PiPoDct.h */,
+				316D6A2C1ED5E1140087AA17 /* PiPoDelta.h */,
+				316D6A2D1ED5E1140087AA17 /* PiPoFft.h */,
+				316D6A2E1ED5E1140087AA17 /* PiPoFiniteDif.h */,
+				316D6A2F1ED5E1140087AA17 /* PiPoGate.h */,
+				316D6A301ED5E1140087AA17 /* PiPoLpc.h */,
+				316D6A311ED5E1140087AA17 /* PiPoLpcFormants.h */,
+				316D6A321ED5E1140087AA17 /* PiPoMeanStddev.h */,
+				316D6A331ED5E1140087AA17 /* PiPoMedian.h */,
+				316D6A341ED5E1140087AA17 /* PiPoMel.h */,
+				316D6A351ED5E1140087AA17 /* PiPoMfcc.h */,
+				316D6A361ED5E1140087AA17 /* PiPoMinMax.h */,
+				316D6A371ED5E1140087AA17 /* PiPoMoments.h */,
+				3100CB9C1ED6E47600D08491 /* PiPoMvavrg.h */,
+				316D6A391ED5E1140087AA17 /* PiPoOnseg.h */,
+				316D6A3A1ED5E1140087AA17 /* PiPoPeaks.h */,
+				316D6A3B1ED5E1140087AA17 /* PiPoRms.h */,
+				316D6A3C1ED5E1140087AA17 /* PiPoScale.h */,
+				316D6A3D1ED5E1140087AA17 /* PiPoSelect.h */,
+				316D6A3E1ED5E1140087AA17 /* PiPoSlice.h */,
+				316D6A3F1ED5E1140087AA17 /* PiPoSum.h */,
+				316D6A401ED5E1140087AA17 /* TempMod.h */,
+			);
+			name = modules;
+			sourceTree = "<group>";
+		};
+		316D6A251ED5E0B40087AA17 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				316D6A491ED5E1550087AA17 /* dependencies */,
+				311BA21C1EDC073F00244DAC /* host */,
+				311BA21B1EDC073A00244DAC /* include */,
+				315D04D61C4E5A97004FAFFB /* modules */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		316D6A491ED5E1550087AA17 /* dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				316D6A8D1ED5E1EA0087AA17 /* bayesfilter */,
+				316D6A8E1ED5E1F90087AA17 /* finitedifferences */,
+				316D6A8F1ED5E2010087AA17 /* lpcformants */,
+				316D6A581ED5E1AB0087AA17 /* rta */,
+			);
+			name = dependencies;
+			sourceTree = "<group>";
+		};
+		316D6A581ED5E1AB0087AA17 /* rta */ = {
+			isa = PBXGroup;
+			children = (
+				311BA2371EDC088C00244DAC /* rta_configuration.h */,
+				316D6A591ED5E1B10087AA17 /* common */,
+				316D6A5A1ED5E1B60087AA17 /* misc */,
+			);
+			name = rta;
+			sourceTree = "<group>";
+		};
+		316D6A591ED5E1B10087AA17 /* common */ = {
+			isa = PBXGroup;
+			children = (
+				311BA2391EDC08A500244DAC /* rta_bpf.c */,
+				311BA23A1EDC08A500244DAC /* rta_bpf.h */,
+				311BA23B1EDC08A500244DAC /* rta_complex.h */,
+				311BA23C1EDC08A500244DAC /* rta_float.h */,
+				311BA23D1EDC08A500244DAC /* rta_int.c */,
+				311BA23E1EDC08A500244DAC /* rta_int.h */,
+				311BA23F1EDC08A500244DAC /* rta_math.h */,
+				311BA2401EDC08A500244DAC /* rta_stdio.h */,
+				311BA2411EDC08A500244DAC /* rta_stdlib.h */,
+				311BA2421EDC08A500244DAC /* rta_types.h */,
+				311BA2431EDC08A500244DAC /* rta_util.c */,
+				311BA2441EDC08A500244DAC /* rta_util.h */,
+				311BA2451EDC08A500244DAC /* rta.h */,
+			);
+			name = common;
+			sourceTree = "<group>";
+		};
+		316D6A5A1ED5E1B60087AA17 /* misc */ = {
+			isa = PBXGroup;
+			children = (
+				311BA2531EDC08B600244DAC /* rta_bands.c */,
+				311BA2541EDC08B600244DAC /* rta_bands.h */,
+				311BA2551EDC08B600244DAC /* rta_biquad.c */,
+				311BA2561EDC08B600244DAC /* rta_biquad.h */,
+				311BA2571EDC08B600244DAC /* rta_correlation.c */,
+				311BA2581EDC08B600244DAC /* rta_correlation.h */,
+				311BA2591EDC08B600244DAC /* rta_cubic.c */,
+				311BA25A1EDC08B600244DAC /* rta_cubic.h */,
+				311BA25B1EDC08B600244DAC /* rta_dct.c */,
+				311BA25C1EDC08B600244DAC /* rta_dct.h */,
+				311BA25D1EDC08B600244DAC /* rta_delta.c */,
+				311BA25E1EDC08B600244DAC /* rta_delta.h */,
+				311BA25F1EDC08B600244DAC /* rta_fft.c */,
+				311BA2601EDC08B600244DAC /* rta_fft.h */,
+				311BA2611EDC08B600244DAC /* rta_filter.h */,
+				311BA2621EDC08B600244DAC /* rta_lifter.c */,
+				311BA2631EDC08B600244DAC /* rta_lifter.h */,
+				311BA2641EDC08B600244DAC /* rta_lpc.c */,
+				311BA2651EDC08B600244DAC /* rta_lpc.h */,
+				311BA2661EDC08B600244DAC /* rta_mean_variance.c */,
+				311BA2671EDC08B600244DAC /* rta_mean_variance.h */,
+				311BA2681EDC08B600244DAC /* rta_mel.c */,
+				311BA2691EDC08B600244DAC /* rta_mel.h */,
+				311BA26A1EDC08B600244DAC /* rta_moments.c */,
+				311BA26B1EDC08B600244DAC /* rta_moments.h */,
+				311BA26C1EDC08B600244DAC /* rta_onepole.c */,
+				311BA26D1EDC08B600244DAC /* rta_onepole.h */,
+				311BA26E1EDC08B600244DAC /* rta_preemphasis.c */,
+				311BA26F1EDC08B600244DAC /* rta_preemphasis.h */,
+				311BA2701EDC08B600244DAC /* rta_resample.c */,
+				311BA2711EDC08B600244DAC /* rta_resample.h */,
+				311BA2721EDC08B600244DAC /* rta_selection.c */,
+				311BA2731EDC08B600244DAC /* rta_selection.h */,
+				311BA2741EDC08B600244DAC /* rta_svd.c */,
+				311BA2751EDC08B600244DAC /* rta_svd.h */,
+				311BA2761EDC08B600244DAC /* rta_window.c */,
+				311BA2771EDC08B600244DAC /* rta_window.h */,
+			);
+			name = misc;
+			sourceTree = "<group>";
+		};
+		316D6A8D1ED5E1EA0087AA17 /* bayesfilter */ = {
+			isa = PBXGroup;
+			children = (
+				311BA22F1EDC087300244DAC /* BayesianFilter.cpp */,
+				311BA2301EDC087300244DAC /* BayesianFilter.h */,
+				311BA2311EDC087300244DAC /* filter_utilities.cpp */,
+				311BA2321EDC087300244DAC /* filter_utilities.h */,
+			);
+			name = bayesfilter;
+			sourceTree = "<group>";
+		};
+		316D6A8E1ED5E1F90087AA17 /* finitedifferences */ = {
+			isa = PBXGroup;
+			children = (
+				311BA22B1EDC086600244DAC /* finitedifferences.c */,
+				311BA22C1EDC086600244DAC /* finitedifferences.h */,
+			);
+			name = finitedifferences;
+			sourceTree = "<group>";
+		};
+		316D6A8F1ED5E2010087AA17 /* lpcformants */ = {
+			isa = PBXGroup;
+			children = (
+				311BA2271EDC085700244DAC /* bbpr.cpp */,
+				311BA2281EDC085700244DAC /* bbpr.h */,
+			);
+			name = lpcformants;
+			sourceTree = "<group>";
+		};
+		31D2EE6C1ED71F60002E9F6A /* test */ = {
+			isa = PBXGroup;
+			children = (
+				31D2EE6D1ED71FCC002E9F6A /* catch.hpp */,
+				31D2EE751ED71FCC002E9F6A /* test-main.cpp */,
+				31D2EE741ED71FCC002E9F6A /* PiPoTestReceiver.h */,
+				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
+				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
+				31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */,
+				31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */,
+				31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */,
+				31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */,
+				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
+			);
+			name = test;
+			sourceTree = "<group>";
+		};
+		31D2EEA61ED72A86002E9F6A /* doc */ = {
+			isa = PBXGroup;
+			children = (
+				21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */,
+				31D2EEAA1ED72EB9002E9F6A /* pipolayout.xml */,
+				31D2EEA91ED72EB9002E9F6A /* pipoheader.html */,
+				31D2EEA71ED72EB9002E9F6A /* pipofooter.html */,
+				31D2EEA81ED72EB9002E9F6A /* pipogroups.doxygen */,
+				31D2EEAB1ED72EB9002E9F6A /* pipostyle.css */,
+				31D2EEAC1ED72EB9002E9F6A /* pipotabs.css */,
+			);
+			name = doc;
+			sourceTree = "<group>";
+		};
+		5A04AA9006D4DD3F0098230D = {
+			isa = PBXGroup;
+			children = (
+				31D2EEA61ED72A86002E9F6A /* doc */,
+				316D6A251ED5E0B40087AA17 /* src */,
+				31D2EE6C1ED71F60002E9F6A /* test */,
+				5A04AAA006D4DD700098230D /* products */,
+			);
+			sourceTree = "<group>";
+		};
+		5A04AAA006D4DD700098230D /* products */ = {
+			isa = PBXGroup;
+			children = (
+				315D052F1C4EF736004FAFFB /* libpipo.a */,
+				31D2EE7C1ED72503002E9F6A /* pipo_test */,
+			);
+			name = products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		315D05151C4EF736004FAFFB /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				311BA2521EDC08A500244DAC /* rta.h in Headers */,
+				311BA24B1EDC08A500244DAC /* rta_int.h in Headers */,
+				311BA2511EDC08A500244DAC /* rta_util.h in Headers */,
+				311BA2811EDC08B600244DAC /* rta_dct.h in Headers */,
+				311BA28A1EDC08B600244DAC /* rta_lpc.h in Headers */,
+				311BA2241EDC075A00244DAC /* PiPoParallel.h in Headers */,
+				311BA22E1EDC086600244DAC /* finitedifferences.h in Headers */,
+				311BA2981EDC08B600244DAC /* rta_selection.h in Headers */,
+				311BA2361EDC087300244DAC /* filter_utilities.h in Headers */,
+				311BA24E1EDC08A500244DAC /* rta_stdlib.h in Headers */,
+				311BA29A1EDC08B600244DAC /* rta_svd.h in Headers */,
+				311BA2381EDC088C00244DAC /* rta_configuration.h in Headers */,
+				311BA2831EDC08B600244DAC /* rta_delta.h in Headers */,
+				311BA2921EDC08B600244DAC /* rta_onepole.h in Headers */,
+				311BA2491EDC08A500244DAC /* rta_float.h in Headers */,
+				311BA2231EDC075A00244DAC /* PiPo.h in Headers */,
+				311BA24F1EDC08A500244DAC /* rta_types.h in Headers */,
+				311BA2471EDC08A500244DAC /* rta_bpf.h in Headers */,
+				311BA22A1EDC085700244DAC /* bbpr.h in Headers */,
+				311BA2851EDC08B600244DAC /* rta_fft.h in Headers */,
+				311BA24C1EDC08A500244DAC /* rta_math.h in Headers */,
+				311BA27B1EDC08B600244DAC /* rta_biquad.h in Headers */,
+				311BA29C1EDC08B600244DAC /* rta_window.h in Headers */,
+				311BA2481EDC08A500244DAC /* rta_complex.h in Headers */,
+				311BA21E1EDC074E00244DAC /* PiPoHost.h in Headers */,
+				311BA2901EDC08B600244DAC /* rta_moments.h in Headers */,
+				311BA28E1EDC08B600244DAC /* rta_mel.h in Headers */,
+				311BA2791EDC08B600244DAC /* rta_bands.h in Headers */,
+				311BA2261EDC075A00244DAC /* RingBuffer.h in Headers */,
+				311BA2881EDC08B600244DAC /* rta_lifter.h in Headers */,
+				311BA2961EDC08B600244DAC /* rta_resample.h in Headers */,
+				311BA27D1EDC08B600244DAC /* rta_correlation.h in Headers */,
+				311BA2341EDC087300244DAC /* BayesianFilter.h in Headers */,
+				311BA2A01EDC09B500244DAC /* PiPoModule.h in Headers */,
+				311BA2861EDC08B600244DAC /* rta_filter.h in Headers */,
+				311BA29F1EDC09B500244DAC /* PiPoCollection.h in Headers */,
+				311BA2251EDC075A00244DAC /* PiPoSequence.h in Headers */,
+				311BA2941EDC08B600244DAC /* rta_preemphasis.h in Headers */,
+				311BA27F1EDC08B600244DAC /* rta_cubic.h in Headers */,
+				311BA24D1EDC08A500244DAC /* rta_stdio.h in Headers */,
+				311BA28C1EDC08B600244DAC /* rta_mean_variance.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		315D05141C4EF736004FAFFB /* libpipo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 315D052A1C4EF736004FAFFB /* Build configuration list for PBXNativeTarget "libpipo" */;
+			buildPhases = (
+				315D05151C4EF736004FAFFB /* Headers */,
+				315D05171C4EF736004FAFFB /* Sources */,
+				315D05281C4EF736004FAFFB /* Frameworks */,
+				315D05291C4EF736004FAFFB /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libpipo;
+			productName = libzsazsa;
+			productReference = 315D052F1C4EF736004FAFFB /* libpipo.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		31D2EE7B1ED72503002E9F6A /* pipo_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 31D2EE801ED72503002E9F6A /* Build configuration list for PBXNativeTarget "pipo_test" */;
+			buildPhases = (
+				31D2EE781ED72503002E9F6A /* Sources */,
+				31D2EE791ED72503002E9F6A /* Frameworks */,
+				31D2EE7A1ED72503002E9F6A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pipo_test;
+			productName = pipo_test;
+			productReference = 31D2EE7C1ED72503002E9F6A /* pipo_test */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5A04AA9406D4DD3F0098230D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0820;
+				TargetAttributes = {
+					31D2EE7B1ED72503002E9F6A = {
+						CreatedOnToolsVersion = 8.2.1;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 5A5828FD08F513D9005EF882 /* Build configuration list for PBXProject "libpipo" */;
+			compatibilityVersion = "Xcode 6.3";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 5A04AA9006D4DD3F0098230D;
+			productRefGroup = 5A04AAA006D4DD700098230D /* products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C8290DF0B8E439800766D9D /* all */,
+				5C411FD30DAC17B9006897CA /* doc */,
+				315D05141C4EF736004FAFFB /* libpipo */,
+				31D2EE7B1ED72503002E9F6A /* pipo_test */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		315D05291C4EF736004FAFFB /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "";
+		};
+		5C411FD20DAC17B9006897CA /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../src/PiPo.h",
+				"$(SRCROOT)/../doxygen/pipo.doxygen",
+				"$(SRCROOT)/../doxygen/pipolayout.xml",
+				"$(SRCROOT)/../doxygen/pipoheader.html",
+				"$(SRCROOT)/../doxygen/pipofooter.html",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#dx1=/Applications/Doxygen.app/Contents/Resources/doxygen\n#dx2=/sw/bin/doxygen\n\n#if   [ -e $dx1 ]; then dx=$dx1;\n#elif [ -e $dx2 ]; then dx=$dx2;\n#else  dx=doxygen\n#fi\n\n#$dx ../doxygen/pipo.doxygen\ndoxygen ../doxygen/pipo.doxygen\n\nexit 0";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		315D05171C4EF736004FAFFB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				311BA2A21EDC09D800244DAC /* PiPoCollection.cpp in Sources */,
+				311BA2991EDC08B600244DAC /* rta_svd.c in Sources */,
+				311BA2801EDC08B600244DAC /* rta_dct.c in Sources */,
+				311BA2951EDC08B600244DAC /* rta_resample.c in Sources */,
+				311BA24A1EDC08A500244DAC /* rta_int.c in Sources */,
+				311BA2461EDC08A500244DAC /* rta_bpf.c in Sources */,
+				311BA29B1EDC08B600244DAC /* rta_window.c in Sources */,
+				311BA2971EDC08B600244DAC /* rta_selection.c in Sources */,
+				311BA2331EDC087300244DAC /* BayesianFilter.cpp in Sources */,
+				311BA2351EDC087300244DAC /* filter_utilities.cpp in Sources */,
+				311BA27E1EDC08B600244DAC /* rta_cubic.c in Sources */,
+				311BA2781EDC08B600244DAC /* rta_bands.c in Sources */,
+				311BA27C1EDC08B600244DAC /* rta_correlation.c in Sources */,
+				311BA28D1EDC08B600244DAC /* rta_mel.c in Sources */,
+				311BA2871EDC08B600244DAC /* rta_lifter.c in Sources */,
+				311BA2911EDC08B600244DAC /* rta_onepole.c in Sources */,
+				311BA28F1EDC08B600244DAC /* rta_moments.c in Sources */,
+				311BA2841EDC08B600244DAC /* rta_fft.c in Sources */,
+				311BA2291EDC085700244DAC /* bbpr.cpp in Sources */,
+				311BA2931EDC08B600244DAC /* rta_preemphasis.c in Sources */,
+				311BA2891EDC08B600244DAC /* rta_lpc.c in Sources */,
+				311BA28B1EDC08B600244DAC /* rta_mean_variance.c in Sources */,
+				311BA22D1EDC086600244DAC /* finitedifferences.c in Sources */,
+				311BA2501EDC08A500244DAC /* rta_util.c in Sources */,
+				311BA2821EDC08B600244DAC /* rta_delta.c in Sources */,
+				311BA27A1EDC08B600244DAC /* rta_biquad.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		31D2EE781ED72503002E9F6A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */,
+				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
+				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,
+				31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */,
+				31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		315D052B1C4EF736004FAFFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "$(SRCROOT)/../../bin/osx";
+				INSTALL_PATH = /;
+				PRODUCT_NAME = pipo;
+			};
+			name = Debug;
+		};
+		315D052D1C4EF736004FAFFB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "$(SRCROOT)/../../bin/osx";
+				INSTALL_PATH = /;
+				PRODUCT_NAME = pipo;
+			};
+			name = Release;
+		};
+		31D2EE811ED72503002E9F6A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "-";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		31D2EE821ED72503002E9F6A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		5A5828FE08F513D9005EF882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_LINK_WITH_DYNAMIC_LIBRARIES = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"ZSAZSA_MULTITHREADING=1",
+					"USE_MACOSX_VECLIB=1",
+				);
+				GCC_THREADSAFE_STATICS = YES;
+				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
+				GCC_VERSION = "";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_ALLOW_INCOMPLETE_PROTOCOL = NO;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = NO;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"../../**",
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				OTHER_LDFLAGS = (
+					"-framework",
+					vecLib,
+				);
+				PREBINDING = YES;
+				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
+				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
+			};
+			name = Debug;
+		};
+		5A5828FF08F513D9005EF882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_LINK_WITH_DYNAMIC_LIBRARIES = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"ZSAZSA_MULTITHREADING=1",
+					"USE_MACOSX_VECLIB=1",
+				);
+				GCC_THREADSAFE_STATICS = YES;
+				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
+				GCC_VERSION = "";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_ALLOW_INCOMPLETE_PROTOCOL = NO;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = NO;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"../../**",
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				OTHER_LDFLAGS = (
+					"-framework",
+					vecLib,
+				);
+				PREBINDING = YES;
+				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
+				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
+			};
+			name = Release;
+		};
+		5C411FD60DAC17BA006897CA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = doc;
+			};
+			name = Debug;
+		};
+		5C411FD70DAC17BA006897CA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = doc;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		5C8290EB0B8E43C900766D9D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = all;
+			};
+			name = Debug;
+		};
+		5C8290EC0B8E43C900766D9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = all;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		315D052A1C4EF736004FAFFB /* Build configuration list for PBXNativeTarget "libpipo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				315D052B1C4EF736004FAFFB /* Debug */,
+				315D052D1C4EF736004FAFFB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		31D2EE801ED72503002E9F6A /* Build configuration list for PBXNativeTarget "pipo_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				31D2EE811ED72503002E9F6A /* Debug */,
+				31D2EE821ED72503002E9F6A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5A5828FD08F513D9005EF882 /* Build configuration list for PBXProject "libpipo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A5828FE08F513D9005EF882 /* Debug */,
+				5A5828FF08F513D9005EF882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5C411FD50DAC17BA006897CA /* Build configuration list for PBXAggregateTarget "doc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C411FD60DAC17BA006897CA /* Debug */,
+				5C411FD70DAC17BA006897CA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5C8290EA0B8E43C900766D9D /* Build configuration list for PBXAggregateTarget "all" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C8290EB0B8E43C900766D9D /* Debug */,
+				5C8290EC0B8E43C900766D9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5A04AA9406D4DD3F0098230D /* Project object */;
+}
