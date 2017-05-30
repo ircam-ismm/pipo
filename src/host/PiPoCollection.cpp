@@ -90,29 +90,7 @@ public:
   {
     if(defaultPipos)
     {
-      include("bands", new PiPoCreator<PiPoBands>);
-      include("bayesfilter", new PiPoCreator<PiPoBayesFilter>);
-      include("biquad", new PiPoCreator<PiPoBiquad>);
-      include("chop", new PiPoCreator<PiPoChop>);
-      include("const", new PiPoCreator<PiPoConst>);
-      include("dct", new PiPoCreator<PiPoDct>);
-      include("delta", new PiPoCreator<PiPoDelta>);
-      include("fft", new PiPoCreator<PiPoFft>);
-      include("finitedif", new PiPoCreator<PiPoFiniteDif>);
-      include("gate", new PiPoCreator<PiPoGate>);
-      include("lpc", new PiPoCreator<PiPoLpc>);
-      include("lpcformants", new PiPoCreator<PiPoLpcFormants>);
-      include("median", new PiPoCreator<PiPoMedian>);
-      include("mel", new PiPoCreator<PiPoMel>);
-      include("mfcc", new PiPoCreator<PiPoMfcc>);
-      include("moments", new PiPoCreator<PiPoMoments>);
-      include("mvavrg", new PiPoCreator<PiPoMvavrg>);
-      include("onseg", new PiPoCreator<PiPoOnseg>);
-      include("peaks", new PiPoCreator<PiPoPeaks>);
-      include("scale", new PiPoCreator<PiPoScale>);
-      include("select", new PiPoCreator<PiPoSelect>);
-      include("slice", new PiPoCreator<PiPoSlice>);
-      include("sum", new PiPoCreator<PiPoSum>);
+      includeDefaultPiPos();
     }
   }
   
@@ -125,6 +103,33 @@ public:
         it->second = NULL;
       }
     }*/
+  }
+
+  void includeDefaultPiPos()
+  {
+    include("bands", new PiPoCreator<PiPoBands>);
+    include("bayesfilter", new PiPoCreator<PiPoBayesFilter>);
+    include("biquad", new PiPoCreator<PiPoBiquad>);
+    include("chop", new PiPoCreator<PiPoChop>);
+    include("const", new PiPoCreator<PiPoConst>);
+    include("dct", new PiPoCreator<PiPoDct>);
+    include("delta", new PiPoCreator<PiPoDelta>);
+    include("fft", new PiPoCreator<PiPoFft>);
+    include("finitedif", new PiPoCreator<PiPoFiniteDif>);
+    include("gate", new PiPoCreator<PiPoGate>);
+    include("lpc", new PiPoCreator<PiPoLpc>);
+    include("lpcformants", new PiPoCreator<PiPoLpcFormants>);
+    include("median", new PiPoCreator<PiPoMedian>);
+    include("mel", new PiPoCreator<PiPoMel>);
+    include("mfcc", new PiPoCreator<PiPoMfcc>);
+    include("moments", new PiPoCreator<PiPoMoments>);
+    include("mvavrg", new PiPoCreator<PiPoMvavrg>);
+    include("onseg", new PiPoCreator<PiPoOnseg>);
+    include("peaks", new PiPoCreator<PiPoPeaks>);
+    include("scale", new PiPoCreator<PiPoScale>);
+    include("select", new PiPoCreator<PiPoSelect>);
+    include("slice", new PiPoCreator<PiPoSlice>);
+    include("sum", new PiPoCreator<PiPoSum>);    
   }
   
   void include(std::string name, PiPoCreatorBase *creator)
