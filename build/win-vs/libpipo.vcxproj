@@ -1,0 +1,416 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\dependencies\bayesfilter\BayesianFilter.cpp" />
+    <ClCompile Include="..\..\src\dependencies\bayesfilter\filter_utilities.cpp" />
+    <ClCompile Include="..\..\src\dependencies\finitedifferences\finitedifferences.c" />
+    <ClCompile Include="..\..\src\dependencies\lpcformants\bbpr.cpp" />
+    <ClCompile Include="..\..\src\dependencies\lpcformants\rpoly.cpp" />
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_bpf.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_int.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_util.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_bands.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_biquad.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_correlation.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_cubic.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_dct.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_delta.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_fft.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_lifter.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_lpc.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_mean_variance.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_mel.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_moments.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_onepole.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_preemphasis.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_resample.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_selection.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_svd.c" />
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_window.c" />
+    <ClCompile Include="..\..\src\host\PiPoCollection.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\dependencies\bayesfilter\BayesianFilter.h" />
+    <ClInclude Include="..\..\src\dependencies\bayesfilter\filter_utilities.h" />
+    <ClInclude Include="..\..\src\dependencies\finitedifferences\finitedifferences.h" />
+    <ClInclude Include="..\..\src\dependencies\lpcformants\bbpr.h" />
+    <ClInclude Include="..\..\src\dependencies\lpcformants\rpoly.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_bpf.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_complex.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_float.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_int.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_math.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_stdio.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_stdlib.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_types.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_util.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_bands.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_biquad.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_correlation.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_cubic.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_dct.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_delta.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_fft.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_filter.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_lifter.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_lpc.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_mean_variance.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_mel.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_moments.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_onepole.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_preemphasis.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_resample.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_selection.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_svd.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_window.h" />
+    <ClInclude Include="..\..\src\dependencies\rta\rta_configuration.h" />
+    <ClInclude Include="..\..\src\host\mimo_host.h" />
+    <ClInclude Include="..\..\src\host\PiPoCollection.h" />
+    <ClInclude Include="..\..\src\host\PiPoGraph.h" />
+    <ClInclude Include="..\..\src\host\PiPoHost.h" />
+    <ClInclude Include="..\..\src\host\PiPoModule.h" />
+    <ClInclude Include="..\..\src\include\PiPo.h" />
+    <ClInclude Include="..\..\src\include\PiPoParallel.h" />
+    <ClInclude Include="..\..\src\include\PiPoSequence.h" />
+    <ClInclude Include="..\..\src\include\RingBuffer.h" />
+    <ClInclude Include="..\..\src\modules\PiPoBands.h" />
+    <ClInclude Include="..\..\src\modules\PiPoBayesFilter.h" />
+    <ClInclude Include="..\..\src\modules\PiPoBiquad.h" />
+    <ClInclude Include="..\..\src\modules\PiPoChop.h" />
+    <ClInclude Include="..\..\src\modules\PiPoConst.h" />
+    <ClInclude Include="..\..\src\modules\PiPoDct.h" />
+    <ClInclude Include="..\..\src\modules\PiPoDelta.h" />
+    <ClInclude Include="..\..\src\modules\PiPoFft.h" />
+    <ClInclude Include="..\..\src\modules\PiPoFiniteDif.h" />
+    <ClInclude Include="..\..\src\modules\PiPoGate.h" />
+    <ClInclude Include="..\..\src\modules\PiPoLpc.h" />
+    <ClInclude Include="..\..\src\modules\PiPoLpcFormants.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMeanStddev.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMedian.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMel.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMfcc.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMinMax.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMoments.h" />
+    <ClInclude Include="..\..\src\modules\PiPoMvavrg.h" />
+    <ClInclude Include="..\..\src\modules\PiPoOnseg.h" />
+    <ClInclude Include="..\..\src\modules\PiPoPeaks.h" />
+    <ClInclude Include="..\..\src\modules\PiPoRms.h" />
+    <ClInclude Include="..\..\src\modules\PiPoScale.h" />
+    <ClInclude Include="..\..\src\modules\PiPoSelect.h" />
+    <ClInclude Include="..\..\src\modules\PiPoSlice.h" />
+    <ClInclude Include="..\..\src\modules\PiPoSum.h" />
+    <ClInclude Include="..\..\src\modules\TempMod.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libpipo</ProjectName>
+    <ProjectGuid>{73069FC3-D989-47DB-B15F-625703EED4DA}</ProjectGuid>
+    <RootNamespace>yin</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">libpipo</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libpipo</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">libpipo</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libpipo</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <GenerateTypeLibrary>false</GenerateTypeLibrary>
+      <TypeLibraryName>
+      </TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+      <DllDataFileName>
+      </DllDataFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\src\host;..\..\src\include;..\..\src\modules;..\..\src\dependencies;..\..\src\dependencies\bayesfilter;..\..\src\dependencies\finitedifferences;..\..\src\dependencies\lpcformants;..\..\src\dependencies\rta;..\..\src\dependencies\rta\common;..\..\src\dependencies\rta\misc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN_VERSION;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;_CRTDBG_MAP_ALLOC_NEW;HAVE_STRUCT_TIMESPEC=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+      <SmallerTypeCheck>
+      </SmallerTypeCheck>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>MaxAPI.lib;MaxAudio.lib;pthreadVC2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>..\..\..\common\maxmix\maxapi\max7\msp-includes\;..\..\..\common\maxmix\maxapi\max7\max-includes\;..\..\..\common\pthreads\win-x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <ModuleDefinitionFile>.\gf.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(ProjectDir)..\..\..\..\build-max5"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateTypeLibrary>false</GenerateTypeLibrary>
+      <TypeLibraryName>
+      </TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+      <DllDataFileName>
+      </DllDataFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\src\host;..\..\src\include;..\..\src\modules;..\..\src\dependencies;..\..\src\dependencies\bayesfilter;..\..\src\dependencies\finitedifferences;..\..\src\dependencies\lpcformants;..\..\src\dependencies\rta;..\..\src\dependencies\rta\common;..\..\src\dependencies\rta\misc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN_VERSION;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRTDBG_MAP_ALLOC;_CRTDBG_MAP_ALLOC_NEW;HAVE_STRUCT_TIMESPEC=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>ext.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+      <SmallerTypeCheck>
+      </SmallerTypeCheck>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:x64 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>MaxAPI.lib;MaxAudio.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>..\..\..\common\maxmix\maxapi\max7\msp-includes\x64;..\..\..\common\maxmix\maxapi\max7\max-includes\x64;..\..\..\common\pthreads\win-x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <ModuleDefinitionFile>.\gf64bits.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(ProjectDir)..\..\..\..\build-max5"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <GenerateTypeLibrary>false</GenerateTypeLibrary>
+      <TypeLibraryName>
+      </TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+      <DllDataFileName>
+      </DllDataFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\src\host;..\..\src\include;..\..\src\modules;..\..\src\dependencies;..\..\src\dependencies\bayesfilter;..\..\src\dependencies\finitedifferences;..\..\src\dependencies\lpcformants;..\..\src\dependencies\rta;..\..\src\dependencies\rta\common;..\..\src\dependencies\rta\misc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN_VERSION;WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;HAVE_STRUCT_TIMESPEC=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(ProjectDir)..\..\..\..\build-max5"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateTypeLibrary>false</GenerateTypeLibrary>
+      <TypeLibraryName>
+      </TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+      <DllDataFileName>
+      </DllDataFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\src\host;..\..\src\include;..\..\src\modules;..\..\src\dependencies;..\..\src\dependencies\bayesfilter;..\..\src\dependencies\finitedifferences;..\..\src\dependencies\lpcformants;..\..\src\dependencies\rta;..\..\src\dependencies\rta\common;..\..\src\dependencies\rta\misc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN_VERSION;WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;HAVE_STRUCT_TIMESPEC=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>ext.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalOptions>/MACHINE:x64 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>MaxAPI.lib;MaxAudio.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>..\..\..\common\maxmix\maxapi\max7\max-includes\x64;..\..\..\common\maxmix\maxapi\max7\msp-includes\x64;..\..\..\common\pthreads\win-x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <ModuleDefinitionFile>.\gf64bits.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(ProjectDir)..\..\..\..\build-max5"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
