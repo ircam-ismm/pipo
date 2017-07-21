@@ -93,7 +93,9 @@ public:
     {
       labelstore[i] = std::string(labels[i]);
       sa.labels[i] = labelstore[i].c_str();
+        //printf("%s ", sa.labels[i]);
     }
+      //printf("\n");
     
     return 0;
   }
@@ -112,7 +114,7 @@ public:
     for (int i = 0; i < size; i++)
       count_invalid += !std::isfinite(_values[i]);
     
-      // printf("new frame\n");
+      //printf("new frame\n");
       
     return 0;
   }

@@ -130,6 +130,8 @@ public:
       this->subGraphs[i].clear();
     }
 
+    // TODO : delete parallels and sequences instantiated with new
+
     if (this->op.getPiPo() != NULL)
     {
       delete this->pipo;
@@ -140,6 +142,17 @@ public:
     }
   };
 
+  bool create(std::string graphStr) {
+    if (parse(graphStr) && instantiate() && wire()) {
+      copyPiPoAttributes();
+      return true;
+    }
+
+    // call clear ?
+    return false;
+  }
+
+private:
   //======================== PARSE GRAPH EXPRESSION ==========================//
 
   // or use const char * ?
@@ -408,8 +421,8 @@ public:
         {
           return false;
         }
-      }
-      
+      }      
+
       this->pipo = new PiPoSequence(this->parent);
     }
     else if (this->graphType == parallel)
@@ -428,33 +441,37 @@ public:
     return true;
   }
 
-  bool connect(bool firstPass = true)
+
+
+  bool wire(bool firstPass = true)
+  // bool connect(PiPo *receiver = NULL)
   {
+
+    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    {
+      this->subGraphs[i].wire(firstPass);
+    }
+
     if (this->graphType == sequence)
     {
-      // if (firstPass) {
+      if (firstPass) {
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
         {
-          dynamic_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-          this->subGraphs[i].connect(firstPass);
+          static_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+          //this->subGraphs[i].connect(firstPass);
         }
-      // }      
+      }      
     }
     else if (this->graphType == parallel)
     {
-      // if (!firstPass) {
+      if (firstPass) {
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
         {
-          dynamic_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-          this->subGraphs[i].connect(firstPass);
+          static_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+          //this->subGraphs[i].connect(firstPass);
         }
-      // }      
+      }      
     }
-
-    // for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    // {
-    //   this->subGraphs[i].connect(firstPass);
-    // }
 
     if (firstPass) {
       //connect(false);
@@ -487,32 +504,13 @@ public:
     }
     //*/
 
-    // if (topLevel)
-    // {
-    //   this->setReceiver(this->pipo);
-    // }
-
     return true;
-  }
-
-  void setReceiver(PiPo *receiver)
-  {
-    this->pipo->setReceiver(receiver);
-  }
-
-  PiPoGraphType getGraphType()
-  {
-    return this->graphType;
-  }
-
-  PiPo *getPiPo()
-  {
-    return this->pipo;
   }
 
   // TODO: add an option to get PiPoAttributes only from named modules ?
   void copyPiPoAttributes(bool topLevel = true)
   {
+    if (topLevel) std::cout << "I am of type " << this->graphType << std::endl;
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
     {
       PiPoGraph &subGraph = this->subGraphs[i];
@@ -561,19 +559,37 @@ public:
         }
       }
     }
-
-    // if (topLevel) {
-    //   for (unsigned int i = 0; i < this->attrNames.size(); i++) {
-    //     std::cout << *this->attrNames[i] << std::endl;
-    //   }
-
-    //   std::cout << this->attrs.size() << std::endl;
-    // }
   }
 
   std::string getInstanceName()
   {
     return (this->graphType == leaf) ? std::string(this->op.getInstanceName()) : "";
+  }
+
+  // void setReceiver(PiPo *receiver)
+  // {
+  //   this->pipo->setReceiver(receiver);
+  // }
+
+public:
+  void setParent(PiPo::Parent *parent)
+  {
+    this->pipo->setParent(parent);
+  }
+
+  PiPoGraphType getGraphType()
+  {
+    return this->graphType;
+  }
+
+  PiPo *getPiPo()
+  {
+    return this->pipo;
+  }
+
+  void connect(PiPo *receiver)
+  {
+    this->pipo->setReceiver(receiver);
   }
 
   // void print() {
