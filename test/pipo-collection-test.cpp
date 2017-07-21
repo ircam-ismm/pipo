@@ -16,12 +16,12 @@ TEST_CASE ("Test pipo collection")
 
   WHEN ("Trying to instantiate a pipo chain")
   {
-    //*
+    /*
     PiPo *seg = PiPoCollection::create("slice:fft:sum:scale:onseg");
     PiPo *lpcf = PiPoCollection::create("lpcformants");
     //*/
       
-    /*
+    //*
     PiPo *graph = PiPoCollection::create("slice:fft<_,sum,moments>");
     PiPoTestReceiver rx(NULL);
       
@@ -55,7 +55,7 @@ TEST_CASE ("Test pipo collection")
     {
       // Chains / modules are not null
 
-        /*
+        //*
         std::cout << ret << std::endl;
         std::cout << rx.count_error << std::endl;
         std::cout << rx.sa.rate << std::endl;
@@ -66,7 +66,7 @@ TEST_CASE ("Test pipo collection")
         REQUIRE (graph != NULL);
         //*/
     
-      //*
+      /*
       REQUIRE (seg != NULL);
       REQUIRE (lpcf != NULL);
       //*/

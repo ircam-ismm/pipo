@@ -87,7 +87,7 @@ public:
     labelstore.resize(sa.numLabels);
     
        //printf("%i %i\n", sa.dims[0], sa.dims[1]);
-       printf("%i %i\n", width, height);
+       //printf("%i %i\n", width, height);
 
       for (int i = 0; i < sa.numLabels; i++)
     {
