@@ -93,9 +93,11 @@ private:
   std::vector<std::string *> attrDescrs;
   PiPoModuleFactory *moduleFactory;
 
+  // bool gotAttrs;
+
   // for intermediary level PiPoGraphs : these point to leaves' attrs so that
   // top level PiPoGraph can add them to itself with this->addAttr
-  std::vector<PiPo::Attr *> attrs;
+  // std::vector<PiPo::Attr *> attrs;
 
 public:
   PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) :
@@ -103,6 +105,7 @@ public:
   {
     this->parent = parent;
     this->moduleFactory = moduleFactory;
+    //gotAttrs = false;
   }
 
   ~PiPoGraph()
@@ -127,7 +130,7 @@ public:
       this->subGraphs[i].clear();
     }
 
-    if (this->op.getPiPo() == NULL)
+    if (this->op.getPiPo() != NULL)
     {
       delete this->pipo;
     }
@@ -228,10 +231,10 @@ public:
           this->representation.end()
         );
 
-        // this parses pipoName and instanceName
+        // the following block parses pipoName and instanceName
         // keep using PiPoOp class for this instead (as in PiPoChain) ?
-        // ===> YES !!! DEFINITELY !!! PiPoOp manages PiPoVersion etc
-        // (LEAVE THIS TO PiPoOp CLASS)
+        // ===> YES ! PiPoOp manages PiPoVersion etc
+        // leave this to PiPoOp class
 
         /*
         size_t open = this->representation.find('(');
@@ -247,7 +250,8 @@ public:
         }
         */
 
-        this->op.parse(this->representation.c_str());
+        size_t pos = 0;
+        this->op.parse(this->representation.c_str(), pos);
 
         // leaf string representation cannot be empty
         return (graphStr.length() > 0);
@@ -314,7 +318,7 @@ public:
 
         for (unsigned int i = 0; i < subStrings.size(); ++i)
         {
-          this->subGraphs.push_back(PiPoGraph());
+          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory));
           PiPoGraph &g = this->subGraphs[subGraphs.size() - 1];
 
           if (!g.parse(graphStr.substr(subStrings[i].first, subStrings[i].second)))
@@ -356,7 +360,7 @@ public:
 
         for (unsigned int i = 0; i < commaIndices.size() - 1; ++i)
         {
-          this->subGraphs.push_back(PiPoGraph());
+          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory));
           PiPoGraph &g = this->subGraphs[this->subGraphs.size() - 1];
           unsigned int blockStart = commaIndices[i];
           unsigned int blockLength = commaIndices[i + 1] - blockStart - 1;
@@ -424,35 +428,76 @@ public:
     return true;
   }
 
-  void connect( bool topLevel = true)
+  bool connect(bool firstPass = true)
   {
-    // add from top level to bottom level (see PiPoBasic)
     if (this->graphType == sequence)
     {
-      for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-      {
-        this->pipo->add(this->subGraphs[i].getPiPo());
-        this->subGraphs[i].connect(false);
-      }
+      // if (firstPass) {
+        for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+        {
+          dynamic_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+          this->subGraphs[i].connect(firstPass);
+        }
+      // }      
     }
     else if (this->graphType == parallel)
     {
-      for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-      {
-        this->pipo->add(this->subGraphs[i].getPiPo());
-        this->subGraphs[i].connect(false);
-      }      
+      // if (!firstPass) {
+        for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+        {
+          dynamic_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+          this->subGraphs[i].connect(firstPass);
+        }
+      // }      
     }
 
-    if (topLevel)
-    {
-      this->setReceiver(this->pipo);
+    // for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    // {
+    //   this->subGraphs[i].connect(firstPass);
+    // }
+
+    if (firstPass) {
+      //connect(false);
     }
+
+
+
+    /*
+    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    {
+      this->subGraphs[i].connect(false);
+    }
+
+    // add from top level to bottom level (see PiPoBasic)
+    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    {
+      if (this->graphType == sequence)
+      {
+        // PiPoSequence add method auto connects new PiPo to previous in the chain
+        dynamic_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+        //this->subGraphs[i].connect(false);
+
+      }
+      else if (this->graphType == parallel)
+      {
+        // PiPoParallel add method auto connects new PiPo to internal Merge
+        dynamic_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+        //this->subGraphs[i].connect(false);
+      }
+    }
+    //*/
+
+    // if (topLevel)
+    // {
+    //   this->setReceiver(this->pipo);
+    // }
+
+    return true;
   }
 
   void setReceiver(PiPo *receiver)
   {
-    this->setReceiver(receiver);
+    this->pipo->setReceiver(receiver);
   }
 
   PiPoGraphType getGraphType()
@@ -470,11 +515,65 @@ public:
   {
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
     {
-      if (this->subGraphs[i].getGraphType() == leaf)
-      {
+      PiPoGraph &subGraph = this->subGraphs[i];
+  
+      subGraph.copyPiPoAttributes(false);
+      PiPo *pipo = subGraph.getPiPo();
+      unsigned int numAttrs = pipo->getNumAttrs();
 
+      if (subGraph.getGraphType() == leaf)
+      {
+        std::string instanceName = subGraph.getInstanceName();
+
+        // std::cout << instanceName << " " << numAttrs << std::endl;
+        for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
+        {
+          PiPo::Attr *attr = pipo->getAttr(iAttr);
+
+          std::string *attrName = new std::string(instanceName);
+          *attrName += ".";
+          *attrName += attr->getName();
+
+          std::string *attrDescr = new std::string(attr->getDescr());
+          *attrDescr += " (";
+          *attrDescr += instanceName;
+          *attrDescr += ")";
+
+          attrNames.push_back(attrName);
+          attrDescrs.push_back(attrDescr);
+          
+          PiPo *p = topLevel ? this : this->pipo;
+          p->addAttr(p, attrNames[attrNames.size() - 1]->c_str(), attrDescrs[attrDescrs.size() - 1]->c_str(), attr);
+        }
+      } 
+
+      if (subGraph.getGraphType() == sequence || subGraph.getGraphType() == parallel)
+      {
+        attrNames.insert(attrNames.end(), subGraph.attrNames.begin(), subGraph.attrNames.end());
+        attrDescrs.insert(attrDescrs.end(), subGraph.attrDescrs.begin(), subGraph.attrDescrs.end());
+
+        // std::cout << pipo << " " << numAttrs << std::endl;
+        for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
+        {
+          PiPo::Attr *attr = pipo->getAttr(iAttr);
+          PiPo *p = topLevel ? this : this->pipo;
+          p->addAttr(p, subGraph.attrNames[iAttr]->c_str(), subGraph.attrDescrs[iAttr]->c_str(), attr);
+        }
       }
     }
+
+    // if (topLevel) {
+    //   for (unsigned int i = 0; i < this->attrNames.size(); i++) {
+    //     std::cout << *this->attrNames[i] << std::endl;
+    //   }
+
+    //   std::cout << this->attrs.size() << std::endl;
+    // }
+  }
+
+  std::string getInstanceName()
+  {
+    return (this->graphType == leaf) ? std::string(this->op.getInstanceName()) : "";
   }
 
   // void print() {
@@ -484,6 +583,22 @@ public:
   //     this->subGraphs[i].print();
   //   }
   // }
+
+  virtual int streamAttributes(bool hasTimeTags, double rate, double offset,
+                               unsigned int width, unsigned int height,
+                               const char **labels, bool hasVarSize,
+                               double domain, unsigned int maxFrames)
+  {
+    return this->pipo->streamAttributes(hasTimeTags, rate, offset,
+                                           width, height, labels, hasVarSize,
+                                           domain, maxFrames);
+  }
+
+  virtual int frames (double time, double weight, PiPoValue *values,
+                      unsigned int size, unsigned int num)
+  {
+    return this->pipo->frames(time, weight, values, size, num);
+  }
 };
 
 //==================== NOW WE CAN WRITE A PIPOHOST CLASS =====================//

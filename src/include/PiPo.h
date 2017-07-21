@@ -319,7 +319,7 @@ protected:
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
 
-private:
+protected:
   std::vector<Attr *> attrs; /**< list of attributes */
 #if __cplusplus >= 201103L  &&  !defined(WIN32)
   constexpr static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */

@@ -86,7 +86,10 @@ public:
     sa.labels = (const char **) malloc(sa.numLabels * sizeof(char *));
     labelstore.resize(sa.numLabels);
     
-    for (int i = 0; i < sa.numLabels; i++)
+       //printf("%i %i\n", sa.dims[0], sa.dims[1]);
+       printf("%i %i\n", width, height);
+
+      for (int i = 0; i < sa.numLabels; i++)
     {
       labelstore[i] = std::string(labels[i]);
       sa.labels[i] = labelstore[i].c_str();
@@ -109,6 +112,8 @@ public:
     for (int i = 0; i < size; i++)
       count_invalid += !std::isfinite(_values[i]);
     
+      // printf("new frame\n");
+      
     return 0;
   }
 

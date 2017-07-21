@@ -99,6 +99,8 @@
 		311BA29F1EDC09B500244DAC /* PiPoCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA29D1EDC09B500244DAC /* PiPoCollection.h */; };
 		311BA2A01EDC09B500244DAC /* PiPoModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA29E1EDC09B500244DAC /* PiPoModule.h */; };
 		311BA2A21EDC09D800244DAC /* PiPoCollection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 311BA2A11EDC09D800244DAC /* PiPoCollection.cpp */; };
+		31B564241F1D32FE00B14B4D /* pipo-graph-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */; };
+		31B564261F1D337300B14B4D /* PiPoGraph.h in Headers */ = {isa = PBXBuildFile; fileRef = 31B564251F1D337300B14B4D /* PiPoGraph.h */; };
 		31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */; };
 		31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE751ED71FCC002E9F6A /* test-main.cpp */; };
 		31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */; };
@@ -215,6 +217,8 @@
 		316D6A3E1ED5E1140087AA17 /* PiPoSlice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSlice.h; path = ../../src/modules/PiPoSlice.h; sourceTree = "<group>"; };
 		316D6A3F1ED5E1140087AA17 /* PiPoSum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSum.h; path = ../../src/modules/PiPoSum.h; sourceTree = "<group>"; };
 		316D6A401ED5E1140087AA17 /* TempMod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TempMod.h; path = ../../src/modules/TempMod.h; sourceTree = "<group>"; };
+		31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-graph-test.cpp"; path = "../../test/pipo-graph-test.cpp"; sourceTree = "<group>"; };
+		31B564251F1D337300B14B4D /* PiPoGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoGraph.h; path = ../../src/host/PiPoGraph.h; sourceTree = "<group>"; };
 		31D2EE6D1ED71FCC002E9F6A /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = ../../test/catch.hpp; sourceTree = "<group>"; };
 		31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "mimo-test.cpp"; path = "../../test/mimo-test.cpp"; sourceTree = "<group>"; };
 		31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-benchmark.cpp"; path = "../../test/pipo-benchmark.cpp"; sourceTree = "<group>"; };
@@ -267,6 +271,7 @@
 		311BA21C1EDC073F00244DAC /* host */ = {
 			isa = PBXGroup;
 			children = (
+				31B564251F1D337300B14B4D /* PiPoGraph.h */,
 				311BA21D1EDC074E00244DAC /* PiPoHost.h */,
 				311BA29E1EDC09B500244DAC /* PiPoModule.h */,
 				311BA29D1EDC09B500244DAC /* PiPoCollection.h */,
@@ -443,6 +448,7 @@
 				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
 				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
 				31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */,
+				31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */,
 				31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */,
 				31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */,
 				31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */,
@@ -496,6 +502,7 @@
 				311BA2511EDC08A500244DAC /* rta_util.h in Headers */,
 				311BA2811EDC08B600244DAC /* rta_dct.h in Headers */,
 				311BA28A1EDC08B600244DAC /* rta_lpc.h in Headers */,
+				31B564261F1D337300B14B4D /* PiPoGraph.h in Headers */,
 				311BA2241EDC075A00244DAC /* PiPoParallel.h in Headers */,
 				311BA22E1EDC086600244DAC /* finitedifferences.h in Headers */,
 				311BA2981EDC08B600244DAC /* rta_selection.h in Headers */,
@@ -653,6 +660,7 @@
 				311BA2991EDC08B600244DAC /* rta_svd.c in Sources */,
 				311BA2801EDC08B600244DAC /* rta_dct.c in Sources */,
 				311BA2951EDC08B600244DAC /* rta_resample.c in Sources */,
+				31B564241F1D32FE00B14B4D /* pipo-graph-test.cpp in Sources */,
 				311BA24A1EDC08A500244DAC /* rta_int.c in Sources */,
 				311BA2461EDC08A500244DAC /* rta_bpf.c in Sources */,
 				311BA29B1EDC08B600244DAC /* rta_window.c in Sources */,

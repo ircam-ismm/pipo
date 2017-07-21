@@ -39,7 +39,9 @@
 #include "PiPoCollection.h"
 
 #include "PiPoHost.h"
+#include "PiPoGraph.h"
 
+#include "PiPoIdentity.h"
 #include "PiPoBands.h"
 #include "PiPoBayesFilter.h"
 #include "PiPoBiquad.h"
@@ -90,6 +92,7 @@ public:
   {
     if(defaultPipos)
     {
+      include("_", new PiPoCreator<PiPoIdentity>);
       include("bands", new PiPoCreator<PiPoBands>);
       include("bayesfilter", new PiPoCreator<PiPoBayesFilter>);
       include("biquad", new PiPoCreator<PiPoBiquad>);
@@ -172,8 +175,9 @@ PiPo *
 PiPoCollection::create(std::string name)
 {
   PiPoChain *chain = new PiPoChain(NULL, factory);
-  
+  // PiPoGraph *chain = new PiPoGraph(NULL, factory);
   if (chain->parse(name.c_str()) > 0 && chain->instantiate() && chain->connect(NULL))
+  // if (chain->parse(name) && chain->instantiate() && chain->connect())
   {
     chain->copyPiPoAttributes();
     return static_cast<PiPo *>(chain);

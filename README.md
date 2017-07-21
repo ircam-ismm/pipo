@@ -10,7 +10,7 @@ http://ismm.ircam.fr/pipo/
 
 ### Authors
 
-This code has been initially authored by Norbert Schnell in the <a href="http://ismm.ircam.fr">Sound Music Movement Interaction</a> team of the <a href="http://www.ircam.fr/stms.html?&L=1">STMS Lab</a> - IRCAM - CNRS - UPMC.
+This code has been initially authored by Norbert Schnell in the <a href="http://ismm.ircam.fr">Sound Music Movement Interaction</a> team of the <a href="https://www.ircam.fr/recherche/lunite-mixte-de-recherche-stms/">STMS Lab</a> - IRCAM - CNRS - UPMC.
 
 ### Copyright
 
