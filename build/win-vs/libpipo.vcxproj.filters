@@ -1,0 +1,360 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="headers">
+      <UniqueIdentifier>{d3dc05e4-c17c-4586-8fd5-9406e3a66fdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4e94195f-7441-4367-942e-6cbc27dbd311}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\modules">
+      <UniqueIdentifier>{fca23942-b5b4-45cb-9116-39e2785ac0b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\include">
+      <UniqueIdentifier>{8d3ef114-4014-4103-9bcc-c168fe3aed5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\host">
+      <UniqueIdentifier>{79a5a3ef-a156-44a8-9119-e827e0575dde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies">
+      <UniqueIdentifier>{858a1e47-2e7e-4269-a97d-d60a4e8c1288}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\rta">
+      <UniqueIdentifier>{9256b392-00df-4a0d-9ce0-5221c6cafc72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\bayesfilter">
+      <UniqueIdentifier>{7b33ff5e-e8db-4140-b392-6961afe0cf4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\finitedifferencies">
+      <UniqueIdentifier>{62430830-0d84-4b69-8389-ef101547ae81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\lpcformants">
+      <UniqueIdentifier>{4ae4d969-2fd2-4d0b-a030-e5604e6bdb59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\rta\common">
+      <UniqueIdentifier>{6ca76bbb-0770-4a0c-b904-07b88d0971f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\dependencies\rta\misc">
+      <UniqueIdentifier>{a8ccfeee-1a41-4d51-bfb0-c100524abdaf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rta">
+      <UniqueIdentifier>{d622e2cd-26ef-4a86-aec7-55c87ae32cce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rta\common">
+      <UniqueIdentifier>{3eab5fbd-512e-4c7e-bfc1-5cfdbcf8bbef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rta\misc">
+      <UniqueIdentifier>{4e347fca-38f5-41ff-af54-592179cbb5b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dependencies">
+      <UniqueIdentifier>{b80d57f3-48c2-46e5-91f1-5c64e249ea01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dependencies\bayesfilter">
+      <UniqueIdentifier>{eff4f6b4-2cd9-4c31-83a3-8f6eaed879d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dependencies\finitedifferencies">
+      <UniqueIdentifier>{2318e0b2-20f5-41c3-b3ad-0ff2d4b264dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dependencies\lpcformants">
+      <UniqueIdentifier>{aa8bf8e9-0503-4045-8157-88f5ef289e9e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_bpf.c">
+      <Filter>src\rta\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_int.c">
+      <Filter>src\rta\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\common\rta_util.c">
+      <Filter>src\rta\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_bands.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_biquad.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_correlation.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_cubic.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_dct.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_delta.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_fft.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_lifter.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_lpc.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_mean_variance.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_mel.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_moments.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_onepole.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_preemphasis.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_resample.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_selection.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_svd.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\rta\misc\rta_window.c">
+      <Filter>src\rta\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\bayesfilter\BayesianFilter.cpp">
+      <Filter>src\dependencies\bayesfilter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\bayesfilter\filter_utilities.cpp">
+      <Filter>src\dependencies\bayesfilter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\finitedifferences\finitedifferences.c">
+      <Filter>src\dependencies\finitedifferencies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\lpcformants\bbpr.cpp">
+      <Filter>src\dependencies\lpcformants</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dependencies\lpcformants\rpoly.cpp">
+      <Filter>src\dependencies\lpcformants</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\host\PiPoCollection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\modules\PiPoBands.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoBayesFilter.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoBiquad.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoChop.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoConst.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoDct.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoDelta.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoFft.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoFiniteDif.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoGate.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoLpc.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoLpcFormants.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMeanStddev.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMedian.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMel.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMfcc.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMinMax.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMoments.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoMvavrg.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoOnseg.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoPeaks.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoRms.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoScale.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoSelect.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoSlice.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\PiPoSum.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\TempMod.h">
+      <Filter>headers\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\host\mimo_host.h">
+      <Filter>headers\host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\host\PiPoCollection.h">
+      <Filter>headers\host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\host\PiPoGraph.h">
+      <Filter>headers\host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\host\PiPoHost.h">
+      <Filter>headers\host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\host\PiPoModule.h">
+      <Filter>headers\host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\PiPo.h">
+      <Filter>headers\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\PiPoParallel.h">
+      <Filter>headers\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\PiPoSequence.h">
+      <Filter>headers\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\RingBuffer.h">
+      <Filter>headers\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\bayesfilter\BayesianFilter.h">
+      <Filter>headers\dependencies\bayesfilter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\bayesfilter\filter_utilities.h">
+      <Filter>headers\dependencies\bayesfilter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\finitedifferences\finitedifferences.h">
+      <Filter>headers\dependencies\finitedifferencies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\lpcformants\bbpr.h">
+      <Filter>headers\dependencies\lpcformants</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\lpcformants\rpoly.h">
+      <Filter>headers\dependencies\lpcformants</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\rta_configuration.h">
+      <Filter>headers\dependencies\rta</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_bpf.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_complex.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_float.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_int.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_math.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_stdio.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_stdlib.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_types.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\common\rta_util.h">
+      <Filter>headers\dependencies\rta\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_bands.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_biquad.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_correlation.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_cubic.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_dct.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_delta.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_fft.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_filter.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_lifter.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_lpc.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_mean_variance.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_mel.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_moments.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_onepole.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_preemphasis.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_resample.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_selection.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_svd.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dependencies\rta\misc\rta_window.h">
+      <Filter>headers\dependencies\rta\misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
