@@ -1452,7 +1452,6 @@ public:
     };
 };
 
-
 /** EMACS **
  * Local variables:
  * mode: c

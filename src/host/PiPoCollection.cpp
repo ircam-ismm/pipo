@@ -180,11 +180,13 @@ PiPo *
 PiPoCollection::create(std::string name)
 {
   // PiPoChain *chain = new PiPoChain(NULL, factory);
-  PiPoGraph *chain = new PiPoGraph(NULL, factory);
+  PiPoGraph *graph = new PiPoGraph(NULL, factory);
   // if (chain->parse(name.c_str()) > 0 && chain->instantiate() && chain->connect(NULL))
-  if (chain->create(name))
+  if (graph->create(name))
   {
-    return static_cast<PiPo *>(chain);
+    // return static_cast<PiPo *>(chain);
+    return static_cast<PiPo *>(graph);
   }
+
   return NULL;
 }

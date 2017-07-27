@@ -48,6 +48,7 @@
 #include "PiPoSequence.h"
 #include "PiPoParallel.h"
 #include "PiPoHost.h"
+//#include "PiPoWrap.h"
 
 // TODO: roll your own Module, Factory and Op ?
 // --------------------------------------------
@@ -147,6 +148,20 @@ public:
       copyPiPoAttributes();
       return true;
     }
+
+    // if (parse(graphStr)) {
+    //   if (instantiate()) {
+    //     if (wire()) {
+    //       return true;
+    //     } else {
+    //       std::cout << "error wiring" << std::endl;
+    //     }
+    //   } else {
+    //     std::cout << "error instantiating" << std::endl;
+    //   }
+    // } else {
+    //   std::cout << "error parsing" << std::endl;
+    // }
 
     // call clear ?
     return false;
@@ -444,7 +459,6 @@ private:
 
 
   bool wire(bool firstPass = true)
-  // bool connect(PiPo *receiver = NULL)
   {
 
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
@@ -458,7 +472,6 @@ private:
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
         {
           static_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-          //this->subGraphs[i].connect(firstPass);
         }
       }      
     }
@@ -468,13 +481,12 @@ private:
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
         {
           static_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-          //this->subGraphs[i].connect(firstPass);
         }
       }      
     }
 
     if (firstPass) {
-      //connect(false);
+      //wire(false);
     }
 
 
@@ -566,15 +578,20 @@ private:
     return (this->graphType == leaf) ? std::string(this->op.getInstanceName()) : "";
   }
 
-  // void setReceiver(PiPo *receiver)
-  // {
-  //   this->pipo->setReceiver(receiver);
-  // }
-
 public:
+  void setReceiver(PiPo *receiver)
+  {
+    this->pipo->setReceiver(receiver);
+  }
+
   void setParent(PiPo::Parent *parent)
   {
     this->pipo->setParent(parent);
+
+    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    {
+      this->subGraphs[i].setParent(parent);
+    }
   }
 
   PiPoGraphType getGraphType()
@@ -585,11 +602,6 @@ public:
   PiPo *getPiPo()
   {
     return this->pipo;
-  }
-
-  void connect(PiPo *receiver)
-  {
-    this->pipo->setReceiver(receiver);
   }
 
   // void print() {

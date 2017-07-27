@@ -24,19 +24,22 @@ TEST_CASE ("Test pipo collection")
       
     //*
     //PiPo *graph = PiPoCollection::create("slice:fft:sum:scale:onseg");
-    PiPo *graph = PiPoCollection::create("slice:fft<_,sum,moments>");
+    //PiPo *graph = PiPoCollection::create("slice:fft<_,sum,moments>");
+    PiPo *graph = PiPoCollection::create("slice<_,fft<sum:scale,moments>>");
+
+    if (graph == NULL) return;
     //PiPo *graph = PiPoCollection::create("<sum,moments,_>");
-    PiPoTestReceiver *rx = new PiPoTestReceiver(NULL);
+    PiPoTestReceiver rx(NULL);
       
-    static_cast<PiPoGraph *>(graph)->connect(rx);
-    // graph->connect(rx);
+    static_cast<PiPoGraph *>(graph)->setReceiver(&rx);
+    // graph->connect(&rx);
       
     std::cout << graph->getNumAttrs() << std::endl;
     
     graph->setAttr(0, 10); // slice.size
     graph->setAttr(1, 5);  // slice.hop
     
-    std::cout << graph->getAttr((unsigned int)0)->getInt(0) << std::endl;
+    //std::cout << graph->getAttr((unsigned int)0)->getInt(0) << std::endl;
     
     int ret = graph->streamAttributes(false, 1, 0, 1, 1, NULL, false, 0, 1);
         
@@ -61,19 +64,19 @@ TEST_CASE ("Test pipo collection")
 
       //*
       std::cout << ret << std::endl;
-      std::cout << rx->count_error << std::endl;
-      std::cout << rx->sa.rate << std::endl;
-      std::cout << rx->sa.dims[0] << " " << rx->sa.dims[1] << std::endl;
+      std::cout << rx.count_error << std::endl;
+      std::cout << rx.sa.rate << std::endl;
+      std::cout << rx.sa.dims[0] << " " << rx.sa.dims[1] << std::endl;
       
-      for (int i = 0; i < rx->sa.numLabels; i++)
+      for (int i = 0; i < rx.sa.numLabels; i++)
       {
-        std::cout << rx->sa.labels[i] << " ";
+        std::cout << rx.sa.labels[i] << " ";
       }
       std::cout << std::endl;
 
-      std::cout << rx->count_frames << std::endl;
+      std::cout << rx.count_frames << std::endl;
        
-      REQUIRE (graph != NULL);
+      //REQUIRE (graph != NULL);
       //*/
     
       /*
