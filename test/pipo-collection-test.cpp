@@ -31,8 +31,9 @@ TEST_CASE ("Test pipo collection")
     //PiPo *graph = PiPoCollection::create("<sum,moments,_>");
     PiPoTestReceiver rx(NULL);
       
-    static_cast<PiPoGraph *>(graph)->setReceiver(&rx);
+    // static_cast<PiPoGraph *>(graph)->setReceiver(&rx);
     // graph->connect(&rx);
+    graph->setReceiver(&rx);
       
     std::cout << graph->getNumAttrs() << std::endl;
     

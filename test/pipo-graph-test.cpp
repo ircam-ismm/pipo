@@ -17,8 +17,8 @@ TEST_CASE ("Test pipo graph")
         PiPoGraph g(NULL);
         bool parsed = true;//g.parse("slice:fft<sum,moments>");
         bool instantiated = true;//g.instantiate();
-        std::cout << "aaa" << g.getGraphType() << std::endl;
-        //g.getPiPo();
+        // std::cout << "aaa" << g.getGraphType() << std::endl;
+        // g.getPiPo();
         
         THEN ("Chains / modules should be instantiated")
         {

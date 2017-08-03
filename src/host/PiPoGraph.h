@@ -38,8 +38,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPOHOST_H_
-#define _PIPOHOST_H_
+#ifndef _PIPOGRAPH_H_
+#define _PIPOGRAPH_H_
 
 #include <string>
 #include <vector>
@@ -48,27 +48,9 @@
 #include "PiPoSequence.h"
 #include "PiPoParallel.h"
 #include "PiPoHost.h"
-//#include "PiPoWrap.h"
-
-// TODO: roll your own Module, Factory and Op ?
-// --------------------------------------------
-
-// class PiPoModule {
-
-// };
-
-// class PiPoModuleFactory {
-
-// };
-
-// class PiPoOp {
-
-// };
 
 
-
-// NB : this is a work in progress, only performs parsing at the moment
-// TODO : implement actual graph instatiation.
+// NB : this is a work in progress
 // TODO: define error return codes for parsing
 
 class PiPoGraph : public PiPo {
@@ -94,19 +76,13 @@ private:
   std::vector<std::string *> attrDescrs;
   PiPoModuleFactory *moduleFactory;
 
-  // bool gotAttrs;
-
-  // for intermediary level PiPoGraphs : these point to leaves' attrs so that
-  // top level PiPoGraph can add them to itself with this->addAttr
-  // std::vector<PiPo::Attr *> attrs;
-
 public:
   PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) :
   PiPo(parent)
   {
+    this->pipo = nullptr;
     this->parent = parent;
     this->moduleFactory = moduleFactory;
-    //gotAttrs = false;
   }
 
   ~PiPoGraph()
@@ -131,14 +107,15 @@ public:
       this->subGraphs[i].clear();
     }
 
-    // TODO : delete parallels and sequences instantiated with new
-
-    if (this->op.getPiPo() != NULL)
+    if (this->graphType != leaf && this->pipo != nullptr)
     {
+      // delete parallels and sequences instantiated with new
       delete this->pipo;
+      this->pipo = nullptr;
     }
     else
     {
+      // let op clear itself
       this->op.clear();
     }
   };
@@ -163,7 +140,7 @@ public:
     //   std::cout << "error parsing" << std::endl;
     // }
 
-    // call clear ?
+    this->clear();
     return false;
   }
 
@@ -522,7 +499,7 @@ private:
   // TODO: add an option to get PiPoAttributes only from named modules ?
   void copyPiPoAttributes(bool topLevel = true)
   {
-    if (topLevel) std::cout << "I am of type " << this->graphType << std::endl;
+    // if (topLevel) std::cout << "I am of type " << this->graphType << std::endl;
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
     {
       PiPoGraph &subGraph = this->subGraphs[i];
@@ -578,13 +555,20 @@ private:
     return (this->graphType == leaf) ? std::string(this->op.getInstanceName()) : "";
   }
 
-public:
-  void setReceiver(PiPo *receiver)
+  PiPoGraphType getGraphType()
   {
-    this->pipo->setReceiver(receiver);
+    return this->graphType;
   }
 
-  void setParent(PiPo::Parent *parent)
+public:
+  PiPo *getPiPo()
+  {
+    return this->pipo;
+  }
+
+  // OVERRIDING EVERY METHOD FROM THE BASE CLASS :
+
+  void setParent(PiPo::Parent *parent) override
   {
     this->pipo->setParent(parent);
 
@@ -594,14 +578,29 @@ public:
     }
   }
 
-  PiPoGraphType getGraphType()
+  PiPo *getReceiver(unsigned int index = 0) override
   {
-    return this->graphType;
+    return this->pipo->getReceiver(index);
   }
 
-  PiPo *getPiPo()
+  void setReceiver(PiPo *receiver, bool add = false) override
   {
-    return this->pipo;
+    this->pipo->setReceiver(receiver);
+  }
+
+  int reset() override
+  {
+    return this->pipo->reset();
+  }
+
+  int segment(double time, bool start) override
+  {
+    return this->pipo->segment(time, start);
+  }
+
+  int finalize(double inputEnd) override
+  {
+    return this->pipo->finalize(inputEnd);
   }
 
   // void print() {
@@ -612,27 +611,27 @@ public:
   //   }
   // }
 
-  virtual int streamAttributes(bool hasTimeTags, double rate, double offset,
+  int streamAttributes(bool hasTimeTags, double rate, double offset,
                                unsigned int width, unsigned int height,
                                const char **labels, bool hasVarSize,
-                               double domain, unsigned int maxFrames)
+                               double domain, unsigned int maxFrames) override
   {
     return this->pipo->streamAttributes(hasTimeTags, rate, offset,
                                            width, height, labels, hasVarSize,
                                            domain, maxFrames);
   }
 
-  virtual int frames (double time, double weight, PiPoValue *values,
-                      unsigned int size, unsigned int num)
+  int frames (double time, double weight, PiPoValue *values,
+                      unsigned int size, unsigned int num) override
   {
     return this->pipo->frames(time, weight, values, size, num);
   }
 };
 
-//==================== NOW WE CAN WRITE A PIPOHOST CLASS =====================//
+//=================== NOW WE COULD WRITE A PIPOHOST CLASS ====================//
 
 // class PiPoHost {
 
 // };
 
-#endif /* _PIPOHOST_H_ */
+#endif /* _PIPOGRAPH_H_ */

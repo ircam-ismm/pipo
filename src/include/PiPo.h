@@ -474,7 +474,7 @@ public:
    *
    * @return receiver PiPo module receiving this module's output stream
    */
-  PiPo *getReceiver(unsigned int index = 0)
+  virtual PiPo *getReceiver(unsigned int index = 0)
   {
     if (index < this->receivers.size())
       return this->receivers[index];
