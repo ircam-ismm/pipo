@@ -6,23 +6,39 @@ PROJECT_BRIEF          = "Plug In Plug Out / Plugin Interface for Processing Obj
 
 INPUT                  = ../../src/modules \
                          ../../src/collection \
-                         ../../include \
+                         ../../src/include \
+                         ../../src/host \
                          ../doxygen/pipogroups.doxygen
 
 RECURSIVE              = YES
 
 EXCLUDE_PATTERNS       = */mimo/* \
-                         PiPoGraph.h \
+                         mimo.h \
                          PiPoMeanStddev.h \
                          PiPoMinMax.h \
                          PiPoRms.h \
+#                         PiPoGraph.h \
+
+EXCLUDE_SYMBOLS        = peak_t
+
+IGNORE_PREFIX          = PiPo
 
 OUTPUT_DIRECTORY       = ../../doc
 
 GENERATE_LATEX         = NO
 GENERATE_TREEVIEW      = YES
+# DISABLE_INDEX          = NO
+COLS_IN_ALPHA_INDEX    = 1
+SHOW_FILES             = NO
+SHOW_USED_FILES        = NO
 
 LAYOUT_FILE            = ../doxygen/pipolayout.xml
 HTML_HEADER            = ../doxygen/pipoheader.html
 HTML_FOOTER            = ../doxygen/pipofooter.html
-HTML_EXTRA_STYLESHEET  = ../doxygen/pipostyle.css ../doxygen/pipotabs.css
+HTML_EXTRA_STYLESHEET  = ../doxygen/pipostyle.css \
+                         ../doxygen/pipotabs.css \
+                         ../doxygen/piposearch.css
+HTML_EXTRA_FILES       = ../doxygen/piposcripts.js
+
+# TO PARSE EVERYTHING BY YOURSELF :
+# GENERATE_XML           = YES

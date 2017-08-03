@@ -7,6 +7,10 @@
  */
 
 /**
+ * @defgroup pipomodules PiPo Modules
+ */
+
+/**
  * @defgroup pipoapi PiPo API
  * 
  * @brief The PiPo API is composed of :
@@ -20,8 +24,4 @@
  * listed above.
  * </li>
  * </ul>
- */
-
-/**
- * @defgroup pipomodules PiPo Modules
  */
