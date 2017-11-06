@@ -217,7 +217,6 @@
 		316D6A3E1ED5E1140087AA17 /* PiPoSlice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSlice.h; path = ../../src/modules/PiPoSlice.h; sourceTree = "<group>"; };
 		316D6A3F1ED5E1140087AA17 /* PiPoSum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSum.h; path = ../../src/modules/PiPoSum.h; sourceTree = "<group>"; };
 		316D6A401ED5E1140087AA17 /* TempMod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TempMod.h; path = ../../src/modules/TempMod.h; sourceTree = "<group>"; };
-		3194678E1F226921009BA2E8 /* PiPoWrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoWrap.h; path = ../../src/include/PiPoWrap.h; sourceTree = "<group>"; };
 		31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-graph-test.cpp"; path = "../../test/pipo-graph-test.cpp"; sourceTree = "<group>"; };
 		31B564251F1D337300B14B4D /* PiPoGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoGraph.h; path = ../../src/host/PiPoGraph.h; sourceTree = "<group>"; };
 		31D2EE6D1ED71FCC002E9F6A /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = ../../test/catch.hpp; sourceTree = "<group>"; };
@@ -262,7 +261,6 @@
 			isa = PBXGroup;
 			children = (
 				311BA21F1EDC075A00244DAC /* PiPo.h */,
-				3194678E1F226921009BA2E8 /* PiPoWrap.h */,
 				311BA2201EDC075A00244DAC /* PiPoParallel.h */,
 				311BA2211EDC075A00244DAC /* PiPoSequence.h */,
 				311BA2221EDC075A00244DAC /* RingBuffer.h */,

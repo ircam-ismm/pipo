@@ -23,7 +23,9 @@ EXCLUDE_SYMBOLS        = peak_t
 
 IGNORE_PREFIX          = PiPo
 
-OUTPUT_DIRECTORY       = ../../doc
+# OUTPUT_DIRECTORY       = ../../docs
+HTML_OUTPUT            = ../../docs
+HTML_TIMESTAMP         = YES
 
 GENERATE_LATEX         = NO
 GENERATE_TREEVIEW      = YES

@@ -3,13 +3,13 @@
  * @author Norbert.Schnell@ircam.fr
  *
  * @brief PiPo scaling data stream into windowed frames
- * 
+ *
  * @ingroup pipomodules
  *
  * @copyright
  * Copyright (C) 2013-2017 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 #include "PiPo.h"
 
 extern "C" {
-#include "psy.h"
+#include "rta_psy.h"
   static int psyAnaCallback(void *obj, double time, double freq, double energy, double ac1, double voiced);
 }
 
@@ -53,19 +53,19 @@ class PiPoPsy : public PiPo
 
 public:
   double outputTime; /* used in C-callback */
-  
+
 private:
-  PsyAnaT psyAna;
+  rta_psy_ana_t psyAna;
   double sampleRate;
   int maxFrames;
-  
+
 public:
   PiPoScalarAttr<double> minFreq;
   PiPoScalarAttr<double> maxFreq;
   PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double> yinThreshold;
   PiPoScalarAttr<double> noiseThreshold;
-  
+
   PiPoPsy(Parent *parent, PiPo *receiver = NULL) :
   PiPo(parent, receiver),
   minFreq(this, "minfreq", "Minimum Frequency", true, 20.0),
@@ -74,9 +74,9 @@ public:
   yinThreshold(this, "yinthreshold", "Yin Threshold", true, 0.68),
   noiseThreshold(this, "noisethreshold", "Noise Threshold", true, 0.45)
   {
-    psyAna_init(&this->psyAna);
-    psyAna_setCallback(&this->psyAna, this, psyAnaCallback);
-        
+    rta_psy_init(&this->psyAna);
+    rta_psy_set_callback(&this->psyAna, this, psyAnaCallback);
+
     this->sampleRate = 0.0;
     this->maxFrames = 0;
     this->outputTime = 0.0;
@@ -86,12 +86,12 @@ public:
     this->downSampling.addEnumItem("4x", "Down sampling by 4");
     this->downSampling.addEnumItem("8x", "Down sampling by 8");
   }
-  
+
   ~PiPoPsy(void)
   {
-    psyAna_deinit(&this->psyAna);  
+    rta_psy_deinit(&this->psyAna);
   }
-  
+
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     double maxFreq = this->maxFreq.get();
@@ -100,74 +100,74 @@ public:
     int downSampling = this->downSampling.get();
     double yinThreshold = this->yinThreshold.get();
     double noiseThreshold = this->noiseThreshold.get();
-    
+
     psyAnaColNames[0] = "Frequency";
     psyAnaColNames[1] = "Energy";
     psyAnaColNames[2] = "AC1";
     psyAnaColNames[3] = "Voiced";
-    
+
     this->sampleRate = rate;
     this->maxFrames = maxFrames;
-    
-    psyAna_reset(&this->psyAna, minFreq, maxFreq, this->sampleRate, this->maxFrames, downSampling);
-    psyAna_setThresholds(&this->psyAna, yinThreshold, noiseThreshold);
-    
+
+    rta_psy_reset(&this->psyAna, minFreq, maxFreq, this->sampleRate, this->maxFrames, downSampling);
+    rta_psy_setThresholds(&this->psyAna, yinThreshold, noiseThreshold);
+
     return this->propagateStreamAttributes(1, maxFreq, offset, 4, 1, psyAnaColNames, 0, 0.0, 1);
   }
-  
+
   int reset(void)
-  {    
+  {
     double minFreq = this->minFreq.get();
     double maxFreq = this->maxFreq.get();
     int downSampling = this->downSampling.get();
     double yinThreshold = this->yinThreshold.get();
     double noiseThreshold = this->noiseThreshold.get();
-    
-    psyAna_reset(&this->psyAna, minFreq, maxFreq, this->sampleRate, this->maxFrames, downSampling);
-    psyAna_setThresholds(&this->psyAna, yinThreshold, noiseThreshold);
-    
+
+    rta_psy_reset(&this->psyAna, minFreq, maxFreq, this->sampleRate, this->maxFrames, downSampling);
+    rta_psy_set_thresholds(&this->psyAna, yinThreshold, noiseThreshold);
+
     return this->propagateReset();
   }
-  
+
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    return psyAna_calculateInputVector(&this->psyAna, values, num, size);
+    return rta_psy_calculate_input_vector(&this->psyAna, values, num, size);
   }
-  
+
   int finalize(double inputEnd)
   {
     float input[256];
     int n = 256;
-    
+
     if(n > this->maxFrames)
       n = this->maxFrames;
-    
+
     memset(input, 0, n * sizeof(float));
-    
+
     while(this->outputTime < inputEnd)
     {
-      if(psyAna_calculateInputVector(&this->psyAna, input, n, 1) <= 0)
+      if(rta_psy_calculate_input_vector(&this->psyAna, input, n, 1) <= 0)
         break;
     }
-    
+
     return 0;
   }
 };
 
-static int 
+static int
 psyAnaCallback(void *obj, double time, double freq, double energy, double ac1, double voiced)
 {
   PiPoPsy *self = (PiPoPsy *)obj;
   float values[4];
-  
+
   values[0] = (float)freq;
   values[1] = (float)energy;
   values[2] = (float)ac1;
   values[3] = (float)voiced;
-  
+
   self->outputTime = time;
-  
+
   return (self->propagateFrames(time, 1.0, values, 4, 1) == 0);
-}  
+}
 
 #endif
