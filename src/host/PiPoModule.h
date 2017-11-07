@@ -3,13 +3,13 @@
  * @author Riccardo Borghesi
  *
  * @brief extension of PiPo for use in host apps
- * 
+ *
  * @ingroup pipoapi
  *
  * @copyright
  * Copyright (C) 2012-2016 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -20,7 +20,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of mosquitto nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
  *

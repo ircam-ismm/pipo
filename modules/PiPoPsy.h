@@ -110,7 +110,7 @@ public:
     this->maxFrames = maxFrames;
 
     rta_psy_reset(&this->psyAna, minFreq, maxFreq, this->sampleRate, this->maxFrames, downSampling);
-    rta_psy_setThresholds(&this->psyAna, yinThreshold, noiseThreshold);
+    rta_psy_set_thresholds(&this->psyAna, yinThreshold, noiseThreshold);
 
     return this->propagateStreamAttributes(1, maxFreq, offset, 4, 1, psyAnaColNames, 0, 0.0, 1);
   }

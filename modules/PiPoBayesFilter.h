@@ -37,8 +37,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPO_MVAVRG_
-#define _PIPO_MVAVRG_
+#ifndef _PIPO_BAYESFILTER_
+#define _PIPO_BAYESFILTER_
 
 #include "BayesianFilter.h"
 #include "PiPo.h"
@@ -161,4 +161,4 @@ public:
   };
 };
 
-#endif
+#endif /* _PIPO_BAYESFILTER_ */

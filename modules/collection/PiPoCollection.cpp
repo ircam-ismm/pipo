@@ -2,13 +2,13 @@
  * @file PiPoCollection.cpp
  * @author Norbert.Schnell@ircam.fr
  * @author joseph.larralde@ircam.fr
- * 
+ *
  * @brief PiPo Module Collection
- * 
+ *
  * @copyright
  * Copyright (C) 2013 - 2017 by ISMM IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,8 @@
 
 #include "PiPoCollection.h"
 
-#include "PiPoHost.h"
-// #include "PiPoGraph.h"
+#include "PiPoOp.h"
+ #include "PiPoGraph.h"
 
 #include "PiPoIdentity.h"
 #include "PiPoBands.h"
@@ -56,17 +56,17 @@
 #include "PiPoLpc.h"
 #include "PiPoLpcFormants.h"
 // #include "PiPoMaximChroma.h" // << Maximilian is required to compile this
-#include "PiPoMeanStddev.h"
+// #include "PiPoMeanStddev.h"
 #include "PiPoMedian.h"
 #include "PiPoMel.h"
 #include "PiPoMfcc.h"
-#include "PiPoMinMax.h"
+// #include "PiPoMinMax.h"
 #include "PiPoMoments.h"
 #include "PiPoMvavrg.h"
 #include "PiPoOnseg.h"
 #include "PiPoPeaks.h"
 #include "PiPoPsy.h"
-#include "PiPoRms.h"
+// #include "PiPoRms.h"
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
 #include "PiPoSlice.h"
@@ -81,12 +81,12 @@ class PiPoPool : public PiPoModuleFactory
   private:
     PiPo *pipo;
     std::string instanceName;
-      
+
   public:
     PiPoPoolModule(PiPo *pipo) {
       this->pipo = pipo;
     }
-    
+
     PiPoPoolModule() {
       if(this->pipo != NULL) {
         delete this->pipo;
@@ -94,7 +94,7 @@ class PiPoPool : public PiPoModuleFactory
       }
     }
   };
-    
+
 public:
   PiPoPool(bool defaultPipos = true)
   {
@@ -103,7 +103,7 @@ public:
       includeDefaultPiPos();
     }
   }
-  
+
   ~PiPoPool()
   {
     /*for(pipoMap::iterator it = map.begin(); it != map.end(); ++it)
@@ -132,17 +132,17 @@ public:
     include("lpc", new PiPoCreator<PiPoLpc>);
     include("lpcformants", new PiPoCreator<PiPoLpcFormants>);
     // include("chroma", new PiPoCreator<PiPoMaximChroma>); // << needs Maximilian
-    include("meanstddev", new PiPoCreator<PiPoMeanStddev>);
+    // include("meanstddev", new PiPoCreator<PiPoMeanStddev>);
     include("median", new PiPoCreator<PiPoMedian>);
     include("mel", new PiPoCreator<PiPoMel>);
     include("mfcc", new PiPoCreator<PiPoMfcc>);
-    include("minmax", new PiPoCreator<PiPoMinMax>);
+    // include("minmax", new PiPoCreator<PiPoMinMax>);
     include("moments", new PiPoCreator<PiPoMoments>);
     include("mvavrg", new PiPoCreator<PiPoMvavrg>);
     include("onseg", new PiPoCreator<PiPoOnseg>);
     include("peaks", new PiPoCreator<PiPoPeaks>);
     include("psy", new PiPoCreator<PiPoPsy>);
-    include("rms", new PiPoCreator<PiPoRms>);
+    // include("rms", new PiPoCreator<PiPoRms>);
     include("scale", new PiPoCreator<PiPoScale>);
     include("select", new PiPoCreator<PiPoSelect>);
     include("slice", new PiPoCreator<PiPoSlice>);
@@ -150,12 +150,12 @@ public:
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
     include("yin", new PiPoCreator<PiPoYin>);
   }
-  
+
   void include(std::string name, PiPoCreatorBase *creator)
   {
       map[name] = creator;
   }
-  
+
   PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
   {
       pipoMap::iterator it = map.find(pipoName);
@@ -164,7 +164,7 @@ public:
       module = new PiPoPoolModule(ret);
       return ret;
   }
-    
+
 private:
   typedef std::map<std::string, PiPoCreatorBase *> pipoMap;
   pipoMap map;
@@ -195,13 +195,13 @@ PiPoCollection::addToCollection(std::string name, PiPoCreatorBase *creator)
 PiPo *
 PiPoCollection::create(std::string name)
 {
-  PiPoChain *chain = new PiPoChain(NULL, factory);
-  // PiPoGraph *graph = new PiPoGraph(NULL, factory);
-  if (chain->parse(name.c_str()) > 0 && chain->instantiate() && chain->connect(NULL))
-  // if (graph->create(name))
+  // PiPoChain *chain = new PiPoChain(NULL, factory);
+  PiPoGraph *graph = new PiPoGraph(NULL, factory);
+  // if (chain->parse(name.c_str()) > 0 && chain->instantiate() && chain->connect(NULL))
+  if (graph->create(name))
   {
-    return static_cast<PiPo *>(chain);
-    // return static_cast<PiPo *>(graph);
+    // return static_cast<PiPo *>(chain);
+    return static_cast<PiPo *>(graph);
   }
 
   return NULL;
