@@ -43,7 +43,7 @@
 
 #include "PiPoSequence.h"
 #include "PiPoLpc.h"
-#include <lpcformants/bbpr.cpp>
+#include "lpcformants/bbpr.cpp"
 //#include <lpcformants/rpoly.cpp>
 #include <vector>
 #include <algorithm>

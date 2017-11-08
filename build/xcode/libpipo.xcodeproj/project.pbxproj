@@ -185,6 +185,7 @@
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B90281FB0DCF20005150B /* rta_psy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_psy.c; path = "../../modules/rta-lib/src/signal/rta_psy.c"; sourceTree = "<group>"; };
 		315B90291FB0DCF20005150B /* rta_psy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_psy.h; path = "../../modules/rta-lib/src/signal/rta_psy.h"; sourceTree = "<group>"; };
+		315B902E1FB36B7E0005150B /* rta_configuration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_configuration.h; path = "../../modules/rta-lib/include/configuration_basic/rta_configuration.h"; sourceTree = "<group>"; };
 		315D052F1C4EF736004FAFFB /* libpipo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpipo.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-graph-test.cpp"; path = "../../test/pipo-graph-test.cpp"; sourceTree = "<group>"; };
 		31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-host-test.cpp"; path = "../../test/pipo-host-test.cpp"; sourceTree = "<group>"; };
@@ -528,6 +529,7 @@
 		31C2B4131FB0D5C2001A134E /* include */ = {
 			isa = PBXGroup;
 			children = (
+				315B902E1FB36B7E0005150B /* rta_configuration.h */,
 				31C2B4AB1FB0D66A001A134E /* rta.h */,
 			);
 			name = include;
@@ -982,6 +984,10 @@
 			buildSettings = {
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
+				HEADER_SEARCH_PATHS = (
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
 				INSTALL_PATH = /;
 				PRODUCT_NAME = pipo;
 			};
@@ -992,6 +998,10 @@
 			buildSettings = {
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
+				HEADER_SEARCH_PATHS = (
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
 				INSTALL_PATH = /;
 				PRODUCT_NAME = pipo;
 			};
@@ -1017,6 +1027,10 @@
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				HEADER_SEARCH_PATHS = (
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1039,6 +1053,10 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				HEADER_SEARCH_PATHS = (
+					"$(VECLIB_DIR)/Headers",
+					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+				);
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
