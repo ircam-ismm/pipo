@@ -31,6 +31,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
 		311BA21E1EDC074E00244DAC /* PiPoHost.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA21D1EDC074E00244DAC /* PiPoHost.h */; };
 		311BA2231EDC075A00244DAC /* PiPo.h in Headers */ = {isa = PBXBuildFile; fileRef = 311BA21F1EDC075A00244DAC /* PiPo.h */; };
@@ -121,6 +122,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		3100CB9C1ED6E47600D08491 /* PiPoMvavrg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoMvavrg.h; path = ../../src/modules/PiPoMvavrg.h; sourceTree = "<group>"; };
 		311BA21D1EDC074E00244DAC /* PiPoHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoHost.h; path = ../../src/host/PiPoHost.h; sourceTree = "<group>"; };
@@ -453,6 +455,7 @@
 				31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */,
 				31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */,
 				31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */,
+				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
 				31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */,
 				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
 			);
@@ -697,6 +700,7 @@
 				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,
 				31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */,
 				31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */,
+				1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

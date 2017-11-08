@@ -352,9 +352,9 @@ public:
               double f = values[k];
               
               if(f <= this->extInMin[j])
-                buffer[k] = this->extInMin[j];
+                buffer[k] = this->extOutMin[j];
               else if(f >= this->extInMax[j])
-                buffer[k] = this->extInMax[j];
+                buffer[k] = this->extOutMax[j];
               else
                 buffer[k] = f * this->inScale[j] + this->inOffset[j];
             }
@@ -372,9 +372,9 @@ public:
               double f = values[k];
               
               if(f <= this->extInMin[j])
-                buffer[k] = this->extInMin[j];
+                buffer[k] = this->extOutMin[j];
               else if(f >= this->extInMax[j])
-                buffer[k] = this->extInMax[j];
+                buffer[k] = this->extOutMax[j];
               else
                 buffer[k] = this->outScale[j] * log(values[k] * this->inScale[j] + this->inOffset[j]) + this->outOffset[j];
             }
@@ -392,9 +392,9 @@ public:
               double f = values[k];
               
               if(f <= this->extInMin[j])
-                buffer[k] = this->extInMin[j];
+                buffer[k] = this->extOutMin[j];
               else if(f >= this->extInMax[j])
-                buffer[k] = this->extInMax[j];
+                buffer[k] = this->extOutMax[j];
               else
                 buffer[k] = this->outScale[j] * exp(values[k] * this->inScale[j] + this->inOffset[j]) + this->outOffset[j];
             }
