@@ -1,6 +1,6 @@
 #include <sstream>
 #include <string>
-#include <iostream>
+#include <cstddef>
 
 #include <vector>
 #include <algorithm>
@@ -24,6 +24,9 @@ TEST_CASE ("PiPoScale")
     {
       for(unsigned int height = 1; height <= 10; height *= 4)
       {
+        int check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+        REQUIRE (check == 0);
+
         const unsigned int size = width * height;
         inputFrame.resize(size);
 
@@ -42,7 +45,7 @@ TEST_CASE ("PiPoScale")
             scale.outMax.set(0, 4.);
 
             // TODO: no parent: no automatic propagation
-            int check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+            check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
             REQUIRE (check == 0);
 
             std::vector<std::vector<PiPoValue> > values = {
@@ -53,14 +56,14 @@ TEST_CASE ("PiPoScale")
               { 3. , 5. }
             };
 
-            for(size_t v = 0; v < values.size(); ++v)
+            for(std::size_t v = 0; v < values.size(); ++v)
             {
               const PiPoValue inputValue = values[v][0];
               const PiPoValue outputExpected = values[v][1];
               std::fill(inputFrame.begin(), inputFrame.end(), inputValue);
               check = scale.frames(0., 1., &inputFrame[0], size, 1);
-              /* REQUIRE (check == 0); */
-              /* REQUIRE (receiver.values != NULL); */
+              REQUIRE (check == 0);
+              REQUIRE (receiver.values != NULL);
 
               for(unsigned int sample = 0; sample < size; ++sample)
               {
@@ -79,7 +82,7 @@ TEST_CASE ("PiPoScale")
             scale.outMax.set(0, 127.);
 
             // TODO: no parent: no automatic propagation
-            int check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+            check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
             REQUIRE (check == 0);
 
             std::vector<std::vector<PiPoValue> > values = {
@@ -93,7 +96,7 @@ TEST_CASE ("PiPoScale")
               { 2.  ,  254. }
             };
 
-            for(size_t v = 0; v < values.size(); ++v)
+            for(std::size_t v = 0; v < values.size(); ++v)
             {
               const PiPoValue inputValue = values[v][0];
               const PiPoValue outputExpected = values[v][1];
@@ -119,7 +122,7 @@ TEST_CASE ("PiPoScale")
             scale.clip.set(true);
 
             // TODO: no parent: no automatic propagation
-            int check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+            check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
             REQUIRE (check == 0);
 
             std::vector<std::vector<PiPoValue> > values = {
@@ -132,14 +135,14 @@ TEST_CASE ("PiPoScale")
               { 1.  , 100.  }
             };
 
-            for(size_t v = 0; v < values.size(); ++v)
+            for(std::size_t v = 0; v < values.size(); ++v)
             {
               const PiPoValue inputValue = values[v][0];
               const PiPoValue outputExpected = values[v][1];
               std::fill(inputFrame.begin(), inputFrame.end(), inputValue);
               check = scale.frames(0., 1., &inputFrame[0], size, 1);
-              /* REQUIRE (check == 0); */
-              /* REQUIRE (receiver.values != NULL); */
+              REQUIRE (check == 0);
+              REQUIRE (receiver.values != NULL);
 
               for(unsigned int sample = 0; sample < size; ++sample)
               {
