@@ -145,7 +145,7 @@ private:
 
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */

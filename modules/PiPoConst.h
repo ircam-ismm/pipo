@@ -176,7 +176,7 @@ inline int PiPoConst::frames (double time, double weight, float *invalues, unsig
  
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */

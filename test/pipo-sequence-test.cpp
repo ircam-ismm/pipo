@@ -131,7 +131,7 @@ TEST_CASE("Test PiPoSequence arg list")
 
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */

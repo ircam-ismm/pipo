@@ -65,7 +65,7 @@ TEST_CASE("Test pipo version")
 
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */

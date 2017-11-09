@@ -422,7 +422,7 @@ int PiPoIdesc::frames (double time, double weight, float *values, unsigned int s
 
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */
