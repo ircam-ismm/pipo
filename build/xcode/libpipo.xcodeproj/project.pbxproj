@@ -35,18 +35,6 @@
 		315B902A1FB115490005150B /* rta_psy.c in Sources */ = {isa = PBXBuildFile; fileRef = 315B90281FB0DCF20005150B /* rta_psy.c */; };
 		31B564241F1D32FE00B14B4D /* pipo-graph-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */; };
 		31C2B37C1FB0C7B4001A134E /* pipo-host-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */; };
-		31C2B38C1FB0D414001A134E /* mimo_host.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3851FB0D414001A134E /* mimo_host.h */; };
-		31C2B38D1FB0D414001A134E /* PiPoChain.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3861FB0D414001A134E /* PiPoChain.h */; };
-		31C2B38E1FB0D414001A134E /* PiPoCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3871FB0D414001A134E /* PiPoCollection.h */; };
-		31C2B38F1FB0D414001A134E /* PiPoGraph.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3881FB0D414001A134E /* PiPoGraph.h */; };
-		31C2B3901FB0D414001A134E /* PiPoHost.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3891FB0D414001A134E /* PiPoHost.h */; };
-		31C2B3911FB0D414001A134E /* PiPoModuleClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B38A1FB0D414001A134E /* PiPoModuleClass.h */; };
-		31C2B3921FB0D414001A134E /* PiPoOp.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B38B1FB0D414001A134E /* PiPoOp.h */; };
-		31C2B3981FB0D422001A134E /* mimo.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3931FB0D422001A134E /* mimo.h */; };
-		31C2B3991FB0D422001A134E /* PiPo.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3941FB0D422001A134E /* PiPo.h */; };
-		31C2B39A1FB0D422001A134E /* PiPoParallel.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3951FB0D422001A134E /* PiPoParallel.h */; };
-		31C2B39B1FB0D422001A134E /* PiPoSequence.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3961FB0D422001A134E /* PiPoSequence.h */; };
-		31C2B39C1FB0D422001A134E /* RingBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3971FB0D422001A134E /* RingBuffer.h */; };
 		31C2B3C21FB0D43F001A134E /* PiPoBands.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B39D1FB0D43F001A134E /* PiPoBands.h */; };
 		31C2B3C31FB0D43F001A134E /* PiPoBasic.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B39E1FB0D43F001A134E /* PiPoBasic.h */; };
 		31C2B3C41FB0D43F001A134E /* PiPoBayesFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B39F1FB0D43F001A134E /* PiPoBayesFilter.h */; };
@@ -161,7 +149,6 @@
 		31C2B4A41FB0D64E001A134E /* rta_mds_hybrid.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B49C1FB0D64E001A134E /* rta_mds_hybrid.h */; };
 		31C2B4A61FB0D64E001A134E /* rta_msdr.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B49E1FB0D64E001A134E /* rta_msdr.h */; };
 		31C2B4AA1FB0D64E001A134E /* rta_unispring.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B4A21FB0D64E001A134E /* rta_unispring.h */; };
-		31C2B4AC1FB0D66A001A134E /* rta.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B4AB1FB0D66A001A134E /* rta.h */; };
 		31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */; };
 		31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE751ED71FCC002E9F6A /* test-main.cpp */; };
 		31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */; };
@@ -185,22 +172,25 @@
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B90281FB0DCF20005150B /* rta_psy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rta_psy.c; path = "../../modules/rta-lib/src/signal/rta_psy.c"; sourceTree = "<group>"; };
 		315B90291FB0DCF20005150B /* rta_psy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_psy.h; path = "../../modules/rta-lib/src/signal/rta_psy.h"; sourceTree = "<group>"; };
-		315B902E1FB36B7E0005150B /* rta_configuration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_configuration.h; path = "../../modules/rta-lib/include/configuration_basic/rta_configuration.h"; sourceTree = "<group>"; };
+		315B90461FB4B9330005150B /* rta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta.h; path = "../../modules/rta-lib/src/rta.h"; sourceTree = "<group>"; };
+		315B90471FB4B9460005150B /* rta_configuration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_configuration.h; path = "../../modules/rta-lib/bindings/lib/rta_configuration.h"; sourceTree = "<group>"; };
+		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
+		315B904B1FB4B9980005150B /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../sdk/src/PiPo.h; sourceTree = "<group>"; };
+		315B904C1FB4B9980005150B /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../sdk/src/PiPoParallel.h; sourceTree = "<group>"; };
+		315B904D1FB4B9980005150B /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../sdk/src/PiPoSequence.h; sourceTree = "<group>"; };
+		315B904E1FB4B9980005150B /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../sdk/src/RingBuffer.h; sourceTree = "<group>"; };
+		315B904F1FB4B9A40005150B /* mimo_host.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo_host.h; path = ../../sdk/src/host/mimo_host.h; sourceTree = "<group>"; };
+		315B90501FB4B9A40005150B /* PiPoChain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoChain.h; path = ../../sdk/src/host/PiPoChain.h; sourceTree = "<group>"; };
+		315B90511FB4B9A40005150B /* PiPoCollection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoCollection.h; path = ../../sdk/src/host/PiPoCollection.h; sourceTree = "<group>"; };
+		315B90521FB4B9A40005150B /* PiPoGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoGraph.h; path = ../../sdk/src/host/PiPoGraph.h; sourceTree = "<group>"; };
+		315B90531FB4B9A40005150B /* PiPoHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PiPoHost.cpp; path = ../../sdk/src/host/PiPoHost.cpp; sourceTree = "<group>"; };
+		315B90541FB4B9A40005150B /* PiPoHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoHost.h; path = ../../sdk/src/host/PiPoHost.h; sourceTree = "<group>"; };
+		315B90551FB4B9A40005150B /* PiPoModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModule.h; path = ../../sdk/src/host/PiPoModule.h; sourceTree = "<group>"; };
+		315B90561FB4B9A40005150B /* PiPoModuleClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModuleClass.h; path = ../../sdk/src/host/PiPoModuleClass.h; sourceTree = "<group>"; };
+		315B90571FB4B9A40005150B /* PiPoOp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoOp.h; path = ../../sdk/src/host/PiPoOp.h; sourceTree = "<group>"; };
 		315D052F1C4EF736004FAFFB /* libpipo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpipo.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-graph-test.cpp"; path = "../../test/pipo-graph-test.cpp"; sourceTree = "<group>"; };
 		31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-host-test.cpp"; path = "../../test/pipo-host-test.cpp"; sourceTree = "<group>"; };
-		31C2B3851FB0D414001A134E /* mimo_host.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo_host.h; path = ../../sdk/host/mimo_host.h; sourceTree = "<group>"; };
-		31C2B3861FB0D414001A134E /* PiPoChain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoChain.h; path = ../../sdk/host/PiPoChain.h; sourceTree = "<group>"; };
-		31C2B3871FB0D414001A134E /* PiPoCollection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoCollection.h; path = ../../sdk/host/PiPoCollection.h; sourceTree = "<group>"; };
-		31C2B3881FB0D414001A134E /* PiPoGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoGraph.h; path = ../../sdk/host/PiPoGraph.h; sourceTree = "<group>"; };
-		31C2B3891FB0D414001A134E /* PiPoHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoHost.h; path = ../../sdk/host/PiPoHost.h; sourceTree = "<group>"; };
-		31C2B38A1FB0D414001A134E /* PiPoModuleClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModuleClass.h; path = ../../sdk/host/PiPoModuleClass.h; sourceTree = "<group>"; };
-		31C2B38B1FB0D414001A134E /* PiPoOp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoOp.h; path = ../../sdk/host/PiPoOp.h; sourceTree = "<group>"; };
-		31C2B3931FB0D422001A134E /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/include/mimo.h; sourceTree = "<group>"; };
-		31C2B3941FB0D422001A134E /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../sdk/include/PiPo.h; sourceTree = "<group>"; };
-		31C2B3951FB0D422001A134E /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../sdk/include/PiPoParallel.h; sourceTree = "<group>"; };
-		31C2B3961FB0D422001A134E /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../sdk/include/PiPoSequence.h; sourceTree = "<group>"; };
-		31C2B3971FB0D422001A134E /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../sdk/include/RingBuffer.h; sourceTree = "<group>"; };
 		31C2B39D1FB0D43F001A134E /* PiPoBands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBands.h; path = ../../modules/PiPoBands.h; sourceTree = "<group>"; };
 		31C2B39E1FB0D43F001A134E /* PiPoBasic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBasic.h; path = ../../modules/PiPoBasic.h; sourceTree = "<group>"; };
 		31C2B39F1FB0D43F001A134E /* PiPoBayesFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBayesFilter.h; path = ../../modules/PiPoBayesFilter.h; sourceTree = "<group>"; };
@@ -321,7 +311,6 @@
 		31C2B4A01FB0D64E001A134E /* rta_unispring_triangulation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rta_unispring_triangulation.cpp; path = "../../modules/rta-lib/src/physical-models/rta_unispring_triangulation.cpp"; sourceTree = "<group>"; };
 		31C2B4A11FB0D64E001A134E /* rta_unispring.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rta_unispring.cpp; path = "../../modules/rta-lib/src/physical-models/rta_unispring.cpp"; sourceTree = "<group>"; };
 		31C2B4A21FB0D64E001A134E /* rta_unispring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_unispring.h; path = "../../modules/rta-lib/src/physical-models/rta_unispring.h"; sourceTree = "<group>"; };
-		31C2B4AB1FB0D66A001A134E /* rta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta.h; path = "../../modules/rta-lib/include/rta.h"; sourceTree = "<group>"; };
 		31D2EE6D1ED71FCC002E9F6A /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = ../../test/catch.hpp; sourceTree = "<group>"; };
 		31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "mimo-test.cpp"; path = "../../test/mimo-test.cpp"; sourceTree = "<group>"; };
 		31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-benchmark.cpp"; path = "../../test/pipo-benchmark.cpp"; sourceTree = "<group>"; };
@@ -360,6 +349,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		315B90481FB4B9880005150B /* src */ = {
+			isa = PBXGroup;
+			children = (
+				315B904A1FB4B9980005150B /* mimo.h */,
+				315B904B1FB4B9980005150B /* PiPo.h */,
+				315B904C1FB4B9980005150B /* PiPoParallel.h */,
+				315B904D1FB4B9980005150B /* PiPoSequence.h */,
+				315B904E1FB4B9980005150B /* RingBuffer.h */,
+				315B90491FB4B98D0005150B /* host */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		315B90491FB4B98D0005150B /* host */ = {
+			isa = PBXGroup;
+			children = (
+				315B904F1FB4B9A40005150B /* mimo_host.h */,
+				315B90501FB4B9A40005150B /* PiPoChain.h */,
+				315B90511FB4B9A40005150B /* PiPoCollection.h */,
+				315B90521FB4B9A40005150B /* PiPoGraph.h */,
+				315B90531FB4B9A40005150B /* PiPoHost.cpp */,
+				315B90541FB4B9A40005150B /* PiPoHost.h */,
+				315B90551FB4B9A40005150B /* PiPoModule.h */,
+				315B90561FB4B9A40005150B /* PiPoModuleClass.h */,
+				315B90571FB4B9A40005150B /* PiPoOp.h */,
+			);
+			name = host;
+			sourceTree = "<group>";
+		};
 		31C2B3811FB0D3E8001A134E /* modules */ = {
 			isa = PBXGroup;
 			children = (
@@ -414,36 +432,9 @@
 		31C2B3821FB0D3F1001A134E /* sdk */ = {
 			isa = PBXGroup;
 			children = (
-				31C2B3841FB0D403001A134E /* host */,
-				31C2B3831FB0D3F9001A134E /* include */,
+				315B90481FB4B9880005150B /* src */,
 			);
 			name = sdk;
-			sourceTree = "<group>";
-		};
-		31C2B3831FB0D3F9001A134E /* include */ = {
-			isa = PBXGroup;
-			children = (
-				31C2B3931FB0D422001A134E /* mimo.h */,
-				31C2B3941FB0D422001A134E /* PiPo.h */,
-				31C2B3951FB0D422001A134E /* PiPoParallel.h */,
-				31C2B3961FB0D422001A134E /* PiPoSequence.h */,
-				31C2B3971FB0D422001A134E /* RingBuffer.h */,
-			);
-			name = include;
-			sourceTree = "<group>";
-		};
-		31C2B3841FB0D403001A134E /* host */ = {
-			isa = PBXGroup;
-			children = (
-				31C2B3851FB0D414001A134E /* mimo_host.h */,
-				31C2B3861FB0D414001A134E /* PiPoChain.h */,
-				31C2B3871FB0D414001A134E /* PiPoCollection.h */,
-				31C2B3881FB0D414001A134E /* PiPoGraph.h */,
-				31C2B3891FB0D414001A134E /* PiPoHost.h */,
-				31C2B38A1FB0D414001A134E /* PiPoModuleClass.h */,
-				31C2B38B1FB0D414001A134E /* PiPoOp.h */,
-			);
-			name = host;
 			sourceTree = "<group>";
 		};
 		31C2B3E71FB0D45C001A134E /* bayesfilter */ = {
@@ -514,7 +505,6 @@
 			isa = PBXGroup;
 			children = (
 				31C2B4141FB0D5C7001A134E /* src */,
-				31C2B4131FB0D5C2001A134E /* include */,
 			);
 			name = "rta-lib";
 			sourceTree = "<group>";
@@ -526,18 +516,11 @@
 			name = wavelet;
 			sourceTree = "<group>";
 		};
-		31C2B4131FB0D5C2001A134E /* include */ = {
-			isa = PBXGroup;
-			children = (
-				315B902E1FB36B7E0005150B /* rta_configuration.h */,
-				31C2B4AB1FB0D66A001A134E /* rta.h */,
-			);
-			name = include;
-			sourceTree = "<group>";
-		};
 		31C2B4141FB0D5C7001A134E /* src */ = {
 			isa = PBXGroup;
 			children = (
+				315B90471FB4B9460005150B /* rta_configuration.h */,
+				315B90461FB4B9330005150B /* rta.h */,
 				31C2B4191FB0D5EE001A134E /* util */,
 				31C2B4181FB0D5E7001A134E /* statistics */,
 				31C2B4171FB0D5E1001A134E /* signal */,
@@ -715,10 +698,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				31C2B43D1FB0D60A001A134E /* rta_cca.h in Headers */,
-				31C2B3981FB0D422001A134E /* mimo.h in Headers */,
 				31C2B3E11FB0D43F001A134E /* PiPoSlice.h in Headers */,
 				31C2B3DF1FB0D43F001A134E /* PiPoScale.h in Headers */,
-				31C2B3921FB0D414001A134E /* PiPoOp.h in Headers */,
 				31C2B4311FB0D5FD001A134E /* rta_util.h in Headers */,
 				31C2B46E1FB0D619001A134E /* rta_correlation.h in Headers */,
 				31C2B4761FB0D619001A134E /* rta_fft.h in Headers */,
@@ -726,25 +707,19 @@
 				31C2B4851FB0D619001A134E /* rta_window.h in Headers */,
 				31C2B3C21FB0D43F001A134E /* PiPoBands.h in Headers */,
 				31C2B3DC1FB0D43F001A134E /* PiPoPeaks.h in Headers */,
-				31C2B38F1FB0D414001A134E /* PiPoGraph.h in Headers */,
 				31C2B4771FB0D619001A134E /* rta_filter.h in Headers */,
 				31C2B42E1FB0D5FD001A134E /* rta_stdlib.h in Headers */,
 				31C2B4A41FB0D64E001A134E /* rta_mds_hybrid.h in Headers */,
 				31C2B3CE1FB0D43F001A134E /* PiPoIdentity.h in Headers */,
 				31C2B3DA1FB0D43F001A134E /* PiPoMvavrg.h in Headers */,
-				31C2B3991FB0D422001A134E /* PiPo.h in Headers */,
 				31C2B4281FB0D5FD001A134E /* rta_complex.h in Headers */,
-				31C2B38C1FB0D414001A134E /* mimo_host.h in Headers */,
 				31C2B4811FB0D619001A134E /* rta_preemphasis.h in Headers */,
-				31C2B39A1FB0D422001A134E /* PiPoParallel.h in Headers */,
 				31C2B42D1FB0D5FD001A134E /* rta_stdio.h in Headers */,
 				31C2B4271FB0D5FD001A134E /* rta_bpf.h in Headers */,
-				31C2B39B1FB0D422001A134E /* PiPoSequence.h in Headers */,
 				31C2B4791FB0D619001A134E /* rta_lifter.h in Headers */,
 				31C2B3D11FB0D43F001A134E /* PiPoLpc.h in Headers */,
 				31C2B3C51FB0D43F001A134E /* PiPoBiquad.h in Headers */,
 				31C2B3E61FB0D43F001A134E /* TempMod.h in Headers */,
-				31C2B38D1FB0D414001A134E /* PiPoChain.h in Headers */,
 				31C2B3E41FB0D43F001A134E /* PiPoWavelet.h in Headers */,
 				31C2B3E01FB0D43F001A134E /* PiPoSelect.h in Headers */,
 				31C2B47D1FB0D619001A134E /* rta_mel.h in Headers */,
@@ -752,7 +727,6 @@
 				31C2B3C61FB0D43F001A134E /* PiPoBranch.h in Headers */,
 				31C2B3C41FB0D43F001A134E /* PiPoBayesFilter.h in Headers */,
 				31C2B42C1FB0D5FD001A134E /* rta_math.h in Headers */,
-				31C2B3901FB0D414001A134E /* PiPoHost.h in Headers */,
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
 				31C2B49A1FB0D640001A134E /* rta_mahalanobis.h in Headers */,
 				31C2B3D51FB0D43F001A134E /* PiPoMedian.h in Headers */,
@@ -763,8 +737,6 @@
 				31C2B4451FB0D60A001A134E /* rta_svd.h in Headers */,
 				31C2B4AA1FB0D64E001A134E /* rta_unispring.h in Headers */,
 				31C2B3F31FB0D49E001A134E /* bbpr.h in Headers */,
-				31C2B4AC1FB0D66A001A134E /* rta.h in Headers */,
-				31C2B38E1FB0D414001A134E /* PiPoCollection.h in Headers */,
 				31C2B4411FB0D60A001A134E /* rta_moments.h in Headers */,
 				31C2B3D81FB0D43F001A134E /* PiPoMinMax.h in Headers */,
 				31C2B3CA1FB0D43F001A134E /* PiPoDelta.h in Headers */,
@@ -776,7 +748,6 @@
 				31C2B3DE1FB0D43F001A134E /* PiPoRms.h in Headers */,
 				31C2B4041FB0D4D8001A134E /* BayesianFilter.h in Headers */,
 				31C2B3F91FB0D4A7001A134E /* finitedifferences.h in Headers */,
-				31C2B3911FB0D414001A134E /* PiPoModuleClass.h in Headers */,
 				31C2B4291FB0D5FD001A134E /* rta_float.h in Headers */,
 				31C2B3C91FB0D43F001A134E /* PiPoDct.h in Headers */,
 				31C2B47F1FB0D619001A134E /* rta_onepole.h in Headers */,
@@ -786,7 +757,6 @@
 				31C2B3C31FB0D43F001A134E /* PiPoBasic.h in Headers */,
 				31C2B3C71FB0D43F001A134E /* PiPoChop.h in Headers */,
 				31C2B3CB1FB0D43F001A134E /* PiPoFft.h in Headers */,
-				31C2B39C1FB0D422001A134E /* RingBuffer.h in Headers */,
 				31C2B4A61FB0D64E001A134E /* rta_msdr.h in Headers */,
 				31C2B3CD1FB0D43F001A134E /* PiPoGate.h in Headers */,
 				31C2B46C1FB0D619001A134E /* rta_biquad.h in Headers */,
@@ -1111,7 +1081,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_MASTER_OBJECT_FILE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../../**",
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
@@ -1172,7 +1141,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_MASTER_OBJECT_FILE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../../**",
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
