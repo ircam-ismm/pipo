@@ -218,11 +218,6 @@ public:
   }
   // additionnal buffer for filter memory ? -> no ! (taken care of by biquadState array)
 
-  void initBiquadStates()
-  {
-    
-  }
-  
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     enum BiquadTypeE biquadType = (enum BiquadTypeE)this->biquadTypeA.get();
