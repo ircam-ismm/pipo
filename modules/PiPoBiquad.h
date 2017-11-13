@@ -184,6 +184,11 @@ public:
 
     rta_biquad_coefs(b, a, (rta_filter_t)filterMode, normF0, q, biquadGain);
   }
+  
+  void initBiquadStates()
+  {
+    std::fill(this->biquadState, this->biquadState + this->biquadState_nb * this->frameWidth, 0.);
+  }
 
   void filterFrame(float *frameValues, float *outValues)//, int nFrames)
   {
@@ -213,7 +218,11 @@ public:
   }
   // additionnal buffer for filter memory ? -> no ! (taken care of by biquadState array)
 
-
+  void initBiquadStates()
+  {
+    
+  }
+  
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     enum BiquadTypeE biquadType = (enum BiquadTypeE)this->biquadTypeA.get();
@@ -228,24 +237,24 @@ public:
     unsigned int frameHeight = size;
 
 
+    if (biquadType != this->biquadType)
+    {
+      this->biquadType = biquadType;
+      
+      if (this->biquadType == DF1BiquadType)
+        this->biquadState_nb = 4;
+      else // this->biquadType == DF2TBiquadType
+        this->biquadState_nb = 2;
+    }
+
     if (frameWidth != this->frameWidth || frameHeight != this->frameHeight)
     {
       this->frameWidth = frameWidth;
       this->frameHeight = frameHeight;
 
-      this->biquadState = (float *)realloc(this->biquadState, 4 * this->frameWidth * sizeof(float));
-      memset(this->biquadState, 0., 4 * this->frameWidth);
+      this->biquadState = (float *)realloc(this->biquadState, this->biquadState_nb * this->frameWidth * sizeof(float));
+      this->initBiquadStates();
       this->outValues = (float *)realloc(this->outValues, this->frameWidth * this->frameHeight * sizeof(float));
-    }
-
-    if (biquadType != this->biquadType)
-    {
-      this->biquadType = biquadType;
-
-      if (this->biquadType == DF1BiquadType)
-        this->biquadState_nb = 4;
-      else // this->biquadType == DF2TBiquadType
-        this->biquadState_nb = 2;
     }
 
     if (this->filterMode == RawCoefsFilteringMode)
@@ -296,10 +305,10 @@ public:
 
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, false, 0.0, 1);
   }
-
+  
   int reset()
   {
-    memset(this->biquadState, 0., 4 * this->frameWidth);
+    this->initBiquadStates();
     return this->propagateReset();
   }
 
