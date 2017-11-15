@@ -1,61 +1,76 @@
 #include <iostream>
 
 #include "catch.hpp"
-//#include "PiPoTestReceiver.h"
-//#include "PiPoCollection.h"
-//#include "PiPoGraph.h"
-#include "PiPoHost.h"
+#include "PiPoTestHost.h"
 
-// easily create your own host derived from PiPoHost :
-class MyPiPoHost : public PiPoHost
+static void fillArrayWithRandomValues(PiPoValue *array, unsigned long size)
 {
-    void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size)
+    for (unsigned int i = 0; i < size; ++i)
     {
-        std::cout << "I am a MyPiPoHost instance and I have a new frame of size " << size << std::endl;
+        std::srand(static_cast<unsigned int>(std::time(0)));
+
+        for (unsigned int i = 0; i < size; ++i) {
+            array[i] = std::rand() / static_cast<float>(RAND_MAX);
+        }
     }
-};
+}
 
 TEST_CASE ("Test pipo host")
 {
     PiPoStreamAttributes sa;
 
-    WHEN ("Instantiating a PiPoHost with a graph description")
+    WHEN ("Instantiating a class derived from PiPoHost with a simple \"slice\" graph")
     {
-        MyPiPoHost h;
-        h.setGraph("slice:fft<sum:scale,moments>");
-        //h.setGraph("slice");
+        PiPoTestHost h;
 
-        h.setAttr("slice.size", 10); // slice.size
-        h.setAttr("slice.hop", 5);  // slice.hop
+        //h.setGraph("slice:fft<sum:scale,moments>");
+        h.setGraph("slice");
 
+        /*
         std::vector<std::string> attrNames = h.getAttrNames();
         for (int i = 0; i < attrNames.size(); ++i)
         {
             std::cout << attrNames[i] << std::endl;
         }
+        //*/
+
+        unsigned int windSize = 10;
+        unsigned int hopSize = 5;
+
+        h.setAttr("slice.size", windSize); // slice.size
+        h.setAttr("slice.hop", hopSize);  // slice.hop
 
         h.setInputStreamAttributes(sa);
-        
+
+        THEN ("output frame rate should be input frame rate divided by hop size")
+        {
+            REQUIRE (h.getOutputStreamAttributes().rate == sa.rate / hopSize);
+        }
+
+        /*
         PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
-        for (int i = 0; i < outSa.dims[0]; ++i)
+        for (int i = 0; i < outSa.numLabels; ++i)
         {
             std::cout << std::string(outSa.labels[i]) << " ";
         }
         std::cout << std::endl;
+        //*/
 
-        THEN ("It should spit out expected values from its onNewFrame method")
+        unsigned long nRandValues = 30;
+
+        /*
+        THEN ("size of output slices should be ")
         {
-            float vals[1024];
-            std::srand(static_cast<unsigned int>(std::time(0)));
+            PiPoValue vals[nRandValues];
 
-            for (unsigned int i = 0; i < 1024; ++i) {
-                vals[i] = std::rand() / static_cast<float>(RAND_MAX);
-            }
+            fillArrayWithRandomValues(vals, nRandValues);
 
-            for (unsigned int i = 0; i < 1024; ++i) {
+            for (unsigned int i = 0; i < nRandValues; ++i) {
                 h.frames(0, 0, &vals[i], 1, 1);
             }
 
+            std::cout << h.receivedFrames.size() << std::endl;
         }
+        //*/
     }
 }

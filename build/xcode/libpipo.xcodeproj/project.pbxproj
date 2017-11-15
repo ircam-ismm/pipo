@@ -192,7 +192,7 @@
 		315B90561FB4B9A40005150B /* PiPoModuleClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModuleClass.h; path = ../../sdk/src/host/PiPoModuleClass.h; sourceTree = "<group>"; };
 		315B90571FB4B9A40005150B /* PiPoOp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoOp.h; path = ../../sdk/src/host/PiPoOp.h; sourceTree = "<group>"; };
 		315D052F1C4EF736004FAFFB /* libpipo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpipo.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-graph-test.cpp"; path = "../../test/pipo-graph-test.cpp"; sourceTree = "<group>"; };
+		319486BF1FBC4D010031D0E1 /* PiPoTestHost.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoTestHost.h; path = ../../test/PiPoTestHost.h; sourceTree = "<group>"; };
 		31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-host-test.cpp"; path = "../../test/pipo-host-test.cpp"; sourceTree = "<group>"; };
 		31C2B39D1FB0D43F001A134E /* PiPoBands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBands.h; path = ../../modules/PiPoBands.h; sourceTree = "<group>"; };
 		31C2B39E1FB0D43F001A134E /* PiPoBasic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBasic.h; path = ../../modules/PiPoBasic.h; sourceTree = "<group>"; };
@@ -645,11 +645,11 @@
 			children = (
 				31D2EE6D1ED71FCC002E9F6A /* catch.hpp */,
 				31D2EE751ED71FCC002E9F6A /* test-main.cpp */,
+				319486BF1FBC4D010031D0E1 /* PiPoTestHost.h */,
 				31D2EE741ED71FCC002E9F6A /* PiPoTestReceiver.h */,
 				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
 				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
 				31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */,
-				31B564231F1D32FE00B14B4D /* pipo-graph-test.cpp */,
 				31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */,
 				31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */,
 				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
@@ -941,8 +941,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				319486BE1FBB5B990031D0E1 /* pipo-host-test.cpp in Sources */,
 				319486BC1FB9EEA30031D0E1 /* PiPoHost.cpp in Sources */,
+				319486BE1FBB5B990031D0E1 /* pipo-host-test.cpp in Sources */,
 				31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
 				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,

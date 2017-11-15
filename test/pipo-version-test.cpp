@@ -1,4 +1,3 @@
-
 #include "catch.hpp"
 
 #define PIPO_WRONG_VERSION 0.001f

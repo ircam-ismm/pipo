@@ -1,4 +1,3 @@
-
 /* run this test only with
 ../../../maxpipo/build/osx-macho/DerivedData/Build/Products/Debug/pipo-test mimo
 */
@@ -168,10 +167,3 @@ TEST_CASE("mimo")
     }
   }
 }
-
-/** EMACS **
- * Local variables:
- * mode: c
- * c-basic-offset:2
- * End:
- */

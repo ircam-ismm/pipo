@@ -8,15 +8,22 @@
 #include "catch.hpp"
 
 #include "PiPoScale.h"
+#include "PiPoTestHost.h"
 #include "PiPoTestReceiver.h"
 
 TEST_CASE ("PiPoScale")
 {
+  // PiPoTestHost host;
+  // host.setGraph("scale");
+
   PiPoTestReceiver receiver(NULL);
   PiPoScale scale(NULL); // TODO: there should be a parent
   scale.setReceiver(&receiver);
 
   std::vector<PiPoValue> inputFrame;
+
+  // PiPoStreamAttributes sa;
+  // sa.maxFrames = 100;
 
   for(double sampleRate = 100.; sampleRate <= 1000.; sampleRate *= 10.)
   {
@@ -24,7 +31,13 @@ TEST_CASE ("PiPoScale")
     {
       for(unsigned int height = 1; height <= 10; height *= 4)
       {
-        int check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+        // sa.rate = sampleRate;
+        // sa.dims[0] = width;
+        // sa.dims[1] = height;
+
+        int check;
+        // check = host.setInputStreamAttributes(sa);
+        check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
         REQUIRE (check == 0);
 
         const unsigned int size = width * height;
@@ -44,8 +57,15 @@ TEST_CASE ("PiPoScale")
             scale.outMin.set(0, 3.);
             scale.outMax.set(0, 4.);
 
+            // host.setAttr("func", "lin");
+            // host.setAttr("scale.inmin", 1.);
+            // host.setAttr("scale.inmax", 2.);
+            // host.setAttr("scale.outmin", 3.);
+            // host.setAttr("scale.outmax", 4.);
+
             // TODO: no parent: no automatic propagation
             check = scale.streamAttributes(false, sampleRate, 0, width, height, NULL, 0, 0, 100);
+            // check = host.setInputStreamAttributes(sa); // no need for this with a host
             REQUIRE (check == 0);
 
             std::vector<std::vector<PiPoValue> > values = {
@@ -62,8 +82,9 @@ TEST_CASE ("PiPoScale")
               const PiPoValue outputExpected = values[v][1];
               std::fill(inputFrame.begin(), inputFrame.end(), inputValue);
               check = scale.frames(0., 1., &inputFrame[0], size, 1);
+              // check = host.frames(0., 1., &inputFrame[0], size, 1);
               REQUIRE (check == 0);
-              REQUIRE (receiver.values != NULL);
+              // REQUIRE (receiver.values != NULL);
 
               for(unsigned int sample = 0; sample < size; ++sample)
               {
@@ -159,10 +180,3 @@ TEST_CASE ("PiPoScale")
   } // sampleRate
 
 } // PiPoScale test case
-
-/** EMACS **
- * Local variables:
- * mode: c
- * c-basic-offset:2
- * End:
- */
