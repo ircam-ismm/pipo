@@ -26,7 +26,9 @@ TEST_CASE ("Test pipo collection")
     //PiPo *graph = PiPoCollection::create("slice:fft:sum:scale:onseg");
     //PiPo *graph = PiPoCollection::create("slice:fft<_,sum,moments>");
     PiPo *graph = PiPoCollection::create("slice<_,fft<sum:scale,moments>>");
-
+    //PiPo *graph = PiPoCollection::create("slice:fft<sum:scale,moments>");
+    //std::shared_ptr<PiPo> graph = std::make_shared<PiPo>(PiPoCollection::create("slice<_,fft<sum:scale,moments>>"));
+      
     if (graph == NULL) return;
     //PiPo *graph = PiPoCollection::create("<sum,moments,_>");
     PiPoTestReceiver rx(NULL);

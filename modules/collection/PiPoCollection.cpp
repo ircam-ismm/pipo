@@ -193,14 +193,12 @@ PiPoCollection::addToCollection(std::string name, PiPoCreatorBase *creator)
 }
 
 PiPo *
-PiPoCollection::create(std::string name)
+PiPoCollection::create(std::string name, PiPo::Parent *parent)
 {
-  // PiPoChain *chain = new PiPoChain(NULL, factory);
-  PiPoGraph *graph = new PiPoGraph(NULL, factory);
-  // if (chain->parse(name.c_str()) > 0 && chain->instantiate() && chain->connect(NULL))
+  PiPoGraph *graph = new PiPoGraph(parent, factory);
+
   if (graph->create(name))
   {
-    // return static_cast<PiPo *>(chain);
     return static_cast<PiPo *>(graph);
   }
 
