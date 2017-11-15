@@ -228,7 +228,7 @@ public:
           inputIndex = overlap;
         }
         
-        values += numInput;
+        values += (numInput * size);
         num -= numInput;
       }
       else

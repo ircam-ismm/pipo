@@ -26,7 +26,7 @@ TEST_CASE ("Test pipo fft")
     fft.mode.set(3);
     fft.norm.set(0);
     int ret = slice.streamAttributes(false, 44100, 0, 1, 1, NULL, 0, 0, 100);
-  
+
     CHECK(ret == 0);
     CHECK(rx.count_streamAttributes == 1);
     CHECK(rx.sa.rate == sr / hopsize);
@@ -43,8 +43,8 @@ TEST_CASE ("Test pipo fft")
       WHEN ("input is noise")
       {
         for (int i = 0; i < numsamp; i++)
-          vals[i] = random() / (1 << 30) - 1.0; // returns successive pseudo-random numbers in the range from 0 to (2**31)-1. 
-    
+          vals[i] = random() / (1 << 30) - 1.0; // returns successive pseudo-random numbers in the range from 0 to (2**31)-1.
+
         int ret2 = slice.frames(0, 1, vals, 1, numsamp);
 
         THEN ("output is ...")
@@ -58,3 +58,10 @@ TEST_CASE ("Test pipo fft")
     }
   }
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */

@@ -79,22 +79,19 @@ public:
 private:
   BiquadTypeE biquadType;;
   FilteringModeE filterMode;
-  //FrameRateUnitE unit;
-
 
   unsigned int frameWidth;
   unsigned int frameHeight;
 
-  float frameRate;
-  float *outValues;
+  double frameRate;
+  std::vector<PiPoValue> outValues;
 
-  float b[3]; /* biquad feed-forward coefficients b0, b1 and b2*/
-  float a[2]; /* biquad feed-backward coefficients a1 and a2 */
-  float *biquadState;
-  unsigned int biquadState_nb; /* number of state: 4 for df1 and 2 for df2t */
+  PiPoValue b[3]; /* biquad feed-forward coefficients b0, b1 and b2*/
+  PiPoValue a[2]; /* biquad feed-backward coefficients a1 and a2 */
+  std::vector<PiPoValue> biquadState;
 
   double f0;
-  double normF0;
+  double normF0; // normalised f0
 
   float biquadGain;
   float biquadQuality;
@@ -104,12 +101,11 @@ public:
   PiPoScalarAttr<float> b0;
   PiPoScalarAttr<float> b1;
   PiPoScalarAttr<float> b2;
-  //PiPoScalarAttr<float> a0; // -> a0 is always 1
+  // a0 is always 1
   PiPoScalarAttr<float> a1;
   PiPoScalarAttr<float> a2;
   PiPoScalarAttr<PiPo::Enumerate> biquadTypeA;
   PiPoScalarAttr<PiPo::Enumerate> filterModeA;
-  //PiPoScalarAttr<PiPo::Enumerate> unitA;
   PiPoScalarAttr<float> gainA;
   PiPoScalarAttr<float> frequencyA;
   PiPoScalarAttr<float> QA;
@@ -125,31 +121,28 @@ public:
   a2(this, "a2", "a2 biquad coefficient", true, 0.),
   biquadTypeA(this, "biquadtype", "Direct Form 1 or 2T", true, DF1BiquadType),
   filterModeA(this, "filtermode", "Filter Mode", true, LowPassFilteringMode),
-  //unitA(this, "unit", "Framerate Unit", true, FrameUnit),
   gainA(this, "gain", "Filter Gain", true, 1.),
   frequencyA(this, "frequency", "Filter Relevant Frequency", true, 1000.),
   QA(this, "Q", "Filter Quality", true, 0.)
   {
-    this->frameWidth = 0;
-    this->frameHeight = 0;
+    this->frameWidth = -1;
+    this->frameHeight = -1;
+    this->frameRate = -1.;
 
-    this->frameRate = 1.;
-    this->outValues = NULL;
-
-    this->biquadType = DF1BiquadType;
-    this->biquadState_nb = 4;
-    this->biquadGain = 1.;
-    this->biquadQuality = 0.;
+    this->biquadType = static_cast<enum BiquadTypeE>(this->biquadTypeA.get());
+    this->biquadGain = this->gainA.get();
+    this->biquadQuality = this->QA.get();
+    
+    // constant
     this->biquadQNormalisation = M_SQRT1_2;
 
-    this->filterMode = LowPassFilteringMode;
+    this->filterMode = static_cast<enum FilteringModeE>(this->filterModeA.get());
 
-    this->b[0] = 1.;
-    this->b[1] = 0.;
-    this->b[2] = 0.;
-    this->a[0] = 0.;
-    this->a[1] = 0.;
-    this->biquadState = NULL;
+    this->b[0] = this->b0.get();
+    this->b[1] = this->b1.get();
+    this->b[2] = this->b2.get();
+    this->a[0] = this->a1.get(); // warning: starts at 1
+    this->a[1] = this->a2.get();
 
     this->biquadTypeA.addEnumItem("DF1", "Direct Form 1");
     this->biquadTypeA.addEnumItem("DF2", "Direct Form 2");
@@ -164,15 +157,10 @@ public:
     this->filterModeA.addEnumItem("lowshelf", "Lowshelf Filtering Mode");
     this->filterModeA.addEnumItem("highshelf", "Highshelf Filtering Mode");
     this->filterModeA.addEnumItem("rawcoefs", "Controlled By Raw Coefficients");
-
-    //this->unitA.addEnumItem("frame", "Raw Frames");
-    //this->unitA.addEnumItem("Hz", "Framerate Expressed in Hertz");
   }
 
   ~PiPoBiquad()
   {
-    free(this->biquadState);
-    free(this->outValues);
   }
 
   void initBiquadCoefficients()
@@ -184,15 +172,33 @@ public:
 
     rta_biquad_coefs(b, a, (rta_filter_t)filterMode, normF0, q, biquadGain);
   }
+  
+  unsigned int getBiquadStatesNumber()
+  {
+    switch (this->biquadType)
+    {
+      case DF1BiquadType:
+        return 4;
+        break;
+      case DF2TBiquadType:
+        return 2;
+        break;
+    }
+  }
+  
+  void initBiquadStates()
+  {
+    std::fill(this->biquadState.begin(), this->biquadState.end(), 0.);
+  }
 
-  void filterFrame(float *frameValues, float *outValues)//, int nFrames)
+  void filterFrame(float *frameValues)//, int nFrames)
   {
     switch (this->biquadType)
     {
       case DF1BiquadType:
         for (unsigned int i = 0; i < this->frameHeight; i++)
           for (unsigned int j = 0; j < this->frameWidth; j++)
-            outValues[i * this->frameWidth + j] = rta_biquad_df1_stride(
+            this->outValues[i * this->frameWidth + j] = rta_biquad_df1_stride(
               frameValues[i * this->frameWidth + j],
               b, 1, a, 1,
               &(this->biquadState[j]),
@@ -203,7 +209,7 @@ public:
       case DF2TBiquadType:
         for (unsigned int i = 0; i < this->frameHeight; i++)
           for (unsigned int j = 0; j < this->frameWidth; j++)
-            outValues[i * this->frameWidth + j] = rta_biquad_df2t_stride(
+            this->outValues[i * this->frameWidth + j] = rta_biquad_df2t_stride(
               frameValues[i * this->frameWidth + j],
               b, 1, a, 1,
               &(this->biquadState[j]),
@@ -213,39 +219,34 @@ public:
   }
   // additionnal buffer for filter memory ? -> no ! (taken care of by biquadState array)
 
-
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     enum BiquadTypeE biquadType = (enum BiquadTypeE)this->biquadTypeA.get();
     enum FilteringModeE filterMode = (enum FilteringModeE)this->filterModeA.get();
-    //enum FrameRateUnitE unit = (enum FrameRateUnitE)this->unitA.get();
 
     float gain = this->gainA.get();
     float frequency = this->frequencyA.get();
     float Q = this->QA.get();
 
     unsigned int frameWidth = width;
-    unsigned int frameHeight = size;
+    unsigned int frameHeight = height;
 
+
+    if (biquadType != this->biquadType)
+    {
+      this->biquadType = biquadType;
+      this->biquadState.resize(this->getBiquadStatesNumber() * this->frameWidth);
+      this->initBiquadStates();
+    }
 
     if (frameWidth != this->frameWidth || frameHeight != this->frameHeight)
     {
       this->frameWidth = frameWidth;
       this->frameHeight = frameHeight;
 
-      this->biquadState = (float *)realloc(this->biquadState, 4 * this->frameWidth * sizeof(float));
-      memset(this->biquadState, 0., 4 * this->frameWidth);
-      this->outValues = (float *)realloc(this->outValues, this->frameWidth * this->frameHeight * sizeof(float));
-    }
-
-    if (biquadType != this->biquadType)
-    {
-      this->biquadType = biquadType;
-
-      if (this->biquadType == DF1BiquadType)
-        this->biquadState_nb = 4;
-      else // this->biquadType == DF2TBiquadType
-        this->biquadState_nb = 2;
+      this->biquadState.resize(this->getBiquadStatesNumber() * this->frameWidth);
+      this->initBiquadStates();
+      this->outValues.resize(this->frameWidth * this->frameHeight);
     }
 
     if (this->filterMode == RawCoefsFilteringMode)
@@ -266,7 +267,7 @@ public:
         b[2] = b2;
       }
 
-      return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, 0, 0.0, 1);
+      return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, 0, 0.0, 1);
     }
 
     // if not in raw coefs control mode, compute coefs from gain / frequency / quality :
@@ -294,23 +295,21 @@ public:
       initBiquadCoefficients();
     }
 
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, false, 0.0, 1);
+    return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, false, 0.0, 1);
   }
-
+  
   int reset()
   {
-    memset(this->biquadState, 0., 4 * this->frameWidth);
+    this->initBiquadStates();
     return this->propagateReset();
   }
 
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    double outputTime = time;
     for (unsigned int i = 0; i < num; i++)
     {
-      //outputTime += (1000. / this->frameRate);
-      filterFrame(values, this->outValues);
-      int ret = this->propagateFrames(outputTime, weight, this->outValues, this->frameWidth * this->frameHeight, 1);
+      filterFrame(values);
+      int ret = this->propagateFrames(time, weight, &this->outValues[0], this->frameWidth * this->frameHeight, 1);
 
       if (ret != 0)
         return ret;

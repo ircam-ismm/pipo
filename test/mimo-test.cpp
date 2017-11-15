@@ -19,7 +19,7 @@ public:
 
   ~MimoTestReceiver()
   {  }
-  
+
   mimo_model_data *getmodel () override { return NULL; }
 
   // called by mimo module's propagateSetup via setupChain
@@ -29,7 +29,7 @@ public:
 
     char str[1000];
     printf("%s: received mimo setup output stream attributes\n%s", __PRETTY_FUNCTION__, at->to_string(str, 1000));
-    
+
     // store stream attributes in outputTrackDescr via base PiPoProcReceiver's method
     return 0; // propagateStreamAttributes(at->hasTimeTags, at->rate, at->offset, at->dims[0], at->dims[1], at->labels, at->hasVarSize, at->domain, at->maxFrames);
   }
@@ -59,7 +59,7 @@ public:
   {
     return prx.finalize(inputEnd);
   }
-    
+
   void signalError(PiPo *pipo, std::string errorMsg)
   {
     prx.signalError(pipo, errorMsg);
@@ -94,20 +94,20 @@ TEST_CASE("mimo")
       attr.dims[1] = 1;
 
       int ret = stats.setup(1, 1, attrarr);
-	  
+
       THEN("check")
       {
 	;
       }
-	  
+
       WHEN("data input")
       {
 	stats.train(0, 0, 0, numframes, data, (double *) NULL, NULL);
-	      
+
 	THEN("result is")
 	{
 	  stats_model_data res = *stats.getmodel();
-		  
+
 	  REQUIRE(res.num.size() == numcols);
 	  REQUIRE(res.mean.size() == numcols);
 
@@ -121,19 +121,19 @@ TEST_CASE("mimo")
 	  THEN("model as json is")
 	  {
 	    mimo_model_data *model = stats.getmodel();
-	    
+
 	    std::string json = model->to_json();
 	    printf("\nmodel to json:\n%s\n", json.c_str());
 	  }
 	}
-	      
+
 	SECTION("decoding")
 	{
 	  WHEN ("stream setup")
 	  {
 	    const char *labels[] = { "col0", "col1", "col2" };
 	    int ret = stats.streamAttributes(false, 1000, 0, numcols, 1, labels, false, 0, 1);
-		  
+
 	    THEN ("setup is propagated") {
 	      CHECK(ret == 0);
 	      CHECK(rx.prx.count_streamAttributes == 1);
@@ -145,10 +145,10 @@ TEST_CASE("mimo")
 	      CHECK(std::strcmp(rx.prx.sa.labels[0], "col0Norm") == 0);
 	      rx.zero();
 	    }
-	    
+
 	    WHEN ("input is training data") {
 	      int ret2 = stats.frames(0, 1, data, numcols, numframes);
-			  
+
 	      THEN ("output is ...") {
 		CHECK(ret2 == 0);
 		CHECK(rx.prx.count_frames == numframes);
@@ -167,3 +167,10 @@ TEST_CASE("mimo")
     }
   }
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */

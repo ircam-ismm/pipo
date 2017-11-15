@@ -180,3 +180,10 @@ TEST_CASE ("PiPoScale")
   } // sampleRate
 
 } // PiPoScale test case
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */

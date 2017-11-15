@@ -194,7 +194,7 @@ BENCHMARK_F (pipo_bench, FramesMFCC3, 10, NUMITER) { pipomfcc->size.set(4096);  
 
 /** EMACS **
  * Local variables:
- * mode: c
+ * mode: c++
  * c-basic-offset:2
  * End:
  */
