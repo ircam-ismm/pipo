@@ -43,7 +43,7 @@
 
 #include "PiPoSequence.h"
 #include "PiPoLpc.h"
-#include "lpcformants/bbpr.cpp"
+#include "lpcformants/bbpr.cpp" //TODO: don't include cpp
 //#include <lpcformants/rpoly.cpp>
 #include <vector>
 #include <algorithm>
@@ -52,80 +52,55 @@ using namespace std;
 
 #define PI 3.14159265
 
-class PiPoLpcFormants: public PiPoSequence
+class PiPoLpcFormants : public PiPoSequence
 {
 private:
-    class PiPoFormants : public PiPo {
-        float *outValues;
-        bool f = false;
+    class PiPoFormants : public PiPo
+    {
+	std::vector<PiPoValue> outValues;
 
     public:
-        PiPoScalarAttr<int> nForm;
+        PiPoScalarAttr<int> nForm;	// number of formants to detect
         PiPoScalarAttr<bool> bandwidth;
         PiPoScalarAttr<int> threshold; // Hz
         PiPoScalarAttr<float> sr;
+                
+        PiPoFormants (PiPo::Parent *parent, PiPo *receiver = NULL)
+	:   PiPo(parent, receiver),
+	    nForm(this, "nForm", "Number Of Formants", true, 1),
+	    bandwidth(this, "bandwidth", "Store the bandwidth", true, true),
+	    threshold(this, "threshold", "Threshold (in Hz) for the Lowest Formants", true, 20),
+	    sr(this, "Samplerate", "Sample rate of the audio", true, 44100)
+	{ }
         
+        ~PiPoFormants ()
+        { }
         
-        PiPoFormants(PiPo::Parent *parent, PiPo *receiver = NULL) :
-        PiPo(parent, receiver),
-        nForm(this, "nForm", "Number Of Formants", true, 1),
-        bandwidth(this, "bandwidth", "Store the bandwidth", true, true),
-        threshold(this, "threshold", "Threshold (in Hz) for the Lowest Formants", true, 20),
-        sr(this, "Samplerate", "Sample rate of the audio", true, 44100){
-            
-        }
-        
-        ~PiPoFormants()
-        {
-            if (f){
-                free(outValues);
-            }
-        }
-        
-        int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+        int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
         {
             int nForm = this->nForm.get();
-            int bandwidth = this->bandwidth.get();
-            int cols = 1;
-            if (bandwidth)
-                cols = 2;
-            outValues = (float *)malloc(cols * nForm * sizeof(float));
-            f = true;
+            int cols = this->bandwidth.get()  ?  2  :  1;
+	    const char *FormColNames[2] = {"FormantFrequency", "FormantBandwidth"};
+
+            outValues.resize(cols * nForm);
             
-            /*const char *FormColNames[cols];
-            FormColNames[0] = "FromantFrequency";
-            if (bandwidth)
-                FormColNames[1] = "FormantBandwidth";*/
-			const char *FormColNames[2];
-			FormColNames[0] = "FromantFrequency";
-			if (bandwidth) FormColNames[1] = "FormantBandwidth";
             return this->propagateStreamAttributes(hasTimeTags, rate, offset, cols, nForm, FormColNames, 0, 0.0, 1);
         }
         
-        int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+        int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
         {
             int nForm = this->nForm.get();
             int threshold = this->threshold.get();
-            int bandwidth = this->bandwidth.get();
-            
+	    int cols = this->bandwidth.get()  ?  2  :  1;
             float sr = this->sr.get();
-                 
-            int cols = 1;
-            if (bandwidth)
-                cols = 2;
-    
-            int n, numr;
-            n = size - 1; // polynomio order
-       
+            int n = size - 1; // polynomio order
+	    int numr;
             double *a, *x, *wr, *wi, quad[2];
             
             a = new double [size]; x = new double [size]; wr = new double [size]; wi = new double [size];
             
             for (unsigned int i = 0; i < size; i++)
                 a[i] = *(values+i);
-
-
-
 
             quad[0] = 2.71828e-1;
             quad[1] = 3.14159e-1;
@@ -156,14 +131,14 @@ private:
             
             for (int i = 0; i < nForm; i++) {
                 if (matrix.size() > 0) {
-                    *(outValues + i * cols) = matrix[i].first;
+                    outValues[i * cols] = matrix[i].first;
                     if (cols > 1) {
-                        *(outValues + i * cols + 1) = matrix[i].second;
+                        outValues[i * cols + 1] = matrix[i].second;
                     }
                 }else{
-                    *(outValues + i * cols) = 0;
+                    outValues[i * cols] = 0;
                     if (cols > 1) {
-                        *(outValues + i * cols + 1) = 0;
+                        outValues[i * cols + 1] = 0;
                     }
                 }
             }
@@ -171,7 +146,7 @@ private:
             delete[] a; delete[]x; delete[]wr; delete[]wi;
             
             //(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
-            return this->propagateFrames(time, weight, static_cast<PiPoValue *>(outValues), nForm*cols, 1);
+            return this->propagateFrames(time, weight, &outValues[0], nForm * cols, 1);
         }
     };
     
