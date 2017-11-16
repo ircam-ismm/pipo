@@ -50,6 +50,8 @@ extern "C" {
 
 #include <vector>
 #include <cstdlib>
+#include <sstream>
+#include <cstring>
 
 class PiPoDelta : public PiPo
 {
@@ -88,21 +90,25 @@ public:
     {
       if (filtsize < 3)
       {
-	//todo: report pipo_error("filter size must be >= 3");
-	filtsize = 3;
+        signalError(std::string("filter size must be >= 3: using 3"));
+        filtsize = 3;
       }
       else if ((filtsize & 1) == 0) // even filtersize, must be odd
       {
-	//todo: pipo_error("filter size must be odd: using %d instead of %d", filtsize - 1, filtsize);
-	filtsize--;
+        std::stringstream errorMessage;
+        errorMessage << "filter size must be odd: using " << filtsize - 1
+                     << " instead of " << filtsize;
+        signalError(errorMessage.str());
+        --filtsize;
       }
     
       unsigned int filter_delay = filtsize / 2; // center, filter_size is odd
       
       // ring size is the maximum between filter size and added delays
       // (plus the past input to be reoutput)
-      int ring_size = filtsize > filter_delay + 1  
-		      ?  filtsize  :  filter_delay + 1;
+      int ring_size = (filtsize > filter_delay + 1  
+                       ?  filtsize
+                       :  filter_delay + 1);
 
       buffer.resize(insize, ring_size);
       frame.resize(insize);
@@ -115,9 +121,7 @@ public:
       rta_delta_weights(&weights[ring_size - filtsize], filtsize);
 
       // duplicate (unroll) weights for contiguous indexing
-      //C++11: std::copy_n(weights.begin(), filtsize, weights.begin() + filtsize);
-      for (int i = 0; i < ring_size; i++)
-	weights[i + ring_size] = weights[i];
+      std::copy(&weights[0], &weights[ring_size], &weights[ring_size]);
 
       normalization_factor = rta_delta_normalization_factor(filtsize);
       filter_size = filtsize;
@@ -126,29 +130,33 @@ public:
     
     offset -= 1000.0 * 0.5 * (filtsize - 1) / rate;
 
-    char **dlab = new char*[width];
-    const char **newlab = NULL;
+    char ** outputLabels = NULL;
+    if(labels != NULL)
+    {
+        const char * prefix = "Delta";
+        outputLabels = new char * [width];
 
-    if (labels)
-    { // prefix labels with "Delta"
-#     define prefix "Delta"
-      
-      for (unsigned int i = 0; i < width; i++)
-      {
-	dlab[i] = (char *) malloc(strlen(prefix) + (labels[i] ? strlen(labels[i]) : 0) + 1);
-	sprintf(dlab[i], prefix "%s", labels[i]);
-      }
-
-      newlab = (const char **) dlab;
+        for(unsigned int l = 0; l < width; ++l)
+        {
+          const char * label = (labels[l] != NULL ? labels[l] : "");
+          outputLabels[l] = new char[std::strlen(label) + std::strlen(prefix) + 1];
+          std::strcpy(outputLabels[l], prefix);
+          std::strcat(outputLabels[l], label);
+        }
     }
-    
-    int ret = propagateStreamAttributes(hasTimeTags, rate, offset, insize, 
-				    1, newlab, 0, 0.0, 1);
 
-    if (labels)
-      for (unsigned int i = 0; i < width; i++)
-	free(dlab[i]);
-	delete[] dlab;
+    int ret = propagateStreamAttributes(hasTimeTags, rate, offset, insize, 1,
+                                        const_cast<const char **>(outputLabels), 0, 0.0, 1);
+
+    if(outputLabels != NULL)
+    {
+        for(unsigned int l = 0; l < width; ++l)
+        {
+            delete[] outputLabels[l];
+        }
+        delete[] outputLabels;
+    }
+
     return ret;
   }
   
@@ -168,17 +176,17 @@ public:
 
       if (buffer.filled)
       {
-	float *wptr = &weights[buffer.size - buffer.index];
+        float *wptr = &weights[buffer.size - buffer.index];
 
-	rta_delta_vector(&frame[0], &buffer.vector[0], buffer.width, wptr, buffer.size);
+        rta_delta_vector(&frame[0], &buffer.vector[0], buffer.width, wptr, buffer.size);
       
-	if (normalize.get())
-	{
-	  for (unsigned int i = 0; i < size; i++)
-	    frame[i] *= normalization_factor;
-	}
+        if (normalize.get())
+        {
+          for (unsigned int i = 0; i < size; i++)
+            frame[i] *= normalization_factor;
+        }
 
-	ret = this->propagateFrames(time, weight, &frame[0], frame.size(), 1);
+        ret = this->propagateFrames(time, weight, &frame[0], frame.size(), 1);
       }
 
       if (ret != 0)
