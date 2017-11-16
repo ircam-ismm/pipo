@@ -66,14 +66,13 @@ private:
   unsigned int inputSize;
   double offset;
   double frameperiod;
-  enum OnsetMode onsetMode;
-  int segmentFrames;	//TBD: unused?
   bool lastFrameWasOnset;
   double onsetTime;
-  bool enDuration;
+  bool segmentmode;
+  int  haveduration;
   bool segIsOn;
   TempModArray tempMod;
-  std::vector<PiPoValue>outputValues;
+  std::vector<PiPoValue> outputValues;
   
 public:
   PiPoScalarAttr<int> colindex;
@@ -93,37 +92,36 @@ public:
   PiPoScalarAttr<bool> enStddev;
   PiPoScalarAttr<bool> odfoutput;
   
-  PiPoOnseg(Parent *parent, PiPo *receiver = NULL) :
-  PiPo(parent, receiver),
-  buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
-  colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
-  numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
-  fltsize(this, "filtersize", "Filter Size", true, 3),
-  threshold(this, "threshold", "Onset Threshold", false, 5),
-  onsetmode(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
-  mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
-  startisonset(this, "startisonset", "Place Marker at Start of Buffer", false, false),
-  duration(this, "duration", "Output Segment Duration", true, false),
-  durthresh(this, "durthresh", "Duration Threshold", false, 0.0),
-  offthresh(this, "offthresh", "Segment End Threshold", false, -80.0),
-  maxsegsize(this, "maxsize", "Maximum Segment Duration", false, 0.0),
-  enMin(this, "min", "Calculate Segment Min", true, false),
-  enMax(this, "max", "Calculate Segment Max", true, false),
-  enMean(this, "mean", "Calculate Segment Mean", true, false),
-  enStddev(this, "stddev", "Calculate Segment StdDev", true, false),
-  odfoutput(this, "odfoutput", "Output only onset detection function", true, false)
+  PiPoOnseg(Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver),
+    buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
+    colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
+    numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
+    fltsize(this, "filtersize", "Filter Size", true, 3),
+    threshold(this, "threshold", "Onset Threshold", false, 5),
+    onsetmode(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
+    mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
+    startisonset(this, "startisonset", "Place Marker at Start of Buffer", false, false),
+    duration(this, "duration", "Output Segment Duration", true, false),
+    durthresh(this, "durthresh", "Duration Threshold", false, 0.0),
+    offthresh(this, "offthresh", "Segment End Threshold", false, -80.0),
+    maxsegsize(this, "maxsize", "Maximum Segment Duration", false, 0.0),
+    enMin(this, "min", "Calculate Segment Min", true, false),
+    enMax(this, "max", "Calculate Segment Max", true, false),
+    enMean(this, "mean", "Calculate Segment Mean", true, false),
+    enStddev(this, "stddev", "Calculate Segment StdDev", true, false),
+    odfoutput(this, "odfoutput", "Output only onset detection function", true, false)
   {
     this->filterSize = 0;
     this->inputSize = 0;
     
     this->offset = 0.0;
     this->frameperiod = 1.;
-    this->onsetMode = MeanOnset;
-    this->segmentFrames = 0;
     this->lastFrameWasOnset = false;
     this->onsetTime = -DBL_MAX;
-    
-    this->enDuration = false;
+
+    this->haveduration = this->duration.get();
+    this->segmentmode = false;
     this->segIsOn = false;
     
     this->onsetmode.addEnumItem("mean", "Mean");
@@ -136,10 +134,9 @@ public:
   {
   }
   
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
   {
     int filterSize = this->fltsize.get();
-    enum OnsetMode onsetMode = (enum OnsetMode)this->onsetmode.get();
     int inputSize = width;
     
     this->frameperiod = 1000.0 / rate;
@@ -147,8 +144,6 @@ public:
     
     if(filterSize < 1)
       filterSize = 1;
-    
-    this->onsetMode = onsetMode;
     
     /* resize internal buffers */
     this->buffer.resize(inputSize, filterSize);
@@ -171,21 +166,25 @@ public:
       this->onsetTime = -DBL_MAX;
     }
 
-    this->enDuration = this->duration.get()  &&  !this->odfoutput.get();
-    
-    if(this->enDuration)
+    // in segment mode, duration or any temp.mod values are output with marker at end of segment
+    this->haveduration = this->duration.get();
+    this->segmentmode = (this->duration.get() || enMin.get() || enMax.get() || enMean.get() || enStddev.get())
+			&&  !this->odfoutput.get();
+
+    if (this->segmentmode)
     {
+
       /* resize temporal models */
       this->tempMod.resize(inputSize);
       
       /* enable temporal models */
       this->tempMod.enable(this->enMin.get(), this->enMax.get(), this->enMean.get(), this->enStddev.get());
       
-      /* get output size */
+      /* get size of tempmod values */
       unsigned int outputSize = this->tempMod.getNumValues();
       
       /* alloc output vector for duration and temporal modelling output */
-      this->outputValues.resize(outputSize + 1);
+      this->outputValues.resize(outputSize + this->haveduration);
       
       /* get labels */
       char *mem = new char[outputSize * 64 + 64];
@@ -193,24 +192,24 @@ public:
       
       for(unsigned int i = 0; i <= outputSize; i++)
         outLabels[i] = mem + i * 64;
+
+      if (this->haveduration)
+	snprintf(outLabels[0], 64, "Duration");
+      this->tempMod.getLabels(labels, inputSize, &outLabels[this->haveduration], 64, outputSize);
       
-      snprintf(outLabels[0], 64, "Duration");
-      this->tempMod.getLabels(labels, inputSize, &outLabels[1], 64, outputSize);
-      
-      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputSize + 1, 1, (const char **)&outLabels[0], false, 0.0, 1);
+      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputSize + this->haveduration, 1, (const char **) &outLabels[0], false, 0.0, 1);
       
       delete [] mem;
       delete [] outLabels;
       
       return ret;
     }
-    
-    if (this->odfoutput.get())
+    else if (this->odfoutput.get())
     {
       const char *outlab[1] = { "ODF" };
       return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
-    else
+    else // real-time mode: output marker immediately, no data
       return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
   }
   
@@ -218,8 +217,6 @@ public:
   {
     this->buffer.reset();
     
-    this->segmentFrames = 0;
-
     if (this->startisonset.get())
     { // start with a segment at 0
       this->lastFrameWasOnset = true;
@@ -246,7 +243,7 @@ public:
     double offThreshold = this->offthresh.get();
     int colindex = this->colindex.get();
     int numcols = this->numcols.get();
-    //printf("frames at %f size %d num %d\n", time, size, num);
+    enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode.get();
 
     if(size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
@@ -269,7 +266,7 @@ public:
       double energy = 0.0;
       
       /* normalize sum to one for Kullback Leibler divergence */
-      if(this->onsetMode == KullbackLeiblerOnset)
+      if(onset_mode == KullbackLeiblerOnset)
       {
         PiPoValue normSum = 0.0;
         
@@ -283,7 +280,7 @@ public:
       int filterSize = this->buffer.input(values, size, scale);
       this->temp = this->buffer.vector;
       
-      switch(this->onsetMode)
+      switch(onset_mode)
       {
         case MeanOnset:
         {
@@ -319,7 +316,7 @@ public:
           odf /= numcols;
           energy /= numcols;
           
-          if(this->onsetMode == RootMeanSquareOnset)
+          if(onset_mode == RootMeanSquareOnset)
           {
             odf = sqrt(odf);
             energy = sqrt(energy);
@@ -353,16 +350,15 @@ public:
       bool frameIsOnset = (odf > onsetThreshold  &&  !this->lastFrameWasOnset  &&  time >= this->onsetTime + minimumInterval)
 		       || (maxsize > 0  &&  (time >= this->onsetTime + maxsize)); // chop unconditionally after maxsize if given
       int ret = 0;
-      
-      if(!this->enDuration)
-      {
+
+      if (!this->segmentmode)
+      { // real-time mode: output just marker immediatly at onset, no temp.mod data
 	if (!this->odfoutput.get())
 	{ /* output marker */
 	  if(frameIsOnset)
-	  {
-	    /* report immediate onset */
-	      ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
-	      this->onsetTime = time;
+	  { /* report immediate onset */
+	    ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
+	    this->onsetTime = time;
 	  }
 	}
 	else
@@ -372,19 +368,20 @@ public:
 	}
       }
       else
-      {
+      { // segment mode: output frame at end of segment
         double duration = time - this->onsetTime;
         
         if(this->segIsOn && (frameIsOnset || energy < offThreshold) && duration >= durationThreshold)
         {
           /* end of segment (new onset or energy below off threshold) */
           int outputSize = this->outputValues.size();
-          
-          this->outputValues[0] = duration;
+
+	  if (this->haveduration)
+	    this->outputValues[0] = duration;
           
           /* get temporal modelling */
           if(outputSize > 1)
-            this->tempMod.getValues(&this->outputValues[1], outputSize - 1, true);
+            this->tempMod.getValues(&this->outputValues[this->haveduration], outputSize - this->haveduration, true);
           
           /* report segment */
           ret = this->propagateFrames(this->offset + this->onsetTime, weight, &this->outputValues[0], outputSize, 1);
