@@ -40,26 +40,31 @@
 #ifndef maxpipo_PiPoMoments_h
 #define maxpipo_PiPoMoments_h
 
-#define MAX_PIPO_MOMENTS_LABELS 128
+#define MAX_PIPO_MOMENTS_LABELS_SIZE 128 // (max size -1) of each label
+#define MAX_PIPO_MOMENTS_LABELS_NUMBER 16 // max number of labels
 
-#ifdef WIN32
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
+#include <algorithm>
+#include <vector>
+#include <cmath>
 
 #include "PiPo.h"
-#include <cmath>
 
 extern "C" {
 #include "rta_configuration.h"
 #include "rta_moments.h"
 }
 
-using namespace std;
+#ifdef WIN32
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#else
+// must be after includes
+using std::min;
+#endif
 
 class PiPoMoments : public PiPo
 {
 protected:
-    vector<float> moments;
+    std::vector<float> moments;
     double domain;
 public:
     enum OutputScaling { None, Domain, Normalized };
@@ -89,14 +94,14 @@ public:
         unsigned int maxorder = (unsigned int)this->order.get();
         this->moments.resize(maxorder);
         
-        const char *momentsColNames[MAX_PIPO_MOMENTS_LABELS];
+        const char *momentsColNames[MAX_PIPO_MOMENTS_LABELS_SIZE];
         // Set 4 first moments names
         momentsColNames[0] = "Centroid";
         momentsColNames[1] = "Spread";
         momentsColNames[2] = "Skewness";
         momentsColNames[3] = "Kurtosis";
         
-        unsigned int maxlabel = min((int)maxorder, MAX_PIPO_MOMENTS_LABELS);
+        unsigned int maxlabel = min((int)maxorder, MAX_PIPO_MOMENTS_LABELS_NUMBER);
         for (unsigned int ord=4; ord<maxlabel; ord++) {
             momentsColNames[ord] = "";
         }
