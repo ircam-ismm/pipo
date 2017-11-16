@@ -48,8 +48,7 @@ extern "C" {
 }
 
 #include <vector>
-
-#define RING_ALLOC_BLOCK 256
+#include <algorithm>
 
 class PiPoMedian : public PiPo
 {
@@ -99,11 +98,11 @@ class PiPoMedian : public PiPo
         num = this->width;
       
       /* copy frame */
-      memcpy(ringValues, values, num * sizeof(T));
-      
+      std::copy(values, values + num, ringValues);
+
       /* zero pad this values */
       if(num < this->width)
-        memset(ringValues + num, 0, (this->width - num) * sizeof(T));
+        std::fill(ringValues + num, ringValues + width, 0.);
       
       this->index++;
       
