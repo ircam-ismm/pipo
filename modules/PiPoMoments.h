@@ -57,7 +57,7 @@ extern "C" {
 #ifdef WIN32
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #else
-// must be after includes
+// no more include at this point
 using std::min;
 #endif
 
@@ -73,16 +73,17 @@ public:
     PiPoScalarAttr<bool> std;
     
     PiPoMoments(Parent *parent, PiPo *receiver = NULL) :
-    PiPo(parent, receiver),
-    order(this, "order", "Maximum order of moments", true, 4),
-    scaling(this, "scaling", "Output Scaling", true, None),
-    std(this, "std", "Standardized moments for order > 2", true, true)
+        PiPo(parent, receiver),
+        order(this, "order", "Maximum order of moments", true, 4),
+        scaling(this, "scaling", "Output Scaling", true, None),
+        std(this, "std", "Standardized moments for order > 2", true, true)
     {
         this->scaling.addEnumItem("None", "No Scaling (bins)");
         this->scaling.addEnumItem("Domain", "Domain Scaling");
         this->scaling.addEnumItem("Normalized", "Normalized Moments");
     }
-    
+
+
     ~PiPoMoments(void)
     {
         this->moments.clear();
@@ -91,7 +92,7 @@ public:
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
         this->domain = domain;
-        unsigned int maxorder = (unsigned int)this->order.get();
+        int maxorder = this->order.get();
         this->moments.resize(maxorder);
         
         const char *momentsColNames[MAX_PIPO_MOMENTS_LABELS_SIZE];
@@ -101,8 +102,8 @@ public:
         momentsColNames[2] = "Skewness";
         momentsColNames[3] = "Kurtosis";
         
-        unsigned int maxlabel = min((int)maxorder, MAX_PIPO_MOMENTS_LABELS_NUMBER);
-        for (unsigned int ord=4; ord<maxlabel; ord++) {
+        int maxlabel = min(maxorder, MAX_PIPO_MOMENTS_LABELS_NUMBER);
+        for (int ord=4; ord<maxlabel; ord++) {
             momentsColNames[ord] = "";
         }
 
@@ -112,7 +113,7 @@ public:
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         float input_sum;
-        unsigned int maxorder = (unsigned int)this->order.get();
+        int maxorder = this->order.get();
         rta_real_t deviation;
         
         for(unsigned int i = 0; i < num; i++)
@@ -178,7 +179,7 @@ public:
                                 
                             }
                             
-                            for (unsigned int ord=5; ord<=maxorder; ord++) {
+                            for (int ord=5; ord<=maxorder; ord++) {
                                 if (this->std.get()) { // Standardized
                                     if (input_sum != 0. && deviation != 0.) {
                                         this->moments[ord-1] = rta_std_weighted_moment_indexes(values,
@@ -186,7 +187,7 @@ public:
                                                                                                this->moments[0],
                                                                                                input_sum,
                                                                                                deviation,
-                                                                                               (rta_real_t)ord);
+                                                                                               ord);
                                     } else {
                                         if(ord & 1) /* even */
                                         {
@@ -203,7 +204,7 @@ public:
                                                                                            size,
                                                                                            this->moments[0],
                                                                                            input_sum,
-                                                                                           (rta_real_t)ord);
+                                                                                           ord);
                                     } else {
                                         this->moments[ord-1] = size;
                                     }
@@ -214,18 +215,18 @@ public:
                 }
             }
             
-            enum OutputScaling outputScaling = (enum OutputScaling)this->scaling.get();
+            enum OutputScaling outputScaling = static_cast<enum OutputScaling>(this->scaling.get());
             switch (outputScaling) {
                 case None:
                     break;
                 case Domain:
-                    for (unsigned int ord=0; ord<2; ord++) {
-                        this->moments[ord] *= powf(float(domain / (size-1)), float(ord+1));
+                    for (int ord=0; ord<2; ord++) {
+                        this->moments[ord] *= std::pow(static_cast<float>(domain) / (size-1), ord+1);
                     }
                     break;
                 case Normalized:
-                    for (unsigned int ord=0; ord<maxorder; ord++) {
-                        this->moments[ord] /= powf(float(size-1), float(ord+1));
+                    for (int ord=0; ord<maxorder; ord++) {
+                        this->moments[ord] /= std::pow(static_cast<float>(size-1), ord+1);
                     }
                     break;
             }
