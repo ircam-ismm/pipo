@@ -136,17 +136,18 @@ public:
 
   int finalize(double inputEnd)
   {
-    float input[256];
+    std::vector<PiPoValue> input;
     int n = 256;
 
     if(n > this->maxFrames)
       n = this->maxFrames;
 
-    memset(input, 0, n * sizeof(float));
+    input.resize(n);
+    std::fill(input.begin(), input.end(), 0.);
 
     while(this->outputTime < inputEnd)
     {
-      if(rta_psy_calculate_input_vector(&this->psyAna, input, n, 1) <= 0)
+      if(rta_psy_calculate_input_vector(&this->psyAna, &input[0], n, 1) <= 0)
         break;
     }
 
@@ -158,16 +159,16 @@ static int
 psyAnaCallback(void *obj, double time, double freq, double energy, double ac1, double voiced)
 {
   PiPoPsy *self = (PiPoPsy *)obj;
-  float values[4];
+  std::vector<PiPoValue> values;
 
-  values[0] = (float)freq;
-  values[1] = (float)energy;
-  values[2] = (float)ac1;
-  values[3] = (float)voiced;
+  values[0] = (PiPoValue)freq;
+  values[1] = (PiPoValue)energy;
+  values[2] = (PiPoValue)ac1;
+  values[3] = (PiPoValue)voiced;
 
   self->outputTime = time;
 
-  return (self->propagateFrames(time, 1.0, values, 4, 1) == 0);
+  return (self->propagateFrames(time, 1.0, &(values[0]), 4, 1) == 0);
 }
 
 #endif
