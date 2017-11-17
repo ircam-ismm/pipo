@@ -56,173 +56,175 @@ extern "C" {
 class PiPoChop : public PiPo
 {
 public:
-  PiPoScalarAttr<double> offset_;
-  PiPoScalarAttr<double> chopsize_;
-  PiPoScalarAttr<bool> enDuration_;
-  PiPoScalarAttr<bool> enMin_;
-  PiPoScalarAttr<bool> enMax_;
-  PiPoScalarAttr<bool> enMean_;
-  PiPoScalarAttr<bool> enStddev_;
+  PiPoScalarAttr<double> offsetA;
+  PiPoScalarAttr<double> chopSizeA;
+  PiPoScalarAttr<bool> enDurationA;
+  PiPoScalarAttr<bool> enMinA;
+  PiPoScalarAttr<bool> enMaxA;
+  PiPoScalarAttr<bool> enMeanA;
+  PiPoScalarAttr<bool> enStddevA;
 
 private:
-  double nexttime_;
-  int    report_duration_;	// caches enDuration_ as index offset, mustn't change while running
-  TempModArray tempmod_;
-  std::vector<PiPoValue> outputvalues_;
+  int maxDescrNameLength;
+  int reportDuration; // caches enDurationA as index offset, mustn't change while running
+  double nextTime;
+  TempModArray tempMod;
+  std::vector<PiPoValue> outValues;
 
   // return next chop time or infinity when not chopping
-  double getnexttime ()
+  double getNextTime ()
   {
-    return chopsize_.get() > 0  ?  offset_.get() + chopsize_.get()  :  DBL_MAX;
+    return chopSizeA.get() > 0 ? offsetA.get() + chopSizeA.get() : DBL_MAX;
   }
 
-public:  
-  PiPoChop (Parent *parent, PiPo *receiver = NULL) 
+public:
+  PiPoChop (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    tempmod_(),
-    offset_  (this, "offset",   "Time Offset Before Starting Segmentation [ms]", false, 0),
-    chopsize_(this, "size",	"Chop Size [ms] (0 = chop at end)", false, 242),
-    enDuration_(this, "duration", "Output Segment Duration", true, false),
-    enMin_   (this, "min",      "Calculate Segment Min", true, false),
-    enMax_   (this, "max",      "Calculate Segment Max", true, false),
-    enMean_  (this, "mean",     "Calculate Segment Mean", true, true),	// at least one tempmod on
-    enStddev_(this, "stddev",   "Calculate Segment StdDev", true, false)
+    tempMod(),
+    offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
+    chopSizeA(this, "size",	"Chop Size [ms] (0 = chop at end)", false, 242),
+    enDurationA(this, "duration", "Output Segment Duration", true, false),
+    enMinA(this, "min", "Calculate Segment Min", true, false),
+    enMaxA(this, "max", "Calculate Segment Max", true, false),
+    enMeanA(this, "mean", "Calculate Segment Mean", true, true),	// at least one tempmod on
+    enStddevA(this, "stddev", "Calculate Segment StdDev", true, false),
+    maxDescrNameLength(64),
+    reportDuration(0)
   {
-    nexttime_ = getnexttime();
-    report_duration_ = 0;
+    nextTime = getNextTime();
   }
-  
+
   ~PiPoChop (void)
   {
   }
 
-  int streamAttributes (bool hasTimeTags, double rate, double offset, 
-			unsigned int width, unsigned int size, 
-			const char **labels, bool hasVarSize, double domain, 
-			unsigned int maxFrames)
+  int streamAttributes (bool hasTimeTags, double rate, double offset,
+			                  unsigned int width, unsigned int height,
+			                  const char **labels, bool hasVarSize, double domain,
+			                  unsigned int maxFrames)
   {
 #ifdef DEBUG
-  printf("PiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  size %d  labels %s  "
+  printf("PiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
 	 "varsize %d  domain %f  maxframes %d\n",
-	 hasTimeTags, rate, offset, (int) width, (int) size, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
+	 hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
-  
-    nexttime_ = getnexttime();
-    report_duration_ = (int) enDuration_.get();
+
+    nextTime = getNextTime();
+    reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
 
     /* resize temporal models */
-    tempmod_.resize(width);
-      
-    /* enable temporal models */ //TODO: switch at least one on
-    tempmod_.enable(enMin_.get(), enMax_.get(), enMean_.get(), enStddev_.get());
-      
-    /* get output size */
-    unsigned int outputsize = tempmod_.getNumValues();
-      
-    /* alloc output vector for duration and temporal modelling output */
-    outputvalues_.resize(outputsize + report_duration_);
-      
-    /* get labels */
-    char *mem = new char[(outputsize + report_duration_) * 64];
-    char **outlabels = new char*[outputsize + report_duration_];
-      
-    for (unsigned int i = 0; i < outputsize + report_duration_; i++)
-      outlabels[i] = mem + i * 64;
+    tempMod.resize(width);
 
-    if (report_duration_)
-      snprintf(outlabels[0], 64, "Duration");
-    tempmod_.getLabels(labels, width, &outlabels[report_duration_], 64, outputsize);
-      
-    int ret = this->propagateStreamAttributes(true, rate, 0.0, outputsize + report_duration_, 1, (const char **) &outlabels[0], false, 0.0, 1);
-    
-    delete [] mem;
-    delete [] outlabels;
-      
+    /* enable temporal models */ //TODO: switch at least one on
+    tempMod.enable(enMinA.get(), enMaxA.get(), enMeanA.get(), enStddevA.get());
+
+    /* get output size */
+    unsigned int outputSize = tempMod.getNumValues();
+
+    /* alloc output vector for duration and temporal modelling output */
+    outValues.resize(outputSize + reportDuration);
+
+    /* get labels */
+    unsigned int totalOutputSize = outputSize + reportDuration;
+    char mem[totalOutputSize * this->maxDescrNameLength];
+    std::vector<char *> outLabels(totalOutputSize);
+
+    for (unsigned int i = 0; i < totalOutputSize; i++)
+      outLabels[i] = mem + i * this->maxDescrNameLength;
+
+    if (reportDuration != 0)
+      std::strcpy(outLabels[0], "Duration");
+
+    tempMod.getLabels(labels, width, &outLabels[reportDuration], this->maxDescrNameLength, outputSize);
+
+    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1, const_cast<const char **>(&outLabels[0]), false, 0.0, 1);
+
     return ret;
   }
-  
+
   int reset (void)
   {
-    nexttime_ = getnexttime();
-    tempmod_.reset();
-    
+    nextTime = getNextTime();
+    tempMod.reset();
+
     return this->propagateReset();
   };
 
-  
+
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
 #ifdef DEBUG
-    //printf("PiPoChop frames time %f (next %f)  size %d  num %d\n", time, nexttime_, size, num);
+    //printf("PiPoChop frames time %f (next %f)  size %d  num %d\n", time, nextTime, size, num);
 #endif
 
     int ret = 0;
 
-    if (time >= offset_.get())
+    if (time >= offsetA.get())
     {
-      // at first crossing of offset, nexttime_ == offset + duration
-
-      if (time >= nexttime_)
+      // at first crossing of offset, nextTime == offset + duration
+      if (time >= nextTime)
       {
-        int outsize = outputvalues_.size();
-                    
-        if (report_duration_)
+        int outsize = outValues.size();
+
+        if (reportDuration != 0)
           //TBD: calculate actual duration quantised to frame hops?
-          outputvalues_[0] = chopsize_.get();
+          outValues[0] = chopSizeA.get();
 
         /* get temporal modelling */
-        tempmod_.getValues(&outputvalues_[report_duration_], outsize - report_duration_, true);
-	      
+        tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+
 #ifdef DEBUG
-        printf("   segment! time %f at input time %f  nexttime_ %f outsize %d\n", 
-               nexttime_ - chopsize_.get(), time, nexttime_, outsize);
+        printf("   segment! time %f at input time %f  nextTime %f outsize %d\n",
+               nextTime - chopSizeA.get(), time, nextTime, outsize);
 #endif
         /* report segment at precise last chop time */
-        ret = this->propagateFrames(nexttime_ - chopsize_.get(), weight, &outputvalues_[0], outsize, 1);
-        
+        ret = this->propagateFrames(nextTime - chopSizeA.get(), weight, &outValues[0], outsize, 1);
+
         if (ret != 0)
           return ret;
 
-        nexttime_ += chopsize_.get();	// never called when not chopping
+        nextTime += chopSizeA.get();	// never called when not chopping
       }
-      
+
       /* feed temporal modelling */
       /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
       for (unsigned int i = 0; i < num; i++)
       {
-        tempmod_.input(values, size);
+        tempMod.input(values, size);
         values += size;
       }
     }
-    
+
     return 0;
   }
-  
-  int finalize (double inputend)
+
+  int finalize (double inputEnd)
   {
-    double duration = chopsize_.get() > 0  ?  inputend - (nexttime_ - chopsize_.get())  :  inputend - offset_.get();
-    
+    double duration = chopSizeA.get() > 0
+                    ? inputEnd - (nextTime - chopSizeA.get())
+                    : inputEnd - offsetA.get();
+
 #ifdef DEBUG
-    printf("PiPoChop finalize time %f  duration %f  size %ld\n", inputend, duration, outputvalues_.size());
+    printf("PiPoChop finalize time %f  duration %f  size %ld\n", inputEnd, duration, outValues.size());
 #endif
 
-    if (1) // want last smaller segment? duration >= chopsize_.get())
+    if (true) // want last smaller segment? duration >= chopSizeA.get())
     {
       /* end of segment (new onset or below off threshold) */
-      int outsize = outputvalues_.size();
-      
-      if (report_duration_)
+      int outsize = outValues.size();
+
+      if (reportDuration != 0)
         // calculate actual duration of last chop
-        outputvalues_[0] = duration;
+        outValues[0] = duration;
 
       /* get temporal modelling */
       if (outsize > 1)
-        tempmod_.getValues(&outputvalues_[report_duration_], outsize - report_duration_, true);
-      
+        tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+
       /* report segment */
-      return this->propagateFrames(inputend - duration, 0.0, &outputvalues_[0], outsize, 1);
+      return this->propagateFrames(inputEnd - duration, 0.0, &outValues[0], outsize, 1);
     }
-    
+
     return 0;
   }
 };
@@ -239,7 +241,7 @@ public:
 #if CHOP_TEST
 int main (int argc, char *argv[])
 {
-    
+
 
     return 0;
 }
