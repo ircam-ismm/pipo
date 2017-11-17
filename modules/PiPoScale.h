@@ -52,7 +52,6 @@ class PiPoScale : public PiPo
 public:
   enum ScaleFun { ScaleLin, ScaleLog, ScaleExp };
   enum CompleteMode { CompleteNot, CompleteRepeatLast, CompleteRepeatAll };
-  //static const double defMinLogVal = 1e-24f;
   
 private:
   std::vector<double> extInMin;
@@ -100,9 +99,9 @@ public:
     numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0)
   {
     this->frameSize = 0;
-    this->scaleFunc = ScaleLin;
-    this->funcBase = 1.0;
-    this->minLogVal = defMinLogVal;
+    this->scaleFunc = (enum ScaleFun) this->func.get();
+    this->funcBase = this->base.get();
+    this->minLogVal = this->minlog.get();
     
     this->func.addEnumItem("lin", "Linear scaling");
     this->func.addEnumItem("log", "Logarithmic scaling");

@@ -1,16 +1,16 @@
 /**
  * @file PiPoYin.h
  * @author Diemo.Schwarz@ircam.fr
- * 
+ *
  * @brief PiPo fundamental frequency estimation after de Cheveigne and Kawahara's yin algorithm
  * Estimates fundamental frequency and outputs energy, periodicity factor, and auto correlation coefficients.
- * 
+ *
  * @ingroup pipomodules
  *
  * @copyright
  * Copyright (C) 2013-2014 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,13 +71,13 @@ public:
   // constructor
   PiPoYin (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    minFreq(this, "minfreq", "Minimum Frequency", true, 24.0),  // just ok for 2048 sample slices
-    downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
-    yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
-    buffer_(NULL), corr_(NULL)
+  minFreq(this, "minfreq", "Minimum Frequency", true, 24.0),  // just ok for 2048 sample slices
+  downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
+  yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+  buffer_(NULL), corr_(NULL)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
-
+    
     this->downSampling.addEnumItem("none", "No down sampling");
     this->downSampling.addEnumItem("2x", "Down sampling by 2");
     this->downSampling.addEnumItem("4x", "Down sampling by 4");
@@ -90,14 +90,14 @@ public:
     free(buffer_);
     free(corr_);
   }
-
+  
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
 #if PIPO_YIN_DEBUG
-      printf("PiPoYin %p streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n",
-	     this, hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
+    printf("PiPoYin %p streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n",
+           this, hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
-
+    
     if (domain == 0)
     { // error: frames must have a duration
       signalError(std::string("input stream domain is zero"));
@@ -110,19 +110,19 @@ public:
     int    downsize = height / down;		// downsampled input frame size
     sr_   = sampleRate / down;			// effective sample rate
     ac_size_ = (int) ceil(sr_ / minFreq.get()) + 2;
-
+    
     /* check size */
     if (downsize > ac_size_)
     {
       buffer_ = (float *) realloc(buffer_, downsize * sizeof(float));
       corr_   = (float *) realloc(corr_,   ac_size_ * sizeof(float));
-
+      
       const char *yinColNames[4];
       yinColNames[0] = "Frequency";
       yinColNames[1] = "Energy";
       yinColNames[2] = "Periodicity";
       yinColNames[3] = "AC1";
-    
+      
       return this->propagateStreamAttributes(hasTimeTags, rate, offset, 4, 1, yinColNames, 0, 0.0, 1);
     }
     else
@@ -133,10 +133,10 @@ public:
   }
   
   int reset (void)
-  {    
+  {
     return this->propagateReset();
   }
-
+  
   // mean-based downsampling
   int downsample (float *in, int size, float *out, int downsamplingexp)
   {
@@ -144,45 +144,45 @@ public:
     int i, j;
     
     if (downVectorSize > 0)
-    {  
+    {
       switch(downsamplingexp)
       {
         case 3:
-	{
-	  for (i = 0, j = 0; i < downVectorSize; i++, j += 8)
-	    out[i] = 0.125 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3] + in[j + 4] + in[j + 5] + in[j + 6] + in[j + 7]);
-	}
-	break;
-        
-        case 2:
-	{
-	  for (i = 0, j = 0; i < downVectorSize; i++, j += 4)
-	    out[i] = 0.25 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3]);
+        {
+          for (i = 0, j = 0; i < downVectorSize; i++, j += 8)
+            out[i] = 0.125 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3] + in[j + 4] + in[j + 5] + in[j + 6] + in[j + 7]);
         }
-        break;
-        
+          break;
+          
+        case 2:
+        {
+          for (i = 0, j = 0; i < downVectorSize; i++, j += 4)
+            out[i] = 0.25 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3]);
+        }
+          break;
+          
         case 1:
-	{
-	  for (i = 0, j = 0; i < downVectorSize; i++, j += 2)
-	    out[i] = 0.5 * (in[j] + in[j + 1]);
-	}
-        break;
-        
+        {
+          for (i = 0, j = 0; i < downVectorSize; i++, j += 2)
+            out[i] = 0.5 * (in[j] + in[j + 1]);
+        }
+          break;
+          
         default:
-	break;
+          break;
       }
-
+      
       return downVectorSize;
     }
     else
     {
       float sum = 0.0;
-	
+      
       for (i = 0; i < size; i++)
-	sum += in[i];
-        
+        sum += in[i];
+      
       out[0] = sum / (float) size;
-
+      
       return 1;
     }
   }
@@ -195,37 +195,37 @@ public:
     float periodicity; /* 1.0 - sqrt(min) */
     float energy; /* sqrt(autocorrelation[0]/ (size - ac_size)) */
     float outvalues[4];
-          
+    
     if (buffer_ == NULL)
       return -1;
-
+    
     int downsize = downsample(values, size, buffer_, downSampling.get());
-
+    
     if (downsize <= ac_size_)
     { // error: input frame size too small for minfreq
       signalError("input frame size too small for given minfreq");
       return -1;
     }
-
+    
     period = rta_yin(&min, corr_, ac_size_, buffer_, downsize, yin_setup, yinThreshold.get());
-
+    
     if (corr_[0] != 0.0)
       ac1_over_ac0 = corr_[1] / corr_[0];
     else
       ac1_over_ac0 = 0.0;
-          
+    
     if (min > 0.0)
       periodicity = (min < 1.) ? 1.0 - sqrt(min) : 0.0;
     else
       periodicity = 1.0;
-      
+    
     energy = sqrt(corr_[0] / (downsize - ac_size_));
-
+    
     outvalues[0] = (float) sr_ / period;
     outvalues[1] = (float) energy;
     outvalues[2] = (float) periodicity;
     outvalues[3] = (float) ac1_over_ac0;
-  
+    
     return propagateFrames(time, 1.0, outvalues, 4, 1);
   }
 };

@@ -39,165 +39,140 @@ void boost::throw_exception(std::exception const & e){}
 
 using namespace std;
 
-class PiPoWavelet : public PiPo {
-  protected:
-    vector<wavelet::Filterbank> filterbank;
-    enum OutputMode { Power, Complex };
-    enum OutputMode outputMode;
-    enum RescaleMode { RescaleDisabled, RescaleEnabled };
-    enum RescaleMode rescaleMode;
+class PiPoWavelet : public PiPo
+{
+protected:
+  std::vector<wavelet::Filterbank> filterbank;
+  enum OutputMode { Power, Complex };
+  enum OutputMode outputMode;
+  enum RescaleMode { RescaleDisabled, RescaleEnabled };
+  enum RescaleMode rescaleMode;
+  
+public:
+  PiPoScalarAttr<float> bandsperoctave;
+  PiPoScalarAttr<float> minfreq;
+  PiPoScalarAttr<float> maxfreq;
+  PiPoScalarAttr<float> omega0;
+  PiPoScalarAttr<float> delay;
+  PiPoScalarAttr<PiPo::Enumerate> optimisation;
+  PiPoScalarAttr<PiPo::Enumerate> mode;
+  PiPoScalarAttr<PiPo::Enumerate> rescale;
 
-  public:
-    PiPoScalarAttr<float> bandsperoctave;
-    PiPoScalarAttr<float> minfreq;
-    PiPoScalarAttr<float> maxfreq;
-    PiPoScalarAttr<float> omega0;
-    PiPoScalarAttr<float> delay;
-    PiPoScalarAttr<PiPo::Enumerate> optimisation;
-    PiPoScalarAttr<PiPo::Enumerate> mode;
-    PiPoScalarAttr<PiPo::Enumerate> rescale;
+  PiPoWavelet(Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver),
+  bandsperoctave(this, "bandsperoctave", "number of bands per octave", true, 4.),
+  minfreq(this, "minfreq", "minimum frequency (Hz)", true, 0.1),
+  maxfreq(this, "maxfreq", "maximum frequency (Hz)", true, 50.),
+  omega0(this, "omega0", "[Morlet] carrier frequency (z)", true, 5.),
+  delay(this, "delay", "Delay (proportional to the wavelet's critical time)", true, 1.5),
+  optimisation(this, "optimisation", "Optimisation of the transform", true, wavelet::Filterbank::STANDARD),
+  mode(this, "mode", "Output mode", true, Power),
+  rescale(this, "rescale", "Rescale Scalogram", true, RescaleEnabled)
+  {
+    this->optimisation.addEnumItem("none", "No optimisation");
+    this->optimisation.addEnumItem("standard", "Standard optimisation (wavelet decimation)");
+    this->optimisation.addEnumItem("agressive", "Agressive optimisation (wavelet + signal decimation)");
+    this->mode.addEnumItem("power", "Power Spectrum");
+    this->mode.addEnumItem("complex", "Complex Spectrum");
+    this->rescale.addEnumItem("no", "No rescaling");
+    this->rescale.addEnumItem("yes", "Rescaling with by scale length");
+    
+    this->outputMode = static_cast<OutputMode>(this->mode.get());
+    this->rescaleMode = static_cast<RescaleMode>(this->rescale.get());
+  }
 
-    PiPoWavelet(Parent *parent, PiPo *receiver = NULL)
-        : PiPo(parent, receiver),
-          bandsperoctave(this, "bandsperoctave", "number of bands per octave",
-                         true, 4.),
-          minfreq(this, "minfreq", "minimum frequency (Hz)", true, 0.1),
-          maxfreq(this, "maxfreq", "maximum frequency (Hz)", true, 50.),
-          omega0(this, "omega0", "[Morlet] carrier frequency (z)", true, 5.),
-          delay(this, "delay",
-                "Delay (proportional to the wavelet's critical time)", true,
-                1.5),
-          optimisation(this, "optimisation", "Optimisation of the transform",
-                       true, wavelet::Filterbank::STANDARD),
-          mode(this, "mode", "Output mode", true, Power),
-          rescale(this, "rescale", "Rescale Scalogram", true, RescaleEnabled) {
-        this->optimisation.addEnumItem("none", "No optimisation");
-        this->optimisation.addEnumItem(
-            "standard", "Standard optimisation (wavelet decimation)");
-        this->optimisation.addEnumItem(
-            "agressive",
-            "Agressive optimisation (wavelet + signal decimation)");
-        this->mode.addEnumItem("power", "Power Spectrum");
-        this->mode.addEnumItem("complex", "Complex Spectrum");
-        this->rescale.addEnumItem("no", "No rescaling");
-        this->rescale.addEnumItem("yes", "Rescaling with by scale length");
-        this->rescaleMode = RescaleEnabled;
-        this->outputMode = Power;
+  ~PiPoWavelet(void) {}
+
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    filterbank.resize(width, wavelet::Filterbank(rate, this->minfreq.get(), this->maxfreq.get(), this->bandsperoctave.get()));
+    
+    if (filterbank[0].getAttribute<float>("samplerate") != rate)
+    {
+      for (auto &bank : filterbank)
+        bank.setAttribute<float>("samplerate", rate);
     }
 
-    ~PiPoWavelet(void) {}
-
-    int streamAttributes(bool hasTimeTags, double rate, double offset,
-                         unsigned int width, unsigned int height,
-                         const char **labels, bool hasVarSize, double domain,
-                         unsigned int maxFrames) {
-        filterbank.resize(
-            width,
-            wavelet::Filterbank(rate, this->minfreq.get(), this->maxfreq.get(),
-                                this->bandsperoctave.get()));
-        if (filterbank[0].getAttribute<float>("samplerate") != rate) {
-            for (auto &bank : filterbank) {
-                bank.setAttribute<float>("samplerate", rate);
-            }
-        }
-
-        try {
-            for (auto &bank : filterbank) {
-                bank.setAttribute<float>("bands_per_octave",
-                                         this->bandsperoctave.get());
-                bank.setAttribute<float>("frequency_min", this->minfreq.get());
-                bank.setAttribute<float>("frequency_max", this->maxfreq.get());
-                bank.setAttribute<float>("omega0", this->omega0.get());
-                bank.setAttribute<float>("delay", this->delay.get());
-                bank.setAttribute<bool>(
-                    "rescale",
-                    (this->rescale.get() == RescaleDisabled) ? false : true);
-                bank.setAttribute<wavelet::Filterbank::Optimisation>(
-                    "optimisation",
-                    static_cast<wavelet::Filterbank::Optimisation>(
-                        this->optimisation.get()));
-            }
-        } catch (exception &e) {
-            std::cout << "Error: " << e.what() << std::endl;
-            signalError(e.what());
-        }
-
-        this->bandsperoctave.set(
-            0, filterbank[0].getAttribute<float>("bands_per_octave"), true);
-        this->minfreq.set(0, filterbank[0].getAttribute<float>("frequency_min"),
-                          true);
-        this->maxfreq.set(0, filterbank[0].getAttribute<float>("frequency_max"),
-                          true);
-        this->omega0.set(0, filterbank[0].getAttribute<float>("omega0"), true);
-        this->delay.set(0, filterbank[0].getAttribute<float>("delay"), true);
-        this->optimisation.set(0, (int)filterbank[0].getAttribute<wavelet::Filterbank::Optimisation>("optimisation"), true);
-
-        this->outputMode = static_cast<OutputMode>(this->mode.get());
-        this->rescaleMode = static_cast<RescaleMode>(this->rescale.get());
-
-        if (this->outputMode == Power) {
-            return this->propagateStreamAttributes(hasTimeTags, rate, offset,
-                                                   filterbank[0].size(), height,
-                                                   NULL, 0, 0.0, 1);
-        } else {
-            return this->propagateStreamAttributes(hasTimeTags, rate, offset,
-                                                   filterbank[0].size() * 2,
-                                                   height, NULL, 0, 0.0, 1);
-        }
+    try {
+      for (auto &bank : filterbank)
+      {
+        bank.setAttribute<float>("bands_per_octave", this->bandsperoctave.get());
+        bank.setAttribute<float>("frequency_min", this->minfreq.get());
+        bank.setAttribute<float>("frequency_max", this->maxfreq.get());
+        bank.setAttribute<float>("omega0", this->omega0.get());
+        bank.setAttribute<float>("delay", this->delay.get());
+        bank.setAttribute<bool>("rescale", (this->rescale.get() == RescaleDisabled) ? false : true);
+        bank.setAttribute<wavelet::Filterbank::Optimisation>("optimisation", static_cast<wavelet::Filterbank::Optimisation>(this->optimisation.get()));
+      }
+    } catch (exception &e){
+      std::cout << "Error: " << e.what() << std::endl;
+      signalError(e.what());
     }
 
-    int reset(void) {
-        for (auto &bank : filterbank) {
-            bank.reset();
-        }
+    this->bandsperoctave.set(0, filterbank[0].getAttribute<float>("bands_per_octave"), true);
+    this->minfreq.set(0, filterbank[0].getAttribute<float>("frequency_min"), true);
+    this->maxfreq.set(0, filterbank[0].getAttribute<float>("frequency_max"), true);
+    this->omega0.set(0, filterbank[0].getAttribute<float>("omega0"), true);
+    this->delay.set(0, filterbank[0].getAttribute<float>("delay"), true);
+    this->optimisation.set(0, (int)filterbank[0].getAttribute<wavelet::Filterbank::Optimisation>("optimisation"), true);
 
-        return this->propagateReset();
-    };
+    this->outputMode = static_cast<OutputMode>(this->mode.get());
+    this->rescaleMode = static_cast<RescaleMode>(this->rescale.get());
 
-    int frames(double time, double weight, float *values, unsigned int size,
-               unsigned int num) {
-        unsigned int numbands = filterbank[0].size();
-        for (unsigned int i = 0; i < num; i++) {
-            vector<float> result(numbands * 2, 0.0);
-            for (unsigned int dimension = 0; dimension < size; dimension++) {
-                filterbank[dimension].update(values[dimension]);
-                for (unsigned int t = 0; t < numbands; t++) {
-                    switch (outputMode) {
-                        case Power:
-                            result[t] += filterbank[dimension].result_power[t] /
-                                         float(size);
-                            break;
-
-                        case Complex:
-                            result[2 * t] +=
-                                filterbank[dimension].result_complex[t].real() /
-                                float(size);
-                            result[2 * t + 1] +=
-                                filterbank[dimension].result_complex[t].imag() /
-                                float(size);
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-            int ret;
-            if (this->outputMode == Power) {
-                ret = this->propagateFrames(time, weight, &result[0],
-                                            filterbank[0].size(), 1);
-            } else {
-                ret = this->propagateFrames(time, weight, &result[0],
-                                            filterbank[0].size() * 2, 1);
-            }
-
-            if (ret != 0) return ret;
-
-            values += size;
-        }
-
-        return 0;
+    if (this->outputMode == Power) {
+      return this->propagateStreamAttributes(hasTimeTags, rate, offset, filterbank[0].size(), height, NULL, 0, 0.0, 1);
+    } else {
+      return this->propagateStreamAttributes(hasTimeTags, rate, offset, filterbank[0].size() * 2, height, NULL, 0, 0.0, 1);
     }
+  }
+
+  int reset(void) {
+    for (auto &bank : filterbank) {
+      bank.reset();
+    }
+    return this->propagateReset();
+  };
+
+  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  {
+    unsigned int numbands = filterbank[0].size();
+    for (unsigned int i = 0; i < num; i++)
+    {
+      std::vector<PiPoValue> result(numbands * 2, 0.0);
+      for (unsigned int dimension = 0; dimension < size; dimension++)
+      {
+        filterbank[dimension].update(values[dimension]);
+        for (unsigned int t = 0; t < numbands; t++)
+        {
+          switch (outputMode)
+          {
+            case Power:
+              result[t] += filterbank[dimension].result_power[t] / float(size);
+              break;
+
+            case Complex:
+              result[2 * t] += filterbank[dimension].result_complex[t].real() / float(size);
+              result[2 * t + 1] += filterbank[dimension].result_complex[t].imag() / float(size);
+              break;
+
+            default:
+              break;
+          }
+        }
+      }
+      int ret;
+      if (this->outputMode == Power)
+        ret = this->propagateFrames(time, weight, &result[0], filterbank[0].size(), 1);
+      else
+        ret = this->propagateFrames(time, weight, &result[0], filterbank[0].size() * 2, 1);
+      
+      if (ret != 0) return ret;
+
+      values += size;
+    }
+
+    return 0;
+  }
 };
 
 #endif
