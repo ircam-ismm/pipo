@@ -69,7 +69,7 @@ public:
   enum EqualLoudnessModeE { None = 0, Hynek = 1 };
 
 private:
-  std::vector<float> bands;
+  std::vector<PiPoValue> bands;
   std::vector<float> weights;
   std::vector<unsigned int> bounds;
   std::vector<float> bandfreq;	// band centre frequency in Hz
@@ -116,8 +116,8 @@ public:
                        unsigned int width, unsigned int size, const char **labels,
                        bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    enum BandsModeE bandsMode = (enum BandsModeE)this->mode.get();
-    enum EqualLoudnessModeE eqlMode = (enum EqualLoudnessModeE)this->eqlmode.get();
+    enum BandsModeE bandsMode = static_cast<BandsModeE>(this->mode.get());
+    enum EqualLoudnessModeE eqlMode = static_cast<EqualLoudnessModeE>(this->eqlmode.get());
     int numBands = this->num.get();
     int specSize = size;
     float sampleRate = 2.0 * domain;
@@ -225,7 +225,7 @@ public:
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, numBands, 1, NULL, 0, 0.0, 1);
   }
 
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     unsigned int numBands = this->bands.size();
     bool log = this->log.get();
