@@ -81,7 +81,7 @@ public:
     int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
         unsigned int frameSize = width * height;
-        unsigned int ncoefs = this->nCoefsA.get();
+        unsigned int ncoefs = std::max(1, this->nCoefsA.get());
         
         if (rate != this->frameRate)
             this->frameRate = rate;

@@ -100,16 +100,12 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    unsigned int frameSize = this->size.get();
-    unsigned int hopSize = this->hop.get();
+    unsigned int frameSize = std::max(1, this->size.get());
+    unsigned int hopSize = std::max(1, this->hop.get());
+
     enum WindowTypeE windowType = (enum WindowTypeE)this->wind.get();
     enum NormModeE normMode = (enum NormModeE)this->norm.get();
     unsigned int inputStride = width * size;
-
-    if(frameSize < 1)
-      frameSize = 1;
-    if(hopSize < 1)
-      hopSize = 1;
 
     offset += 500.0 * frameSize / rate;
     

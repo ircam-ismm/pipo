@@ -41,7 +41,7 @@
 #define maxpipo_PiPoMoments_h
 
 #define MAX_PIPO_MOMENTS_LABELS_SIZE 128 // (max size -1) of each label
-#define MAX_PIPO_MOMENTS_LABELS_NUMBER 16 // max number of labels
+#define MAX_PIPO_MOMENTS_NUMBER 16 // max number of labels
 
 #include <algorithm>
 #include <vector>
@@ -64,6 +64,7 @@ using std::min;
 class PiPoMoments : public PiPo
 {
 protected:
+    int maxorder;
     std::vector<float> moments;
     double domain;
 public:
@@ -92,8 +93,9 @@ public:
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
         this->domain = domain;
-        int maxorder = this->order.get();
-        this->moments.resize(maxorder);
+        this->maxorder = std::min(MAX_PIPO_MOMENTS_NUMBER,
+                                  std::max(1, this->order.get()));
+        this->moments.resize(this->maxorder);
         
         const char *momentsColNames[MAX_PIPO_MOMENTS_LABELS_SIZE];
         // Set 4 first moments names
@@ -102,28 +104,26 @@ public:
         momentsColNames[2] = "Skewness";
         momentsColNames[3] = "Kurtosis";
         
-        int maxlabel = min(maxorder, MAX_PIPO_MOMENTS_LABELS_NUMBER);
-        for (int ord=4; ord<maxlabel; ord++) {
+        for (int ord=4; ord<this->maxorder; ord++) {
             momentsColNames[ord] = "";
         }
 
-        return this->propagateStreamAttributes(hasTimeTags, rate, offset, maxorder, 1, momentsColNames, 0, 0.0, 1);
+        return this->propagateStreamAttributes(hasTimeTags, rate, offset, this->maxorder, 1, momentsColNames, 0, 0.0, 1);
     }
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         float input_sum;
-        int maxorder = this->order.get();
         rta_real_t deviation;
         
         for(unsigned int i = 0; i < num; i++)
         {
-            if (maxorder >= 1) {
+            if (this->maxorder >= 1) {
                 this->moments[0] = rta_weighted_moment_1_indexes(&input_sum,
                                                                  values,
                                                                  size);
                 
-                if (maxorder >= 2) {
+                if (this->maxorder >= 2) {
                     if (input_sum != 0.) {
                         this->moments[1] = rta_weighted_moment_2_indexes(values,
                                                                          size,
@@ -133,7 +133,7 @@ public:
                         this->moments[1] = size;
                     }
                     
-                    if (maxorder >= 3) {
+                    if (this->maxorder >= 3) {
                         if (this->std.get()) { // Standardized
                             deviation = sqrtf(this->moments[1]);
                             if (input_sum != 0. && deviation != 0.) {
@@ -156,7 +156,7 @@ public:
                             }
                         }
                         
-                        if (maxorder >= 4) {
+                        if (this->maxorder >= 4) {
                             if (this->std.get()) { // Standardized
                                 if (input_sum != 0. && deviation != 0.) {
                                     this->moments[3] = rta_std_weighted_moment_4_indexes(values,
@@ -179,7 +179,7 @@ public:
                                 
                             }
                             
-                            for (int ord=5; ord<=maxorder; ord++) {
+                            for (int ord=5; ord<=this->maxorder; ord++) {
                                 if (this->std.get()) { // Standardized
                                     if (input_sum != 0. && deviation != 0.) {
                                         this->moments[ord-1] = rta_std_weighted_moment_indexes(values,
@@ -225,13 +225,13 @@ public:
                     }
                     break;
                 case Normalized:
-                    for (int ord=0; ord<maxorder; ord++) {
+                    for (int ord=0; ord<this->maxorder; ord++) {
                         this->moments[ord] /= std::pow(static_cast<float>(size-1), ord+1);
                     }
                     break;
             }
             
-            int ret = this->propagateFrames(time, weight, &moments[0], maxorder, 1);
+            int ret = this->propagateFrames(time, weight, &moments[0], this->maxorder, 1);
             
             if(ret != 0)
                 return ret;

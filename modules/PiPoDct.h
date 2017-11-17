@@ -81,7 +81,7 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    unsigned int order = this->order.get();
+    unsigned int order = std::max(1, this->order.get());
     unsigned int inputSize = width * size;
     
     enum WeightingMode weightingMode = (enum WeightingMode)this->weighting.get();

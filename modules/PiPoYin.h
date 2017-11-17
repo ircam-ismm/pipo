@@ -48,6 +48,7 @@ extern "C" {
 #include <math.h>
 }
 
+#include <algorithm>
 #include <cstdlib>
 
 #define PIPO_YIN_DEBUG 1
@@ -106,7 +107,7 @@ public:
     
     // we expect sliced input, so rate is the frame rate and the sampling rate is each row's duration
     double sampleRate = (double) height / domain;
-    double down = 1 << downSampling.get();	// downsampling factor
+    double down = 1 << std::max<int>(0, downSampling.get());	// downsampling factor
     int    downsize = height / down;		// downsampled input frame size
     sr_   = sampleRate / down;			// effective sample rate
     ac_size_ = (int) ceil(sr_ / minFreq.get()) + 2;
@@ -199,7 +200,7 @@ public:
     if (buffer_ == NULL)
       return -1;
     
-    int downsize = downsample(values, size, buffer_, downSampling.get());
+    int downsize = downsample(values, size, buffer_, std::max<int>(0, downSampling.get()));
     
     if (downsize <= ac_size_)
     { // error: input frame size too small for minfreq

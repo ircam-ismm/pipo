@@ -97,7 +97,7 @@ public:
     double maxFreq = this->maxFreq.get();
     const char *psyAnaColNames[4];
     double minFreq = this->minFreq.get();
-    int downSampling = this->downSampling.get();
+    int downSampling = std::max<int>(0, this->downSampling.get());
     double yinThreshold = this->yinThreshold.get();
     double noiseThreshold = this->noiseThreshold.get();
 
@@ -119,7 +119,7 @@ public:
   {
     double minFreq = this->minFreq.get();
     double maxFreq = this->maxFreq.get();
-    int downSampling = this->downSampling.get();
+    int downSampling = std::max<int>(0, this->downSampling.get());
     double yinThreshold = this->yinThreshold.get();
     double noiseThreshold = this->noiseThreshold.get();
 

@@ -54,8 +54,9 @@ extern "C" {
 #include "rta_biquad.h"
 }
 
-#include <math.h>
-#include <stdlib.h>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 
 class PiPoBiquad : public PiPo
 {
@@ -225,8 +226,10 @@ public:
     enum FilteringModeE filterMode = (enum FilteringModeE)this->filterModeA.get();
 
     float gain = this->gainA.get();
-    float frequency = this->frequencyA.get();
-    float Q = this->QA.get();
+    float frequency = std::max<float>(rate * 1e-5,
+                                      std::min<float>(rate * 0.5,
+                                                      this->frequencyA.get()));
+    float Q = std::max<float>(1e-5, this->QA.get());
 
     unsigned int frameWidth = width;
     unsigned int frameHeight = height;

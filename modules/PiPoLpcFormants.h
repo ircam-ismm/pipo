@@ -78,7 +78,7 @@ private:
         
         int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
         {
-            int nForm = this->nForm.get();
+            int nForm = std::max(1, this->nForm.get());
             int cols = this->bandwidth.get()  ?  2  :  1;
 	    const char *FormColNames[2] = {"FormantFrequency", "FormantBandwidth"};
 
@@ -89,7 +89,7 @@ private:
         
         int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
         {
-            int nForm = this->nForm.get();
+            int nForm = std::max(1, this->nForm.get());
             int threshold = this->threshold.get();
 	    int cols = this->bandwidth.get()  ?  2  :  1;
             float sr = this->sr.get();
@@ -171,14 +171,17 @@ public:
         this->addAttr(this, "Bandwidth", "Output or not the bandwidth", &formants.bandwidth);
         
         this->addAttr(this, "sr", "samplerate of the input signal", &formants.sr);
-        
+
+
+
         lpc.nCoefsA.set(2*formants.nForm.get() + 3); // nCoefsA is two times the expected number of formants + 2 (+1 because the firts coef = 1)
 
     }
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-        lpc.nCoefsA.set(2*formants.nForm.get() + 3, true);
+        const int nForm = std::max(1, formants.nForm.get());
+        lpc.nCoefsA.set(2*nForm + 3, true);
         return PiPoSequence::streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
     }
 };

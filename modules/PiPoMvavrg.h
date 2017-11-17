@@ -163,7 +163,7 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    unsigned int filterSize = this->size.get();
+    unsigned int filterSize = std::max(1, this->size.get());
     unsigned int inputSize = width * size;
     double lag = 1000.0 * 0.5 * (filterSize - 1) / rate;
     

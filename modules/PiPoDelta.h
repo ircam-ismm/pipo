@@ -82,8 +82,10 @@ public:
 			unsigned int width, unsigned int size, 
 			const char **labels, bool hasVarSize, double domain, 
 			unsigned int maxFrames)
-  {  
-    unsigned int filtsize = filter_size_param.get();
+  {
+    // 0 for later check
+    unsigned int filtsize = std::max(0, filter_size_param.get());
+
     unsigned int insize  = width * size;
     
     if (filtsize != filter_size  ||  insize != input_size)

@@ -157,6 +157,8 @@ public:
     //printf("PiPoChop frames time %f (next %f)  size %d  num %d\n", time, nextTime, size, num);
 #endif
 
+    double chopSize = std::max(0., chopSizeA.get());
+
     int ret = 0;
 
     if (time >= offsetA.get())
@@ -168,22 +170,22 @@ public:
 
         if (reportDuration != 0)
           //TBD: calculate actual duration quantised to frame hops?
-          outValues[0] = chopSizeA.get();
+          outValues[0] = chopSize;
 
         /* get temporal modelling */
         tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
 
 #ifdef DEBUG
         printf("   segment! time %f at input time %f  nextTime %f outsize %d\n",
-               nextTime - chopSizeA.get(), time, nextTime, outsize);
+               nextTime - chopSize, time, nextTime, outsize);
 #endif
         /* report segment at precise last chop time */
-        ret = this->propagateFrames(nextTime - chopSizeA.get(), weight, &outValues[0], outsize, 1);
+        ret = this->propagateFrames(nextTime - chopSize, weight, &outValues[0], outsize, 1);
 
         if (ret != 0)
           return ret;
 
-        nextTime += chopSizeA.get();	// never called when not chopping
+        nextTime += chopSize;	// never called when not chopping
       }
 
       /* feed temporal modelling */
