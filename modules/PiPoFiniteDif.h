@@ -74,24 +74,24 @@ public:
   
   PiPoFiniteDif (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  buffer(),
-  weights(),
-  frame(),
-  filter_size(0),
-  input_size(0),
-  //missing_inputs(0),
-  //normalization_factor(1),
-  accuracy_order(1),
-  derivative_order(1),
-  filter_delay(0),
-  method(Backward),
-  filter_size_param(this, "size", "Filter Size", true, 3),
-  //normalize(this, "normalize", "Normalize output", true, false),
-  derivative_order_param(this, "order", "Derivative order", true, 1),
-  accuracy_order_param(this, "accuracy", "Accuracy order", true, 2),
-  delta_t(this, "dt", "Sampling period", true, 0.01),
-  fdmethod(this, "method", "Finite difference method", true, Backward),
-  temporalize(this, "temporalize", "Take into account the sample rate in the computation", false, false)
+    buffer(),
+    weights(),
+    frame(),
+    filter_size(0),
+    input_size(0),
+    //missing_inputs(0),
+    //normalization_factor(1),
+    accuracy_order(1),
+    derivative_order(1),
+    filter_delay(0),
+    method(Backward),
+    filter_size_param(this, "size", "Filter Size", true, 3),
+    //normalize(this, "normalize", "Normalize output", true, false),
+    derivative_order_param(this, "order", "Derivative order", true, 1),
+    accuracy_order_param(this, "accuracy", "Accuracy order", true, 2),
+    delta_t(this, "dt", "Sampling period", true, 0.01),
+    fdmethod(this, "method", "Finite difference method", true, Backward),
+    temporalize(this, "temporalize", "Take into account the sample rate in the computation", false, false)
   {
     this->fdmethod.addEnumItem("backward", "Backward FD");
     this->fdmethod.addEnumItem("centered", "Centered FD");
@@ -101,7 +101,8 @@ public:
   ~PiPoFiniteDif ()
   { }
   
-  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames){
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
     int filtsize = filter_size_param.get();
     int deriv_order = derivative_order_param.get();
     int accur_order = accuracy_order_param.get();
@@ -372,7 +373,8 @@ public:
     return propagateReset();
   };
   
-  int frames (double time, double weight, float *values, unsigned int size, unsigned int num){
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
+  {
     int ret = 0;
     
     for (unsigned int i = 0; i < num; i++)
