@@ -42,22 +42,26 @@
 
 #include "PiPo.h"
 
-class PiPoIdentity : public PiPo {
+class PiPoIdentity : public PiPo
+{
 public:
-  PiPoIdentity(Parent *parent, PiPo *receiver = NULL) :
-  PiPo(parent, receiver) {}
+  PiPoIdentity (Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver)
+  {}
 
-  int streamAttributes(bool hasTimeTags, double rate, double offset,
-                       unsigned int width, unsigned int height,
-                       const char **labels, bool hasVarSize,
-                       double domain, unsigned int maxFrames) {
+  int streamAttributes (bool hasTimeTags, double rate, double offset,
+			unsigned int width, unsigned int height,
+			const char **labels, bool hasVarSize,
+			double domain, unsigned int maxFrames)
+  {
     return this->propagateStreamAttributes(hasTimeTags, rate, offset,
                                            width, height, labels, hasVarSize,
                                            domain, maxFrames);
   }
 
-  int frames(double time, double weight, float *values, unsigned int size,
-             unsigned int num) {
+  int frames (double time, double weight, PiPoValue *values, unsigned int size,
+             unsigned int num)
+  {
     return this->propagateFrames(time, weight, values, size, num);
   }
 };
