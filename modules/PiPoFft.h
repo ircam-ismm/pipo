@@ -124,14 +124,14 @@ public:
   enum OutputMode { ComplexFft, MagnitudeFft, PowerFft, LogPowerFft };
   enum WeightingMode { NoWeighting, AWeighting, BWeighting, CWeighting, DWeighting, Itur468Weighting};
   
-  std::vector<float> fftFrame;
-  std::vector<float> fftWeights;
+  std::vector<PiPoValue> fftFrame;	// assuming PiPoValue == rta_real_t
+  std::vector<PiPoValue> fftWeights;
   double sampleRate;
   int fftSize;
   enum OutputMode outputMode;
   enum WeightingMode weightingMode;
   rta_fft_setup_t *fftSetup;
-  float fftScale;
+  rta_real_t fftScale;
 
 public:
   PiPoScalarAttr<int> size;
@@ -239,7 +239,7 @@ public:
     
     if(fftSize != this->fftSize || weightingMode != this->weightingMode)
     {
-      float *nyquistMagPtr;
+      PiPoValue *nyquistMagPtr;
       
       /* alloc output frame */
       this->fftFrame.resize(fftSize + 2);
@@ -352,7 +352,7 @@ public:
       if(this->fftSetup != NULL)
         rta_fft_setup_delete(this->fftSetup);
       
-      rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (float *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], fftSize, nyquistMagPtr);
+      rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (rta_real_t *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], fftSize, nyquistMagPtr);
     }
     
     this->outputMode = outputMode;
@@ -361,15 +361,15 @@ public:
     return this->propagateStreamAttributes(0, rate, offset, outputWidth, outputSize + 1, fftColNames, 0, 0.5 * sampleRate, 1);
   }
   
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     if(this->fftSetup != NULL)
     {
-      float *fftFrame = &this->fftFrame[0];
+      PiPoValue *fftFrame = &this->fftFrame[0];
       unsigned int outputMode = this->outputMode;
       int fftSize = this->fftSize;
       int outputSize = fftSize / 2;
-      float *outputFrame;
+      PiPoValue *outputFrame;
       int outputWidth;
       
       if(outputMode > LogPowerFft)
