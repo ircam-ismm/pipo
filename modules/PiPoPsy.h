@@ -160,7 +160,8 @@ psyAnaCallback(void *obj, double time, double freq, double energy, double ac1, d
 {
   PiPoPsy *self = (PiPoPsy *)obj;
   std::vector<PiPoValue> values;
-
+  values.resize(4);
+  
   values[0] = (PiPoValue)freq;
   values[1] = (PiPoValue)energy;
   values[2] = (PiPoValue)ac1;
