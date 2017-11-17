@@ -132,7 +132,7 @@ public:
     this->biquadType = static_cast<enum BiquadTypeE>(this->biquadTypeA.get());
     this->biquadGain = this->gainA.get();
     this->biquadQuality = this->QA.get();
-    
+
     // constant
     this->biquadQNormalisation = M_SQRT1_2;
 
@@ -170,9 +170,9 @@ public:
     if (this->biquadQNormalisation != 1.)
       q *= this->biquadQNormalisation;
 
-    rta_biquad_coefs(b, a, (rta_filter_t)filterMode, normF0, q, biquadGain);
+    rta_biquad_coefs(b, a, static_cast<rta_filter_t>(filterMode), normF0, q, biquadGain);
   }
-  
+
   unsigned int getBiquadStatesNumber()
   {
     switch (this->biquadType)
@@ -185,7 +185,7 @@ public:
         break;
     }
   }
-  
+
   void initBiquadStates()
   {
     std::fill(this->biquadState.begin(), this->biquadState.end(), 0.);
@@ -297,14 +297,14 @@ public:
 
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, false, 0.0, 1);
   }
-  
+
   int reset()
   {
     this->initBiquadStates();
     return this->propagateReset();
   }
 
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     for (unsigned int i = 0; i < num; i++)
     {
