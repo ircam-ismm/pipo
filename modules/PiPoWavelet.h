@@ -33,10 +33,6 @@
 #include "wavelet_all.hpp"
 #include <cmath>
 
-#ifdef WIN32
-void boost::throw_exception(std::exception const & e){}
-#endif
-
 using namespace std;
 
 class PiPoWavelet : public PiPo
