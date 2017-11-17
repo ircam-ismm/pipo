@@ -56,7 +56,7 @@ using namespace std;
 class PiPoBayesFilter : public PiPo {
   BayesianFilter filter;
   vector<float> observation;
-  vector<float> output;
+  vector<PiPoValue> output;
 
 public:
   PiPoScalarAttr<float> logdiffusion;
@@ -99,7 +99,7 @@ public:
   ~PiPoBayesFilter(void){};
 
   int streamAttributes(bool hasTimeTags, double rate, double offset,
-                       unsigned int width, unsigned int size,
+                       unsigned int width, unsigned int height,
                        const char **labels, bool hasVarSize, double domain,
                        unsigned int maxFrames)
   {
@@ -119,10 +119,10 @@ public:
 
     this->filter.init();
 
-    this->output.resize(width * size * maxFrames);
+    this->output.resize(width * height * maxFrames);
 
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width,
-                                           size, labels, 0, 0.0, 1);
+                                           height, labels, 0, 0.0, 1);
   };
 
   int reset(void)
@@ -131,10 +131,10 @@ public:
     return this->propagateReset();
   };
 
-  int frames(double time, double weight, float *values, unsigned int size,
+  int frames(double time, double weight, PiPoValue *values, unsigned int size,
              unsigned int num)
   {
-    float *output = &(this->output[0]);
+    PiPoValue *output = &(this->output[0]);
 
     for (unsigned int i = 0; i < num; i++)
     {
@@ -146,7 +146,7 @@ public:
       this->filter.update(observation);
 
       for (unsigned int j = 0; j < size; j++)
-          output[j] = float(this->filter.output[j]);
+          output[j] = PiPoValue(this->filter.output[j]);
 
       int ret = this->propagateFrames(time, weight, output, size, 1);
 
