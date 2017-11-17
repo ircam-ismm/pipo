@@ -41,12 +41,8 @@
 
 #include "PiPo.h"
 
-extern "C" {
-//#include "rta_yin.h"
-#include <math.h>
-}
-
-#include <cstdlib>
+#include <cmath>
+#include <cstdlib> // qsort
 
 #define PIPO_PEAKS_DEBUG 1
 #define ABS_MAX 2147483647.0
@@ -132,13 +128,11 @@ public:
            this, hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
 
-    int maxNumPeaks = this->numPeaks.get();
+    int maxNumPeaks = std::max(1, this->numPeaks.get());
     this->peaksRate = rate;
     
-    const char *peaksColNames[2];
-    peaksColNames[0] = "Frequency";
-    peaksColNames[1] = "Amplitude";
-    
+    const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
+
     this->allocatedPeaksSize = maxNumPeaks;
     if(this->allocatedPeaksSize < DEFAULT_NUM_ALLOC_PEAKS) this->allocatedPeaksSize = DEFAULT_NUM_ALLOC_PEAKS;
     this->buffer_.resize(this->allocatedPeaksSize * 2);
@@ -169,10 +163,10 @@ public:
       domscale *= this->peaksRate;
     
     if(domscale < 0.0)
-      domscale = -domscale / (double)size;
+      domscale = -domscale / static_cast<double>(size);
     
-    start = (unsigned int)floor(this->rangeLow.get() / domscale);
-    end = (unsigned int)ceil(this->rangeHigh.get() / domscale);
+    start = std::floor(this->rangeLow.get() / domscale);
+    end = std::ceil(this->rangeHigh.get() / domscale);
       
     if(start < 1)
       start = 1;
@@ -202,7 +196,7 @@ public:
         double b = 0.5 * (right - left);
         double frac = -b / (2.0 * a);
         double max_amp = (a * frac + b) * frac + center;
-        double max_index = (double)i + frac;
+        double max_index = i + frac;
           
         if(fabs(max_amp - mean) < thresholdDev)
           continue;
@@ -247,7 +241,7 @@ public:
               b = 0.5 * (right - left);
               frac = -b / (2.0 * a);
               min_left_amp = (a * frac + b) * frac + center;
-              min_left_index = (double)k + frac;
+              min_left_index = k + frac;
                 
               break;
             }
@@ -276,7 +270,7 @@ public:
       if(n_found > this->numPeaks.get())
         n_found = maxNumPeaks;
       
-      qsort((void *)peaks_ptr, n_found, sizeof(peak_t), peaks_compare_freq);
+      std::qsort(static_cast<void *>(peaks_ptr), n_found, sizeof(peak_t), peaks_compare_freq);
     }
     return propagateFrames(time, 1.0, peaks_ptr, 2*n_found, 1);
   }
