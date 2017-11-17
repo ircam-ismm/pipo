@@ -62,8 +62,7 @@ private:
     unsigned int frameSize;
     float frameRate; //unused?
 
-    int ac_size;
-    std::vector<rta_real_t> corr;
+    std::vector<rta_real_t> corr;	// we assume rta_real_t == PiPoValue
     std::vector<rta_real_t> coefs;
     rta_real_t error;
     
