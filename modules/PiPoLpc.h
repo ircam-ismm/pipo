@@ -58,100 +58,79 @@ extern "C" {
 
 class PiPoLpc : public PiPo
 {
-//public:
 private:
     unsigned int frameSize;
-    //unsigned int nFrames;
-    float frameRate;
+    float frameRate; //unused?
 
     int ac_size;
-    float *corr;
-    float error;
-    
-    unsigned int nCoefs;
-    float *coefs;
-    float *outValues;
+    std::vector<rta_real_t> corr;
+    std::vector<rta_real_t> coefs;
+    rta_real_t error;
     
 public:
     PiPoScalarAttr<int> nCoefsA;
     
     //=============== CONSTRUCTOR ===============//
-    PiPoLpc(Parent *parent, PiPo *receiver = NULL) :
-    PiPo(parent, receiver),
-    nCoefsA(this, "ncoefs", "Number Of LPC Coefficients", true, 10)
+    PiPoLpc (Parent *parent, PiPo *receiver = NULL)
+    : PiPo(parent, receiver),
+      nCoefsA(this, "ncoefs", "Number Of LPC Coefficients", true, 10)
     {
         this->frameSize     = 0;
-        //this->nFrames       = 0;
         this->frameRate     = 1.;
-        
-        this->nCoefs        = 0;
-        this->coefs         = NULL;
-        this->corr          = NULL;
-        //this->outValues     = NULL;
-        
     }
 
-    int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+    int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-        unsigned int frameSize = width * size;
-        //unsigned int nFrames = 1;//size;
-        unsigned int nCoefs = this->nCoefsA.get();
+        unsigned int frameSize = width * height;
+        unsigned int ncoefs = this->nCoefsA.get();
         
-        if(rate != this->frameRate) {
+        if (rate != this->frameRate)
             this->frameRate = rate;
-        }
         
-        /*
-        if(frameSize != this->frameSize) {
+        if (frameSize != this->frameSize || ncoefs != this->coefs.size())
+	{
             this->frameSize = frameSize;
-            // resize outValues array
-            this->outValues = (float *)realloc(this->outValues, this->nFrames * this->frameSize * sizeof(float));
-        }
-        */
-        
-        if(frameSize != this->frameSize || nCoefs != this->nCoefs) {
             
-            this->frameSize = frameSize;
-            this->nCoefs = nCoefs;
+            if (ncoefs > this->frameSize)
+                ncoefs = this->frameSize;
             
-            if(this->nCoefs > this->frameSize) {
-                this->nCoefs = this->frameSize;
-            }
-            if(this->nCoefs < 1) {
-                this->nCoefs = 1;
-            }
+            if (ncoefs < 1)
+                ncoefs = 1;
             
             // resize arrays
-            this->coefs = (float *)realloc(this->coefs, this->nCoefs * sizeof(float));
+            this->coefs.resize(ncoefs);
             // see rta_lpc : corr and coefs are assumed to be of same size
-            this->corr = (float *)realloc(this->corr, this->nCoefs * sizeof(float));
+            this->corr.resize(ncoefs);
         }
         
         // compute previous framerate from rate, offset and width * size ? -> to be able to output values in Hz ?
         // also update dimensions according to nCoefs
-        return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, this->nCoefs, NULL, false, 1, 1);
-        //return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, NULL, false, 1, 1);
+        return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, ncoefs, NULL, false, 1, 1);
     }
     
-    int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+    int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         int ret;
-        for(unsigned int i = 0; i < num; i++)
+	
+        for (unsigned int i = 0; i < num; i++)
         {
-            if(this->frameSize > 1) {
-                rta_lpc(this->coefs, this->nCoefs, &(this->error), this->corr, values, this->frameSize);
-                ret = this->propagateFrames(time, weight, this->coefs, this->nCoefs, 1);
-            } else {
-                this->coefs[0] = 0.;
-                ret = this->propagateFrames(time, weight, this->coefs, 1, 1);
+            if (this->frameSize > 1)
+	    {
+                rta_lpc(&this->coefs[0], this->coefs.size(), &(this->error), &this->corr[0], values, this->frameSize);
+                ret = this->propagateFrames(time, weight, &this->coefs[0], this->coefs.size(), 1);
             }
-            if(ret != 0)
+	    else
+	    {
+                this->coefs[0] = 0.;
+                ret = this->propagateFrames(time, weight, &this->coefs[0], 1, 1);
+            }
+
+            if (ret != 0)
                 return ret;
             
             values += size;
         }
         return 0;
-
     }
     
 };
