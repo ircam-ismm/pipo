@@ -107,7 +107,7 @@ public:
         return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, ncoefs, NULL, false, 1, 1);
     }
     
-    int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+    int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
     {
         int ret;
 	
