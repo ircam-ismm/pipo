@@ -67,7 +67,6 @@ public:
 private:
   int numCols;
   int maxDescrNameLength;
-  // PiPoValue  *outValues;
   std::vector<PiPoValue> outValues;
 };
 
