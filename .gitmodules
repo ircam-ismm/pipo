@@ -5,9 +5,9 @@
 [submodule "modules/bayesfilter"]
 	path = modules/bayesfilter
 	url = https://github.com/Ircam-RnD/bayesfilter.git
-[submodule "modules/rta-lib"]
-	path = modules/rta-lib
-	url = https://github.com/Ircam-RnD/rta-lib.git
 [submodule "modules/wavelet"]
 	path = modules/wavelet
 	url = https://github.com/Ircam-RnD/wavelet.git
+[submodule "modules/rta"]
+	path = modules/rta
+	url = https://github.com/Ircam-RnD/rta-lib.git
