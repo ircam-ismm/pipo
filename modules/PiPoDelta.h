@@ -73,7 +73,10 @@ public:
     filter_size(0), input_size(0), missing_inputs(0), normalization_factor(1),
     filter_size_param(this, "size", "Filter Size", true, 7),
     normalize(this, "normalize", "Normalize output", true, true)
-  { }
+  {
+    
+    
+  }
   
   ~PiPoDelta ()
   { }

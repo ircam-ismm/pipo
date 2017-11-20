@@ -118,6 +118,8 @@ public:
     scale.func.set("log");
     scale.base.set(10);
     moments.scaling.set("Domain");
+    
+    signalWarning("PiPoBasic is obsolete, please use PiPoDescr instead!");
   }
 
 /*  virtual ~PiPoBasic ()
@@ -125,6 +127,16 @@ public:
     //printf("•••••••• %s: DESTRUCTOR\n", __PRETTY_FUNCTION__); //db
   }
 */
+  
+  int streamAttributes (bool hasTimeTags, double rate, double offset,
+                        unsigned int width, unsigned int size,
+                        const char **labels, bool hasVarSize, double domain,
+                        unsigned int maxFrames)
+  {
+    signalWarning("PiPoBasic is obsolete, please use PiPoDescr instead!");
+    return propagateStreamAttributes(hasTimeTags, rate, offset, width, size,
+                                        labels, hasVarSize, domain, maxFrames);
+  }
   
 private:
   PiPoBasic (const PiPoBasic &other)
@@ -134,6 +146,7 @@ private:
     seq1(other.parent), seq2(other.parent), par1(other.parent), par2(other.parent)
   {
     //printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
+    signalWarning("PiPoBasic is obsolete, please use PiPoDescr instead!");
   }
   
   PiPoBasic &operator= (const PiPoBasic &other)
