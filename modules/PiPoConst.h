@@ -134,7 +134,7 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
 
   for (unsigned int l = 0; l < this->numCols; ++l)
   {
-      delete [] outputLabels[l];
+      delete[] outputLabels[l];
   }
 
   return ret;

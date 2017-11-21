@@ -45,15 +45,15 @@
 #include <sstream>
 
 extern "C" {
-  //#include "rta_configuration.h"
 #include "finitedifferences.h"
 }
 
 #include <vector>
 
-class PiPoFiniteDif : public PiPo {
+class PiPoFiniteDif : public PiPo
+{
 private:
-  RingBuffer<PiPoValue>  buffer;
+  RingBuffer<PiPoValue> buffer;
   std::vector<PiPoValue> weights;
   std::vector<PiPoValue> frame;
   int filter_size;
@@ -71,7 +71,7 @@ public:
   PiPoScalarAttr<int> accuracy_order_param;
   PiPoScalarAttr<float> delta_t;
   PiPoScalarAttr<PiPo::Enumerate> fdmethod;
-  
+
   PiPoFiniteDif (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(),
@@ -97,23 +97,24 @@ public:
     this->fdmethod.addEnumItem("centered", "Centered FD");
     this->fdmethod.addEnumItem("forward", "Forward FD");
   }
-  
+
   ~PiPoFiniteDif ()
   { }
-  
-  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     int filtsize = filter_size_param.get();
     int deriv_order = derivative_order_param.get();
     int accur_order = accuracy_order_param.get();
-    int insize  = width * size;
-    FDMethod meth = (FDMethod)fdmethod.get();
+    int insize  = width * height;
+    FDMethod meth = static_cast<FDMethod>(fdmethod.get());
     std::ostringstream error_message;
     int temp;
-    
+
     bool debug = false;
-    
-    if(debug){
+
+    if(debug)
+    {
       error_message << "In: filter_size = " << filter_size << ", input_size = " << input_size << ", accuracy_order = " << accuracy_order << ", derivative_order = " << derivative_order << ", method = " << method;
       signalWarning(error_message.str());
       error_message.str("");
@@ -130,39 +131,47 @@ public:
         signalWarning("derivation order must be >= 1, set to 1");
         deriv_order = 1;
       }
-      
+
       //Verifications depending on the method
-      switch(meth){
+      switch (meth)
+      {
         case Centered:
           //Derivative order has changed
-          if (deriv_order != derivative_order){
-            if (deriv_order > 6){
+          if (deriv_order != derivative_order)
+          {
+            if (deriv_order > 6)
+            {
               signalWarning("derivation order must be <= 6 for a centered method, set to 6");
               deriv_order = 6;
             }
           }
-          
-          
+
+
           //Modification by filter size (or by both filter size and accuracy order) (or derivative order has changed) (or method)
-          if (deriv_order != derivative_order || meth != method || filtsize != filter_size){
+          if (deriv_order != derivative_order || meth != method || filtsize != filter_size)
+          {
             //New filter size should be odd
-            if ((filtsize & 1) == 0){
-              error_message << "filter size must be odd: using " << filtsize-1 << " instead of " << filtsize;
+            if ((filtsize & 1) == 0)
+            {
+              error_message << "filter size must be odd: using " << filtsize - 1 << " instead of " << filtsize;
               signalWarning(error_message.str());
               error_message.str("");
               filtsize--;
             }
             //Check that the filter size lies within acceptable bounds
-            temp = 3+2*((deriv_order-1)/2);
-            if (filtsize < temp){
+            temp = 3 + 2 * ((deriv_order - 1) / 2);
+            if (filtsize < temp)
+            {
               error_message << "filter size must be >= " << temp << " for a centered method with derivation order " << deriv_order << ", set to " << temp;
               signalWarning(error_message.str());
               error_message.str("");
               filtsize = temp;
             }
-            else {
-              temp = 9-2*((deriv_order-1)/4);
-              if (filtsize > temp){
+            else
+            {
+              temp = 9 - 2 * ((deriv_order - 1) / 4);
+              if (filtsize > temp)
+              {
                 error_message << "filter size must be <=" << temp << " for a centered method with derivation order " << deriv_order << ", set to " << temp;
                 signalWarning(error_message.str());
                 error_message.str("");
@@ -173,7 +182,8 @@ public:
             temp = filtersize_to_accuracy(meth, deriv_order, filtsize);
             //If both filter size and accuracy order were provided, check that they are compatible
             //if (accur_order != accuracy_order && temp != accur_order){
-            if (temp != accur_order){
+            if (temp != accur_order)
+            {
               error_message << "accuracy order updated to " << temp;
               signalWarning(error_message.str());
               error_message.str("");
@@ -181,23 +191,29 @@ public:
             accur_order = temp;
           }
           //Modification by accuracy order (only)
-          else {
+          else
+          {
             //New accuracy order should be even
-            if ((accur_order & 1) == 1){
-              error_message << "accuracy order must be even for a centered method: using " << accur_order-1 << " instead of " << accur_order;
+            if ((accur_order & 1) == 1)
+            {
+              error_message << "accuracy order must be even for a centered method: using " << accur_order - 1 << " instead of " << accur_order;
               signalWarning(error_message.str());
               error_message.str("");
               accur_order--;
             }
-            if (accur_order != accuracy_order){
+            if (accur_order != accuracy_order)
+            {
               //Check that accuracy order lies within acceptable bounds
-              if (accur_order < 2){
+              if (accur_order < 2)
+              {
                 signalWarning("accuracy order must be >= 2, set to 2");
                 accur_order = 2;
               }
-              else {
-                temp = 8-((deriv_order-1)/2)*((deriv_order+1)/2);
-                if (accur_order > temp){
+              else
+              {
+                temp = 8 - ((deriv_order - 1) / 2) * ((deriv_order + 1) / 2);
+                if (accur_order > temp)
+                {
                   error_message << "accuracy order must be <=" << temp << " for a centered method with derivation order " << deriv_order << ", set to " << temp;
                   signalWarning(error_message.str());
                   error_message.str("");
@@ -207,33 +223,38 @@ public:
             }
             //Update filter size
             filtsize = accuracy_to_filtersize(meth, deriv_order, accur_order);
-            if (filter_size != filtsize){
+            if (filter_size != filtsize)
+            {
               error_message << "filter size updated to " << filtsize;
               signalWarning(error_message.str());
               error_message.str("");
             }
           }
           break;
-          
+
         case Forward:
         case Backward:
-          if (deriv_order > 4){
+          if (deriv_order > 4)
+          {
             signalWarning("derivation order must be <= 4 for a backward or forward method, set to 4");
             deriv_order = 4;
           }
           //Modification by filter size (or by both filter size and accuracy order) (or derivative order has changed)
-          if (deriv_order != derivative_order || meth != method || filtsize != filter_size){
+          if (deriv_order != derivative_order || meth != method || filtsize != filter_size)
+          {
             //Check that the filter size lies within acceptable bounds
-            temp = deriv_order+1;
+            temp = deriv_order + 1;
             if (filtsize < temp){
               error_message << "filter size must be >= " << temp << " for a backward or forward method with derivation order " << deriv_order << ", set to " << temp;
               signalWarning(error_message.str());
               error_message.str("");
               filtsize = temp;
             }
-            else {
-              temp = 6+deriv_order-deriv_order/4;
-              if (filtsize > temp){
+            else
+            {
+              temp = 6 + deriv_order-deriv_order / 4;
+              if (filtsize > temp)
+              {
                 error_message << "filter size must be <=" << temp << " for a backward or forward method with derivation order " << deriv_order << ", set to " << temp;
                 signalWarning(error_message.str());
                 error_message.str("");
@@ -244,7 +265,8 @@ public:
             temp = filtersize_to_accuracy(meth, deriv_order, filtsize);
             //If both filter size and accuracy order were provided, check that they are compatible
             //if (accur_order != accuracy_order && temp != accur_order){
-            if (temp != accur_order){
+            if (temp != accur_order)
+            {
               error_message << "accuracy order updated to " << temp;
               signalWarning(error_message.str());
               error_message.str("");
@@ -252,16 +274,20 @@ public:
             accur_order = temp;
           }
           //Modification by accuracy order (only)
-          else {
+          else
+          {
             if (accur_order != accuracy_order){
               //Check that accuracy order lies within acceptable bounds
-              if (accur_order < 1){
+              if (accur_order < 1)
+              {
                 signalWarning("accuracy order must be >= 1, set to 1");
                 accur_order = 1;
               }
-              else {
-                temp = 6-deriv_order/4;
-                if (accur_order > temp){
+              else
+              {
+                temp = 6 - deriv_order / 4;
+                if (accur_order > temp)
+                {
                   error_message << "accuracy order must be <=" << temp << " for a backward or forward method with derivation order " << deriv_order << ", set to " << temp;
                   signalWarning(error_message.str());
                   error_message.str("");
@@ -270,7 +296,8 @@ public:
               }
               //Update filter size
               filtsize = accuracy_to_filtersize(meth, deriv_order, accur_order);
-              if (filter_size != filtsize){
+              if (filter_size != filtsize)
+              {
                 error_message << "filter size updated to " << filtsize;
                 signalWarning(error_message.str());
                 error_message.str("");
@@ -282,42 +309,44 @@ public:
           signalWarning("unknown method, set to Backward");
           meth = Backward;
       }
-      
+
       // compute filter delay
-      switch (meth){
+      switch (meth)
+      {
         case Centered:
-          this->filter_delay = filtsize/2;
+          this->filter_delay = filtsize / 2;
           break;
         case Backward:
           this->filter_delay = 0;
         case Forward:
-          this->filter_delay = filtsize-1;
+          this->filter_delay = filtsize - 1;
           break;
         default:
           signalError("unknown method");
           break;
       }
-      
+
       // ring size is the maximum between filter size and added delays
       // (plus the past input to be reoutput)
       int ring_size = filtsize > this->filter_delay + 1
-      ?  filtsize  :  this->filter_delay + 1;
-      
+                    ? filtsize
+                    : this->filter_delay + 1;
+
       buffer.resize(insize, ring_size);
       frame.resize(insize);
-      
+
       // weights_vector zero-padded to fit the ring size (before the
       // values) and then duplicated to be applied strait to the inputs
       // ring buffer, so actual memory size is ring_size * 2
       weights.resize(ring_size * 2);
       std::fill(&weights[0], &weights[ring_size - filtsize], 0.);
       finitedifferences_weights_by_filtersize(&weights[ring_size - filtsize], deriv_order, filtsize, meth);
-      
+
       // duplicate (unroll) weights for contiguous indexing
       //C++11: std::copy_n(weights.begin(), filtsize, weights.begin() + filtsize);
       for (int i = 0; i < ring_size; i++)
         weights[i + ring_size] = weights[i];
-      
+
       //normalization_factor = 1.;//finitedifferences_normalization_factor(filtsize, meth, accur_order)
       //update private variables
       filter_size = filtsize;
@@ -330,78 +359,82 @@ public:
       accuracy_order_param.set(accur_order, true);
       derivative_order_param.set(deriv_order, true);
       fdmethod.set(meth, true);
-      
-      if (debug){
+
+      if (debug)
+      {
         error_message << "Out: filter size = " << filter_size << ", input size = " << input_size << ", accuracy order = " << accuracy_order << ", derivative order = " << derivative_order << ", method = " << method;
         signalError(error_message.str());
         error_message.str("");
       }
     }
-    
-    //offset -= 1000.0 * 0.5 * (filtsize - 1) / rate;
+
     offset -= 1000.0 * this->filter_delay / rate;
-    
-    char **dlab = new char*[width];
-    const char **newlab = NULL;
-    
-    if (labels)
-    { // prefix labels with "Delta"
-#     define prefix "Delta"
-      
-      for (unsigned int i = 0; i < width; i++)
+
+    char ** outputLabels = NULL;
+    if (labels != NULL)
+    {
+      const char * prefix = "Delta";
+      outputLabels = new char * [width];
+
+      for (unsigned int i = 0; i < width; ++i)
       {
-        dlab[i] = (char *) malloc(strlen(prefix) + (labels[i] ? strlen(labels[i]) : 0) + 1);
-        sprintf(dlab[i], prefix "%s", labels[i]);
+        const char * label = labels[i] != NULL ? labels[i] : "";
+        outputLabels[i] = new char[std::strlen(prefix) + std::strlen(label) + 1];
+        std::strcpy(outputLabels[i], prefix);
+        std::strcat(outputLabels[i], label);
       }
-      
-      newlab = (const char **) dlab;
     }
-    
-    int ret = propagateStreamAttributes(hasTimeTags, rate, offset, insize,
-                                        1, newlab, 0, 0.0, 1);
-    
-    if (labels)
-      for (unsigned int i = 0; i < width; i++)
-        free(dlab[i]);
-    delete[] dlab;
+
+    int ret = propagateStreamAttributes(hasTimeTags, rate, offset, insize, 1,
+                                        const_cast<const char **>(outputLabels), 0, 0.0, 1);
+
+    if (outputLabels != NULL)
+    {
+      for (unsigned int i = 0; i < width; ++i)
+      {
+        delete [] outputLabels[i];
+      }
+      delete[] outputLabels;
+    }
+
     return ret;
-    
+
   }
-  
+
   int reset (){
     buffer.reset();
     return propagateReset();
   };
-  
+
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     int ret = 0;
-    
+
     for (unsigned int i = 0; i < num; i++)
     {
       buffer.input(values, size);
-      
+
       if (buffer.filled)
       {
         float *wptr = &weights[buffer.size - buffer.index];
-        
+
         finitedifferences_vector(&frame[0], &buffer.vector[0], buffer.width, wptr, buffer.size);
-        
+
         /*if (normalize.get())
          {
          for (int i = 0; i < size; i++)
          frame[i] *= normalization_factor;
          }*/
-        
+
         ret = this->propagateFrames(time, weight, &frame[0], frame.size(), 1);
       }
-      
+
       if (ret != 0)
         return ret;
-      
+
       values += size;
     }
-    
+
     return 0;
   }
 };

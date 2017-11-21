@@ -55,59 +55,60 @@ class PiPoSelect : public PiPo
 {
 private:
   std::vector<PiPo::Atom> _colNames;
+  std::vector<int> _colIndices;
   std::vector<int> _rowIndices;
   std::vector<unsigned int> _usefulColIndices; // sorted and validity-checked indices
   std::vector<unsigned int> _usefulRowIndices; // sorted and validity-checked indices
-  
+
   unsigned int lastNum;
-  
+
   unsigned int frameWidth;
   unsigned int frameHeight;
-  
+
   unsigned int outWidth;
   unsigned int outHeight;
-  
+
   unsigned int outFrameSize;
-  
-  PiPoValue *outValues;
-    
+
+  std::vector<PiPoValue> outValues;
+
 public:
   PiPoVarSizeAttr<PiPo::Atom> colNames;
+  PiPoVarSizeAttr<int> colIndices;
   PiPoVarSizeAttr<int> rowIndices;
-  
+
   PiPoSelect(Parent *parent, PiPo *receiver = NULL) :
   PiPo(parent, receiver),
-  colNames(this, "cols", "List of Names or Indices of Columns to Select", true, 1),
-  rowIndices(this, "rows", "List of Indices of Rows to Select", true, 1, 0)
+  colNames(this, "cols", "List of Names or Indices of Columns to Select [DEPRECATED]", true, 0, 0),
+  colIndices(this, "columns", "List of Column Indices to select", true, 0, 0),
+  rowIndices(this, "rows", "List of Row Indices to Select", true, 0, 0)
   {
     this->lastNum = 0;
-    
+
     this->frameWidth = 0;
     this->frameHeight = 0;
     this->outWidth = 0;
     this->outHeight = 0;
     this->outFrameSize = 0;
-    
-    this->outValues = (PiPoValue *)malloc(0);
   }
-  
+
   ~PiPoSelect()
   {
-    free(this->outValues);
   }
-  
+
   int streamAttributes(bool hasTimeTags, double rate, double offset,
                        unsigned int width, unsigned int height,
                        const char **labels, bool hasVarSize,
                        double domain, unsigned int maxFrames)
   {
     unsigned int cnSize = this->colNames.getSize();
+    unsigned int ciSize = this->colIndices.getSize();
     unsigned int riSize = this->rowIndices.getSize();
-    const char *colNames[128];
-    
+    const char *colNames[128]; // these are the labels we pass to the next pipo
+
     unsigned int frameWidth = width;
     unsigned int frameHeight = height;
-    
+
     //================== check col names changes
     bool colNamesChanged = false;
     if (cnSize != this->_colNames.size())
@@ -116,7 +117,7 @@ public:
     }
     else
     {
-      for (unsigned int i = 0; i < cnSize; i++)
+      for (unsigned int i = 0; i < cnSize; ++i)
       {
         if (this->_colNames[i] != this->colNames[i])
         {
@@ -125,8 +126,26 @@ public:
         }
       }
     }
-    
+
     //================== check col indices changes
+    bool colIndicesChanged = false;
+    if (ciSize != this->_colIndices.size())
+    {
+      colIndicesChanged = true;
+    }
+    else
+    {
+      for (unsigned int i = 0; i < ciSize; ++i)
+      {
+        if (this->_colIndices[i] != this->colIndices[i])
+        {
+          colIndicesChanged = true;
+          break;
+        }
+      }
+    }
+
+    //================== check row indices changes
     bool rowIndicesChanged = false;
     if (riSize != this->_rowIndices.size())
     {
@@ -134,7 +153,7 @@ public:
     }
     else
     {
-      for (unsigned int i = 0; i < riSize; i++)
+      for (unsigned int i = 0; i < riSize; ++i)
       {
         if (this->_rowIndices[i] != this->rowIndices[i])
         {
@@ -143,103 +162,113 @@ public:
         }
       }
     }
-    
-    //=========== check any change in stream attributes and/or PiPo attributes =========//
-    
-    if(colNamesChanged || rowIndicesChanged || frameWidth != this->frameWidth || frameHeight != this->frameHeight)
+
+    //===== check any change in stream attributes and/or PiPo attributes =====//
+
+    if(colNamesChanged || colIndicesChanged || rowIndicesChanged ||
+       frameWidth != this->frameWidth || frameHeight != this->frameHeight)
     {
-      /*
-      for(unsigned int i = 0; i < this->colNames.size(); i++)
+      //=== decide between column indices and mixed column names / indices ===//
+
+      // copy new col indices
+      this->_colIndices.clear();
+      for (unsigned int i = 0; i < ciSize; ++i)
       {
-        printf("%s ", this->colNames[i]);
+        this->_colIndices.push_back(this->colIndices[i]);
       }
-      printf("\n");
-      //*/
-      
-      //copy new col names
+
+      // copy new col names
       this->_colNames.clear();
       for (unsigned int i = 0; i < cnSize; i++)
       {
         this->_colNames.push_back(this->colNames[i]);
       }
-      
-      // copy new row indices
+
+      //========================= copy new row indices =======================//
+
       this->_rowIndices.clear();
       for (unsigned int i = 0; i < riSize; i++)
       {
         this->_rowIndices.push_back(this->rowIndices[i]);
       }
-      
+
       // set new input dimensions
       this->frameWidth = frameWidth;
       this->frameHeight = frameHeight;
-      
-      //============== first deal with col indices ================//
-      
+
+      //===================== first deal with col indices ====================//
+
       unsigned int cnt = 0;
       this->_usefulColIndices.clear();
-      for (unsigned int i = 0; i < cnSize; i++)
+
+      // try with indices only ("columns" attribute)
+      for (unsigned int i = 0; i < this->_colIndices.size(); ++i)
       {
-        switch (this->_colNames[i].getType())
+        if (this->_colIndices[i] < static_cast<int>(this->frameWidth) &&
+            this->_colIndices[i] >= 0)
         {
-          case Double:
-          case Int:
+          this->_usefulColIndices.push_back(this->_colIndices[i]);
+        }
+      }
+
+      // if there were no valid indices, try with column names ("cols" attribute)
+      if (this->_usefulColIndices.size() == 0)
+      {
+        for (unsigned int i = 0; i < cnSize; i++)
+        {
+          switch (this->_colNames[i].getType())
           {
-            int res = this->_colNames[i].getInt();
-            if (res >= 0 && (unsigned int)res < this->frameWidth)
+            case Double:
+            case Int:
             {
-              //add res to the indices of valid columns
-              this->_usefulColIndices.push_back(res);
-              cnt++;
-            }
-          }
-          break;
-              
-          case String:
-          {
-            if (labels != NULL)
-            {
-              for (unsigned int j = 0; j < this->frameWidth; j++)
+              int res = this->_colNames[i].getInt();
+              if (res >= 0 && static_cast<unsigned int>(res) < this->frameWidth)
               {
-                if (strcmp(this->_colNames[i].getString(), labels[j]) == 0)
+                this->_usefulColIndices.push_back(res);
+                cnt++;
+              }
+            }
+            break;
+
+            case String:
+            {
+              if (labels != NULL)
+              {
+                for (unsigned int j = 0; j < this->frameWidth; j++)
                 {
-                  this->_usefulColIndices.push_back(j);
-                  cnt++;
+                  if (std::strcmp(this->_colNames[i].getString(), labels[j]) == 0)
+                  {
+                    this->_usefulColIndices.push_back(j);
+                    cnt++;
+                  }
                 }
               }
             }
+            break;
+
+            default:
+                break;
           }
-          break;
-              
-          default:
-              break;
         }
       }
-      /*
-      printf("selected cols :");
-      for(unsigned int i = 0; i < this->_usefulColIndices.size(); i++)
-      {
-          printf(" %d", this->_usefulColIndices[i]);
-      }
-      printf("\n");
-      //*/
-      
-      if (this->_usefulColIndices.size() == 0) // pass all through
+
+      // if no valid indices, pass all through
+      if (this->_usefulColIndices.size() == 0)
       {
         // fill with all indices
         this->_usefulColIndices.resize(this->frameWidth);
-        for (unsigned int i = 0; i < this->frameWidth; i++)
+        for (unsigned int i = 0; i < this->frameWidth; ++i)
         {
           this->_usefulColIndices[i] = i;
         }
       }
-      
+
       this->outWidth = static_cast<unsigned int>(this->_usefulColIndices.size());
       // default sorting is ascending order
       //std::sort(this->_usefulColIndices.begin(), this->_usefulColIndices.end());
-      
+
       //============== now deal with row indices ================//
-      
+
       this->_usefulRowIndices.clear();
       for (unsigned int i = 0; i < this->_rowIndices.size(); i++)
       {
@@ -247,7 +276,7 @@ public:
           this->_usefulRowIndices.push_back(this->_rowIndices[i]);
         }
       }
-      
+
       if (this->_usefulRowIndices.size() == 0) // pass all through
       {
         // fill with all indices
@@ -257,49 +286,49 @@ public:
           this->_usefulRowIndices[i] = i;
         }
       }
-      
+
       this->outHeight = static_cast<unsigned int>(this->_usefulRowIndices.size());
       // default sorting is ascending order
       //std::sort(this->_usefulRowIndices.begin(), this->_usefulRowIndices.end());
-      
+
       this->outFrameSize = this->outWidth * this->outHeight;
     }
-    
-    for (unsigned int i = 0; i < this->outWidth; i++)
+
+    for (unsigned int i = 0; i < this->outWidth; ++i)
     {
         colNames[i] = (labels != NULL ? labels[this->_usefulColIndices[i]] : "");
     }
-    
+
     return this->propagateStreamAttributes(hasTimeTags, rate, offset,
                                            this->outWidth, this->outHeight,
                                            (labels != NULL ? colNames : NULL), hasVarSize,
                                            domain, maxFrames);
   }
-  
+
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     if (num != this->lastNum)
     {
       this->lastNum = num;
-      this->outValues = (PiPoValue *)realloc(this->outValues, this->outFrameSize * num * sizeof(PiPoValue));
+      this->outValues.resize(this->outFrameSize * num);
     }
-    
+
     for (unsigned int n = 0; n < num; n++)
     {
       unsigned int cnt = 0;
-      for (unsigned int i = 0; i < this->outHeight; i++)
+      for (unsigned int i = 0; i < this->outHeight; ++i)
       {
-        for (unsigned int j = 0; j < this->outWidth; j++)
+        for (unsigned int j = 0; j < this->outWidth; ++j)
         {
           this->outValues[n * this->outFrameSize + cnt] = values[this->_usefulRowIndices[i] * this->frameWidth + this->_usefulColIndices[j]];
           cnt++;
         }
       }
-      
+
       values += size;
     }
-    
-    return this->propagateFrames(time, weight, this->outValues, this->outFrameSize, num);
+
+    return this->propagateFrames(time, weight, &this->outValues[0], this->outFrameSize, num);
   }
 };
 

@@ -105,8 +105,8 @@ public:
   {
 #ifdef DEBUG
   printf("PiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
-	 "varsize %d  domain %f  maxframes %d\n",
-	 hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
+	  "varsize %d  domain %f  maxframes %d\n",
+	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
 
     nextTime = getNextTime();
@@ -126,18 +126,25 @@ public:
 
     /* get labels */
     unsigned int totalOutputSize = outputSize + reportDuration;
-    char mem[totalOutputSize * this->maxDescrNameLength];
-    std::vector<char *> outLabels(totalOutputSize);
+    char ** outLabels = new char * [totalOutputSize];
 
     for (unsigned int i = 0; i < totalOutputSize; i++)
-      outLabels[i] = mem + i * this->maxDescrNameLength;
+      outLabels[i] = new char[this->maxDescrNameLength];
 
     if (reportDuration != 0)
       std::strcpy(outLabels[0], "Duration");
 
-    tempMod.getLabels(labels, width, &outLabels[reportDuration], this->maxDescrNameLength, outputSize);
+    tempMod.getLabels(labels, width, outLabels + reportDuration, this->maxDescrNameLength, outputSize);
 
-    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1, const_cast<const char **>(&outLabels[0]), false, 0.0, 1);
+    int ret = this->propagateStreamAttributes(false, rate, 0.0, totalOutputSize, 1,
+                                              const_cast<const char **>(outLabels),
+                                              false, 0.0, 1);
+
+    for (unsigned int i = 0; i < totalOutputSize; ++i)
+    {
+      delete[] outLabels[i];
+    }
+    delete[] outLabels;
 
     return ret;
   }
