@@ -6,7 +6,7 @@ SCENARIO ("Testing PiPoConst")
 {
   PiPoTestHost h;
   PiPoStreamAttributes sa;
-  std::vector<PiPoValue> inputFrame;
+  std::vector<PiPoValue> inputFrame(10);
 
   GIVEN ("A host with a graph ending with \"const\"")
   {
@@ -34,7 +34,7 @@ SCENARIO ("Testing PiPoConst")
         h.frames(0., 1., &inputFrame[0], 1, inputFrame.size());
 
         REQUIRE (h.receivedFrames[0].size() == outSa.dims[0]);
-        REQUIRE (h.receivedFrames[0][4] == 3.14);
+        REQUIRE (h.receivedFrames[0][4] == Approx(3.14));
       }
     }
   }

@@ -52,6 +52,7 @@
 		316488391FC226690086FEDF /* rta_moments.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F11FC224220086FEDF /* rta_moments.c */; };
 		3164883A1FC226760086FEDF /* rta_selection.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F31FC224220086FEDF /* rta_selection.c */; };
 		316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 316488471FC31D600086FEDF /* pipo-select-test.cpp */; };
+		3164885B1FC474E00086FEDF /* pipo-const-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3164885A1FC474380086FEDF /* pipo-const-test.cpp */; };
 		319486BB1FB9EE9C0031D0E1 /* PiPoHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 315B90531FB4B9A40005150B /* PiPoHost.cpp */; };
 		319486BC1FB9EEA30031D0E1 /* PiPoHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 315B90531FB4B9A40005150B /* PiPoHost.cpp */; };
 		319486BE1FBB5B990031D0E1 /* pipo-host-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */; };
@@ -208,6 +209,7 @@
 		316488271FC224820086FEDF /* rta_unispring.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rta_unispring.cpp; path = "../../modules/rta/src/physical-models/rta_unispring.cpp"; sourceTree = "<group>"; };
 		316488281FC224820086FEDF /* rta_unispring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rta_unispring.h; path = "../../modules/rta/src/physical-models/rta_unispring.h"; sourceTree = "<group>"; };
 		316488471FC31D600086FEDF /* pipo-select-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-select-test.cpp"; path = "../../test/pipo-select-test.cpp"; sourceTree = "<group>"; };
+		3164885A1FC474380086FEDF /* pipo-const-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-const-test.cpp"; path = "../../test/pipo-const-test.cpp"; sourceTree = "<group>"; };
 		319486BF1FBC4D010031D0E1 /* PiPoTestHost.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoTestHost.h; path = ../../test/PiPoTestHost.h; sourceTree = "<group>"; };
 		31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-host-test.cpp"; path = "../../test/pipo-host-test.cpp"; sourceTree = "<group>"; };
 		31C2B39D1FB0D43F001A134E /* PiPoBands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoBands.h; path = ../../modules/PiPoBands.h; sourceTree = "<group>"; };
@@ -585,16 +587,17 @@
 				31D2EE751ED71FCC002E9F6A /* test-main.cpp */,
 				319486BF1FBC4D010031D0E1 /* PiPoTestHost.h */,
 				31D2EE741ED71FCC002E9F6A /* PiPoTestReceiver.h */,
-				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
-				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
-				31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */,
 				31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */,
+				3164885A1FC474380086FEDF /* pipo-const-test.cpp */,
 				31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */,
+				31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */,
+				31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */,
+				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
 				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
 				316488471FC31D600086FEDF /* pipo-select-test.cpp */,
+				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
 				31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */,
 				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
-				31C2B37B1FB0C7B4001A134E /* pipo-host-test.cpp */,
 			);
 			name = test;
 			sourceTree = "<group>";
@@ -827,11 +830,12 @@
 				319486BC1FB9EEA30031D0E1 /* PiPoHost.cpp in Sources */,
 				31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */,
 				31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */,
+				3164885B1FC474E00086FEDF /* pipo-const-test.cpp in Sources */,
+				31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */,
 				319486BE1FBB5B990031D0E1 /* pipo-host-test.cpp in Sources */,
+				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,
 				1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */,
 				316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */,
-				31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */,
-				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
