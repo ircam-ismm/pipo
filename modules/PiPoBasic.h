@@ -40,6 +40,7 @@
 #ifndef _PIPO_BASIC_
 #define _PIPO_BASIC_
 
+#include <algorithm>
 #include "PiPoSequence.h"
 #include "PiPoParallel.h"
 #include "PiPoSlice.h"

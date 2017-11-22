@@ -54,13 +54,6 @@ extern "C" {
 #include "rta_moments.h"
 }
 
-#ifdef WIN32
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#else
-// no more include at this point
-using std::min;
-#endif
-
 class PiPoMoments : public PiPo
 {
 protected:
@@ -93,8 +86,7 @@ public:
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
         this->domain = domain;
-        this->maxorder = std::min(MAX_PIPO_MOMENTS_NUMBER,
-                                  std::max(1, this->order.get()));
+        this->maxorder = std::min(MAX_PIPO_MOMENTS_NUMBER, std::max(1, this->order.get()));
         this->moments.resize(this->maxorder);
         
         const char *momentsColNames[MAX_PIPO_MOMENTS_LABELS_SIZE];

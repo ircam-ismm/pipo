@@ -40,6 +40,7 @@
 #ifndef _PIPO_PSY_
 #define _PIPO_PSY_
 
+#include <algorithm>
 #include "PiPo.h"
 
 extern "C" {

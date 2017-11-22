@@ -40,6 +40,7 @@
 #ifndef _PIPO_CHOP_
 #define _PIPO_CHOP_
 
+#include <algorithm>
 #include "PiPo.h"
 #include "TempMod.h"
 #include <vector>

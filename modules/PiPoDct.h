@@ -40,6 +40,7 @@
 #ifndef _PIPO_DCT_
 #define _PIPO_DCT_
 
+#include <algorithm>
 #include "PiPo.h"
 
 extern "C" {

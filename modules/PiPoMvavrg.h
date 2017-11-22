@@ -40,6 +40,8 @@
 #ifndef _PIPO_MVAVRG_
 #define _PIPO_MVAVRG_
 
+
+#include <algorithm>
 #include "PiPo.h"
 
 extern "C" {
