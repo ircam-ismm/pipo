@@ -137,7 +137,7 @@ public:
 
     tempMod.getLabels(labels, width, outLabels + reportDuration, this->maxDescrNameLength, outputSize);
 
-    int ret = this->propagateStreamAttributes(false, rate, 0.0, totalOutputSize, 1,
+    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1,
                                               const_cast<const char **>(outLabels),
                                               false, 0.0, 1);
 
