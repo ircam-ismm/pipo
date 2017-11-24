@@ -60,8 +60,6 @@ private:
   std::vector<unsigned int> _usefulColIndices; // sorted and validity-checked indices
   std::vector<unsigned int> _usefulRowIndices; // sorted and validity-checked indices
 
-  unsigned int lastNum;
-
   unsigned int frameWidth;
   unsigned int frameHeight;
 
@@ -83,8 +81,6 @@ public:
   colIndices(this, "columns", "List of Column Indices to select", true, 0, 0),
   rowIndices(this, "rows", "List of Row Indices to Select", true, 0, 0)
   {
-    this->lastNum = 0;
-
     this->frameWidth = 0;
     this->frameHeight = 0;
     this->outWidth = 0;
@@ -307,11 +303,8 @@ public:
 
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-    if (num != this->lastNum)
-    {
-      this->lastNum = num;
+    if(num * this->outFrameSize != this->outValues.size())
       this->outValues.resize(this->outFrameSize * num);
-    }
 
     for (unsigned int n = 0; n < num; n++)
     {

@@ -40,6 +40,7 @@
 #ifndef _PIPO_DELTA_
 #define _PIPO_DELTA_
 
+#include <algorithm>
 #include "PiPo.h"
 #include "RingBuffer.h"
 

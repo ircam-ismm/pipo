@@ -41,6 +41,7 @@
 #ifndef _PIPO_LPC_H_
 #define _PIPO_LPC_H_
 
+#include <algorithm>
 #include "PiPo.h"
 
 extern "C" {
