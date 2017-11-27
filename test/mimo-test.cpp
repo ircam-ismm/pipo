@@ -23,9 +23,9 @@ public:
   mimo_model_data *getmodel () override { return NULL; }
 
   // called by mimo module's propagateSetup via setupChain
-  int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) override
+  int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) override
   {
-    PiPoStreamAttributes *at = streamattr[0];
+    const PiPoStreamAttributes *at = streamattr[0];
 
     char str[1000];
     printf("%s: received mimo setup output stream attributes\n%s", __PRETTY_FUNCTION__, at->to_string(str, 1000));
@@ -34,7 +34,7 @@ public:
     return 0; // propagateStreamAttributes(at->hasTimeTags, at->rate, at->offset, at->dims[0], at->dims[1], at->labels, at->hasVarSize, at->domain, at->maxFrames);
   }
 
-  int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double starttime, int *varsize) override
+  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
     return -1;
   };
@@ -88,12 +88,13 @@ TEST_CASE("mimo")
   {
     WHEN("setup called")
     {
-      PiPoStreamAttributes attr = PiPoStreamAttributes(),
-		 	  *attrarr[1] = { &attr }; // put them in an array per track
+      PiPoStreamAttributes attr = PiPoStreamAttributes();
+      const PiPoStreamAttributes *attrarr[1] = { &attr }; // put them in an array per track
       attr.dims[0] = numcols;
       attr.dims[1] = 1;
+      const int sizes[1] = { numframes };
 
-      int ret = stats.setup(1, 1, attrarr);
+      int ret = stats.setup(1, 1, sizes, attrarr);
 
       THEN("check")
       {
@@ -102,7 +103,14 @@ TEST_CASE("mimo")
 
       WHEN("data input")
       {
-	stats.train(0, 0, 0, numframes, data, (double *) NULL, NULL);
+	mimo_buffer inbuf;
+	inbuf.numframes = numframes;
+	inbuf.data      = data;
+	inbuf.varsize   = NULL;
+	inbuf.has_timetags = false;
+	inbuf.time.starttime = 0;
+	
+	stats.train(0, 0, 1, &inbuf);
 
 	THEN("result is")
 	{
@@ -121,9 +129,10 @@ TEST_CASE("mimo")
 	  THEN("model as json is")
 	  {
 	    mimo_model_data *model = stats.getmodel();
-
-	    std::string json = model->to_json();
-	    printf("\nmodel to json:\n%s\n", json.c_str());
+	    char json[1024];
+	    model->to_json(json, 1024);
+	    
+	    printf("\nmodel to json:\n%s\n", json);
 	  }
 	}
 
