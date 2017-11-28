@@ -209,8 +209,8 @@ public:
       // multiply by factor attribute alpha, output avg. distance to full normalisation
 
       // copy input buffer struct, only pointers will change
-      mimo_buffer outbufs[numbuffers];
-      std::memcpy(outbufs, buffers, numbuffers * sizeof(mimo_buffer));
+      std::vector<mimo_buffer> outbufs(numbuffers);
+      outbufs.assign(buffers, buffers + numbuffers);	// copy array via pointer iterator
       
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
@@ -256,7 +256,7 @@ public:
 	distance_ = 1.0 - factor;
       }
 
-      return propagateTrain(itercount, trackindex, numbuffers, outbufs);
+      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
     }
   }
 
