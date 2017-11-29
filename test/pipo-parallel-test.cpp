@@ -41,7 +41,7 @@ TEST_CASE("Test PiPoParallel")
 
       THEN ("Results are as expected") {
 	CHECK(ret2 == 0);
-	CHECK(rx.count_frames == 1);
+	REQUIRE(rx.count_frames == 1);
 	CHECK(rx.time == 111);
 	CHECK(rx.values[0] == 333);
 	CHECK(rx.values[1] == 444);
