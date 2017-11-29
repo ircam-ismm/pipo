@@ -79,20 +79,31 @@ public:
 
     return ss.str();
   }
-    
-  char *to_json (char *out, int n) throw() override
-  {
-    std::stringstream ss;
 
+  void model2json (std::stringstream &ss)
+  {
     ss << "{ \"num\":  " << vector2json<unsigned long>(num) << "," << std::endl
        << "  \"min\":  " << vector2json<double>(min)  	    << "," << std::endl
        << "  \"max\":  " << vector2json<double>(max)  	    << "," << std::endl
        << "  \"mean\": " << vector2json<double>(mean) 	    << "," << std::endl
        << "  \"std\":  " << vector2json<double>(std)  	    << "," << std::endl
        << "}";
+  }
 
+  int json_size () override
+  {
+    std::stringstream ss;
+    model2json(ss);
+    return ss.str().size() + 1;
+  }
+  
+  char *to_json (char *out, int n) throw() override
+  {
+    std::stringstream ss;
+    model2json(ss);
+    
     std::string ret = ss.str();
-    if (ret.size() > n)
+    if (ret.size() + 1 > n)
       throw std::runtime_error("json string too long");
     else
       strcpy(out, ret.c_str());
