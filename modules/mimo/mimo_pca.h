@@ -19,8 +19,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 3. Neither the name of the copyright holder nor the names of its
- *    contribut
- ors may be used to endorse or promote products derived from
+ *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -119,6 +118,11 @@ public:
         return ss.str();
     }
     
+    int json_size() override
+    {
+        return (V.size() + VT.size())*20;
+    }
+    
     char* to_json (char* out, int size) throw() override
     {
         std::stringstream ss;
@@ -185,22 +189,16 @@ public:
     ,   autorank(this, "svdmode", "Mode for automatic/ manual removal of redundant eigen- values and vectors", true, 0)
     ,   forwardbackward(this, "processmode", "Mode for processing", true, 0)
     ,   rank(this, "rank", "How many eigen- values and vectors you want to retain", true, 10)
-    { }
+    {}
     
     ~MiMoPca(void)
     {}
     
     int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
     {
-        if(streamattr[0]->dims[0] != 1)
-        {
-            signalError("Width of input frames should be one");
-            return -1;
-        }
-        
         //save state
-        _n = streamattr[0]->dims[1];
         _m = bufsizes[0];
+        _n = streamattr[0]->dims[0] * streamattr[0]->dims[1];
         _minmn = _m > _n ? _n : _m;
         _attr = *streamattr;
         _numbuffers = numbuffers;
@@ -208,13 +206,13 @@ public:
         _rank = rank.get();
         _autorank = autorank.get();
         
-        //check if buffersizes are the same
-        for(int i = 0; i < _numbuffers; ++i)
-            if(bufsizes[i] != _m)
-            {
-                signalError("Buffersizes should be the same for all buffers");
-                return -1;
-            }
+//        //check if buffersizes are the same
+//        for(int i = 0; i < _numbuffers; ++i)
+//            if(bufsizes[i] != _m)
+//            {
+//                signalError("Buffersizes should be the same for all buffers");
+//                return -1;
+//            }
         
         //fortran uses row major order so n and m should be swapped in C++
         std::swap(_m, _n);
@@ -234,15 +232,16 @@ public:
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        const int numframes = buffers[0].numframes * _attr->dims[1];
+        const int tracksize = _m * _n;
         
         for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
             float* data = buffers[bufferindex].data;
+            
             //queue input till all buffers are copied
-            const int offset = (bufferindex * _numtracks *  numframes) + (trackindex * numframes);
+            const int offset = (bufferindex * _numtracks * tracksize) + (trackindex * tracksize);
             float mean = 0;
-            for(int i = 0; i < numframes; ++i)
+            for(int i = 0; i < tracksize; ++i)
             {
                 trainingdata[offset+i] = data[i];
                 mean += data[i];
@@ -287,7 +286,8 @@ public:
                 // fill diagonal of S
                 {
                     std::vector<float> swap(_m*_n, 0);
-                    for(int i=0, j=0; i<_m; i++, j+=(_n+1))
+                    int minmn = _m < _n ? _m : _n;
+                    for(int i=0, j=0; i<minmn; i++, j+=(_n+1))
                         swap[j] = S[i];
                     std::swap(S, swap);
                 }
@@ -318,8 +318,7 @@ public:
                     S.resize(_rank * _rank);
                     decomposition.VT.resize(_rank * _n);
                     decomposition.V = xTranspose(decomposition.VT, _rank, _n);
-                    return propagateTrain(itercount, trackindex, numbuffers, buffers);
-                }
+                    return propagateTrain(itercount, trackindex, numbuffers, buffers);                 }
                 else
                 {
                     signalError("SVD failed: rank < 1");
@@ -396,7 +395,6 @@ public:
                     return -1;
                 }
             
-                
                 std::vector<float> features = xMul(values, decomposition.V, 1, _n, static_cast<int>(_rank));
                 return propagateFrames(time, weight, features.data(), _rank, 1);
             }
