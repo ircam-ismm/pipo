@@ -182,13 +182,16 @@ public:
     PiPoScalarAttr<PiPoValue> autorank;
     PiPoScalarAttr<PiPoValue> forwardbackward;
     PiPoScalarAttr<PiPoValue> rank;
+    PiPoScalarAttr<const char*> inmodel;
+
     svd_model_data decomposition;
     
-    MiMoPca(Parent *parent, Mimo *receiver = NULL)
+    MiMoPca(Parent *parent, Mimo *receiver = nullptr)
     :   Mimo(parent, receiver)
     ,   autorank(this, "svdmode", "Mode for automatic/ manual removal of redundant eigen- values and vectors", true, 0)
     ,   forwardbackward(this, "processmode", "Mode for processing", true, 0)
     ,   rank(this, "rank", "How many eigen- values and vectors you want to retain", true, 10)
+    ,   inmodel(this, "inputmodel in json format", "the model for processing", true, "")
     {}
     
     ~MiMoPca(void)
@@ -318,7 +321,9 @@ public:
                     S.resize(_rank * _rank);
                     decomposition.VT.resize(_rank * _n);
                     decomposition.V = xTranspose(decomposition.VT, _rank, _n);
-                    return propagateTrain(itercount, trackindex, numbuffers, buffers);                 }
+                    mimo_buffer* outbuf = new mimo_buffer(1,U.data(), NULL, false, NULL, 0);
+                    return propagateTrain(itercount, trackindex, numbuffers, outbuf);
+                }
                 else
                 {
                     signalError("SVD failed: rank < 1");
@@ -336,6 +341,10 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
+        const char* test = "";
+        if(std::strncmp(inmodel.get(), test, 3) != 0 && decomposition.V.empty() &&decomposition.VT.empty())
+            decomposition.from_json(inmodel.get());
+        
         if(height != 1)
         {
             signalError("Input should be a vector");
@@ -378,7 +387,7 @@ public:
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         _fb = forwardbackward.get();
-        
+
         if(num!= 1)
         {
             signalError("Wrong numframes: input to decode should be a vector");
