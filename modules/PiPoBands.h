@@ -40,6 +40,7 @@
 #ifndef _PIPO_BANDS_
 #define _PIPO_BANDS_
 
+#include <algorithm>
 #include "PiPo.h"
 
 extern "C" {

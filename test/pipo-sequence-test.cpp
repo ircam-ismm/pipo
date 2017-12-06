@@ -39,7 +39,7 @@ TEST_CASE("Test PiPoSequence")
     int ret2 = seq.frames(111, 222, &vals, 1, 1);
 
     CHECK(ret2 == 0);
-    CHECK(rx.count_frames == 1);
+    REQUIRE(rx.count_frames == 1);
     CHECK(rx.time == 111);
     CHECK(rx.values[0] == 333);
     CHECK(rx.values[1] == 99);
@@ -81,7 +81,7 @@ TEST_CASE("Test PiPoSequence autoconnect")
     int ret2 = seq.frames(111, 222, &vals, 1, 1);
 
     CHECK(ret2 == 0);
-    CHECK(rx.count_frames == 1);
+    REQUIRE(rx.count_frames == 1);
     CHECK(rx.time == 111);
     CHECK(rx.values[0] == 333);
     CHECK(rx.values[1] == 99);
@@ -121,7 +121,7 @@ TEST_CASE("Test PiPoSequence arg list")
     int ret2 = seq.frames(111, 222, &vals, 1, 1);
 
     CHECK(ret2 == 0);
-    CHECK(rx.count_frames == 1);
+    REQUIRE(rx.count_frames == 1);
     CHECK(rx.time == 111);
     CHECK(rx.values[0] == 333);
     CHECK(rx.values[1] == 99);

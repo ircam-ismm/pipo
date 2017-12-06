@@ -54,14 +54,14 @@ public:
                        bool hasVarSize, double domain, unsigned int maxFrames);
   int finalize (double inputEnd);
   int reset(void);
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num);
+  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num);
 
 private:
   static void datacallback (int descrid, int varnum, int numval, IDESC_REAL_TYPE *values, void* obj);
   static void endcallback (double frame_time_sec, void* obj);
 
   idescx		       *idesc_;
-  float			       *outbuf_;
+  std::vector<PiPoValue>        outbuf_;
   bool				initialised_;
   int				status_;
   std::map<int, int>		doffset_;
@@ -78,7 +78,7 @@ class idescx : public idesc::idesc
 public:
   idescx (double sr, double winsize, double hopsize, PiPoIdesc *_pipo)
   : idesc(sr, winsize, hopsize),
-  pipo(_pipo)
+    pipo(_pipo)
   { };
 
   // dummy setters to keep IDESC_PARAM macro happy
@@ -123,7 +123,6 @@ PiPoIdesc::PiPoIdesc(PiPo::Parent *parent, PiPo *receiver)
   descriptors(this, "descriptors", "Descriptors to calculate", true, 0)
 {
   idesc_  = NULL;
-  outbuf_ = NULL;
   colnames_ = NULL;
 
   // set up and query idesc library
@@ -160,7 +159,6 @@ PiPoIdesc::~PiPoIdesc(void)
     delete idesc_;
     idesc_ = NULL;
   }
-  free(outbuf_);
   if (colnames_ != NULL)
     clearcolnames();	//FIXME: free strings
 }
@@ -269,7 +267,7 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
         doffset_[did] = numcols_;
         numcols_ += dcols;
       }
-      outbuf_ = (float *) realloc(outbuf_, numcols_ * sizeof(float));
+      outbuf_.resize(numcols_);
 
       if (numcols_ > ndescr)
       { // generate column names with index for non-singleton descriptors
@@ -380,10 +378,10 @@ void PiPoIdesc::endcallback (double frame_time_sec, void* obj)
   PiPoIdesc *self = (PiPoIdesc *) obj;
 
   // propagate gathered frame data
-  self->status_ = self->propagateFrames(frame_time_sec * 1000., 1., self->outbuf_, self->numcols_, 1);
+  self->status_ = self->propagateFrames(frame_time_sec * 1000., 1., &self->outbuf_[0], self->numcols_, 1);
 }
 
-int PiPoIdesc::frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+int PiPoIdesc::frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
 {
 #if IDESC_DEBUG >= 2
   post("PiPoIdesc::frames time %f  values %p  size %d  num %d\n",

@@ -48,6 +48,10 @@ extern "C" {
 #include <math.h>
 }
 
+#ifndef WIN32
+#define snprintf std::snprintf
+#endif
+
 class TempMod
 {
 public:
@@ -185,16 +189,16 @@ public:
       name = "";
 
     if(this->enabled[Min] && index < numLabels)
-      std::snprintf(labels[index++], strLen, "%sMin", name);
+      snprintf(labels[index++], strLen, "%sMin", name);
 
     if(this->enabled[Max] && index < numLabels)
-      std::snprintf(labels[index++], strLen, "%sMax", name);
+      snprintf(labels[index++], strLen, "%sMax", name);
 
     if(this->enabled[Mean] && index < numLabels)
-      std::snprintf(labels[index++], strLen, "%sMean", name);
+      snprintf(labels[index++], strLen, "%sMean", name);
 
     if(this->enabled[StdDev] && index < numLabels)
-      std::snprintf(labels[index++], strLen, "%sStdDev", name);
+      snprintf(labels[index++], strLen, "%sStdDev", name);
 
     return index;
   }

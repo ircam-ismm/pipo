@@ -40,6 +40,7 @@
 #ifndef _PIPO_SLICE_
 #define _PIPO_SLICE_
 
+#include <algorithm>
 #include "PiPo.h"
 
 #include <math.h>

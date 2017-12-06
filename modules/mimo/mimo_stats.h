@@ -60,7 +60,7 @@ class stats_model_data : public mimo_model_data
 {
 public:
   std::vector<unsigned long>	num;	// number of elements present
-  std::vector<double>		mean, std, min, max;
+  std::vector<double>		mean, std, min, max;  // statistics for each input data matrix element
 
   // helper function for json formatting
   template<typename T>
@@ -79,20 +79,31 @@ public:
 
     return ss.str();
   }
-    
-  char *to_json (char *out, int n) throw() override
-  {
-    std::stringstream ss;
 
+  void model2json (std::stringstream &ss)
+  {
     ss << "{ \"num\":  " << vector2json<unsigned long>(num) << "," << std::endl
        << "  \"min\":  " << vector2json<double>(min)  	    << "," << std::endl
        << "  \"max\":  " << vector2json<double>(max)  	    << "," << std::endl
        << "  \"mean\": " << vector2json<double>(mean) 	    << "," << std::endl
        << "  \"std\":  " << vector2json<double>(std)  	    << "," << std::endl
        << "}";
+  }
 
+  int json_size () override
+  {
+    std::stringstream ss;
+    model2json(ss);
+    return ss.str().size() + 1;
+  }
+  
+  char *to_json (char *out, int n) throw() override
+  {
+    std::stringstream ss;
+    model2json(ss);
+    
     std::string ret = ss.str();
-    if (ret.size() > n)
+    if (ret.size() + 1 > n)
       throw std::runtime_error("json string too long");
     else
       strcpy(out, ret.c_str());
@@ -130,13 +141,13 @@ public:
       @param streamattr	attributes of input data
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
-  int setup (int numbuffers, int numtracks, int tracksize[], const PiPoStreamAttributes *streamattr[]) override
+  int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[]) override
   {
     char astr[1000];
     printf("%s b %d t %d attr:\n%s\n", __PRETTY_FUNCTION__, numbuffers, numtracks, streamattr[0]->to_string(astr, 1000));
     
     if (numtracks != 1)
-      return -1;
+      return -1; // can only work on one input track per buffer
 
     // save for later
     numbuffers_ = numbuffers;
@@ -158,96 +169,106 @@ public:
     for (int i = 0; i < numbuffers_; i++)
       traindata_[i].resize(tracksize[i]);
 
+    // propagate same buffer layout
     return propagateSetup(numbuffers, numtracks, tracksize, streamattr);
   }
 
   /** the train method receives the training data set and performs one iteration of training 
       Each iteration can output transformed input data by calling propagateTrain().
   */
-  int train (int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *indata, const double *timetags, const int *varsize) override
+  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
-    const PiPoValue *data = indata;
-    PiPoValue *outdata;
+    printf("%s\n  ic %d ti %d numbuf %d\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);
 
-    printf("%s %d %d %d num %d %p %p %p\n", __PRETTY_FUNCTION__, itercount, bufferindex, trackindex, numframes, data, timetags, varsize);
-      
     if (itercount == 0)
     { // for the sake of the example: this mimo module can iterate, but stats are calculated only at first iteration
-      for (int i = 0; i < numframes; i++)
+      for (int buf = 0; buf < numbuffers; buf++)
       {
-	int mtxsize = stream_.hasVarSize ? varsize[i] : size_;
+	const PiPoValue *data = buffers[buf].data;
+
+	for (int i = 0; i < buffers[buf].numframes; i++)
+	{
+	  int mtxsize = stream_.hasVarSize ? buffers[buf].varsize[i] : size_;
 	    
-	for (int j = 0; j < mtxsize; j++)
-	{
-	  PiPoValue val = data[j];
+	  for (int j = 0; j < mtxsize; j++)
+	  {
+	    PiPoValue val = data[j];
 
-	  stats_.num[j]++;
-	  sum_[j]  += val;
-	  sum2_[j] += val * val;
-	  if (val < stats_.min[j])  stats_.min[j] = val;
-	  if (val > stats_.max[j])  stats_.max[j] = val;
+	    stats_.num[j]++;
+	    sum_[j]  += val;
+	    sum2_[j] += val * val;
+	    if (val < stats_.min[j])  stats_.min[j] = val;
+	    if (val > stats_.max[j])  stats_.max[j] = val;
+	  }
+
+	  data += size_;
 	}
-
-	data += size_;
       }
 
-      // last buffer: finish statistics
-      if (bufferindex == numbuffers_ - 1)
-	for (int j = 0; j < size_; j++)
-	{
-	  stats_.mean[j] = sum_[j] / stats_.num[j];
-	  stats_.std[j] = sqrt(sum2_[j] / stats_.num[j] - stats_.mean[j] * stats_.mean[j]);
-	}
-    }
-
-    // for the sake of the example: when iterating, exponentially approach normalised data:
-    // multiply by factor attribute alpha, output avg. distance to full normalisation
-    if (itercount > 0)
-    {
-      // check if input track size has changed since setup
-      if (numframes != bufsize_[bufferindex])
+      // finish statistics
+      for (int j = 0; j < size_; j++)
       {
-	traindata_[bufferindex].resize(numframes);
-	bufsize_[bufferindex] = numframes;
+	stats_.mean[j] = sum_[j] / stats_.num[j];
+	stats_.std[j] = sqrt(sum2_[j] / stats_.num[j] - stats_.mean[j] * stats_.mean[j]);
       }
 
-      float factor = alpha.get() * itercount;
-      data = indata; // indata is always original data, we want to iterate on previous output
-      outdata = &traindata_[bufferindex][0];
+      // first iteration, output input data, to be worked on at next iterations
+      return propagateTrain(itercount, trackindex, numbuffers, buffers);
+    }
+    else
+    { // for the sake of the example: when iterating, exponentially approach normalised data:
+      // multiply by factor attribute alpha, output avg. distance to full normalisation
+
+      // copy input buffer struct, only pointers will change
+      std::vector<mimo_buffer> outbufs(numbuffers);
+      outbufs.assign(buffers, buffers + numbuffers);	// copy array via pointer iterator
       
-      for (int i = 0; i < numframes; i++)
+      for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
-	int mtxsize = stream_.hasVarSize ? varsize[i] : size_;
-	int j;
-	double norm;
+	int numframes = buffers[bufferindex].numframes;
 	
-	for (j = 0; j < mtxsize; j++)
+	// check if input track size has changed since setup
+	if (numframes != bufsize_[bufferindex])
 	{
-	  if (stats_.std[j] != 0)
-	    norm = (data[j] - stats_.mean[j]) / stats_.std[j];
-	  else
-	    norm = (data[j] - stats_.mean[j]);
-
-	  // banal interpolation
-	  outdata[j] = (1 - factor) * data[j] + factor * norm;
+	  traindata_[bufferindex].resize(numframes);
+	  bufsize_[bufferindex] = numframes;
 	}
 
-	if (i == 0 && mtxsize > 0) printf("normalise %f .. %f -> %f\n", data[j - 1], norm, outdata[j - 1]);
+	float factor = alpha.get() * itercount;
+	PiPoValue *data    = buffers[bufferindex].data; // indata is always original data, we want to iterate on previous output
+	PiPoValue *outdata = outbufs[bufferindex].data = &traindata_[bufferindex][0];
+      
+	for (int i = 0; i < numframes; i++)
+	{
+	  int mtxsize = stream_.hasVarSize ? buffers[bufferindex].varsize[i] : size_;
+	  int j;
+	  double norm;
 	
-	for (; j < size_; j++)
-	  outdata[j] = 0;
+	  for (j = 0; j < mtxsize; j++)
+	  {
+	    if (stats_.std[j] != 0)
+	      norm = (data[j] - stats_.mean[j]) / stats_.std[j];
+	    else
+	      norm = (data[j] - stats_.mean[j]);
 
-	data += size_;
-	outdata += size_;
+	    // banal interpolation
+	    outdata[j] = (1 - factor) * data[j] + factor * norm;
+	  }
+
+	  if (i == 0 && mtxsize > 0) printf("normalise %f .. %f -> %f\n", data[j - 1], norm, outdata[j - 1]);
+	
+	  for (; j < size_; j++)
+	    outdata[j] = 0;
+
+	  data += size_;
+	  outdata += size_;
+	}
+
+	distance_ = 1.0 - factor;
       }
 
-      distance_ = 1.0 - factor;
-      outdata = &traindata_[bufferindex][0];
+      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
     }
-    else // after first iteration, output input data
-      outdata = (PiPoValue *) indata;
-    
-    return propagateTrain(itercount, bufferindex, trackindex, numframes, outdata, timetags, varsize);
   }
 
   /** return trained model parameters */

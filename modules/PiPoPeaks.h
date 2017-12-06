@@ -39,6 +39,7 @@
 #ifndef _PIPO_PEAKS_
 #define _PIPO_PEAKS_
 
+#include <algorithm>
 #include "PiPo.h"
 
 #include <cmath>

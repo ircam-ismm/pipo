@@ -40,6 +40,7 @@
 #ifndef _PIPO_MFCC_
 #define _PIPO_MFCC_
 
+#include <algorithm>
 #include "PiPoSlice.h"
 #include "PiPoFft.h"
 #include "PiPoBands.h"
