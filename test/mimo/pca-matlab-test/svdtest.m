@@ -116,7 +116,7 @@ vlm5 = v5(:,1:10);
 vlm6 = v6(:,1:10);
 vlm7 = v7(:,1:10); 
 vlm8 = v8(:,1:10); 
-vlm9 = v9(:,1:10); 
+vlm9 = v9(:,1:12);
 vlm10 = v10(:,1:10); 
 
 vtlm1 = vlm1'; %calculate transposed matrices
