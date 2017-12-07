@@ -1,4 +1,8 @@
 #include "../catch.hpp"
+
+#define NONORMALIZATION
+//#define WIN32
+
 #include "mimo_pca.h"
 #include "PiPoTestReceiver.h"
 #include <iostream>
@@ -7,7 +11,6 @@
 #include <string>
 #include <algorithm>
 
-//#define WIN32
 
 std::tuple<std::vector<float>,int,int> parseMatrix(std::string path)
 {
