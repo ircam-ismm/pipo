@@ -81,12 +81,12 @@ public:
   }
 
   void model2json (std::stringstream &ss)
-  {
+  { //todo: output column names
     ss << "{ \"num\":  " << vector2json<unsigned long>(num) << "," << std::endl
        << "  \"min\":  " << vector2json<double>(min)  	    << "," << std::endl
        << "  \"max\":  " << vector2json<double>(max)  	    << "," << std::endl
        << "  \"mean\": " << vector2json<double>(mean) 	    << "," << std::endl
-       << "  \"std\":  " << vector2json<double>(std)  	    << "," << std::endl
+       << "  \"std\":  " << vector2json<double>(std)  	    <<        std::endl
        << "}";
   }
 
@@ -159,8 +159,8 @@ public:
     sum_.assign(size_, 0);
     sum2_.assign(size_, 0);
     stats_.num.assign(size_, 0);
-    stats_.mean.resize(size_);
-    stats_.std.resize(size_);
+    stats_.mean.assign(size_, 0);
+    stats_.std.assign(size_, 0);
     stats_.min.assign(size_,  FLT_MAX);
     stats_.max.assign(size_, -FLT_MAX);
 
@@ -178,7 +178,7 @@ public:
   */
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
-    printf("%s\n  ic %d ti %d numbuf %d\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);
+    printf("%s\n  itercount %d trackindex %d numbuf %d\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);
 
     if (itercount == 0)
     { // for the sake of the example: this mimo module can iterate, but stats are calculated only at first iteration
