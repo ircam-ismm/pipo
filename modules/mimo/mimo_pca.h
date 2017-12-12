@@ -57,7 +57,8 @@
  resynthesized = vec[1,rank] * VT[rank,n];
 
  */
-
+#include <cstdio> //file writing can be removed
+#include <iostream>
 
 #include "mimo.h"
 #include <vector>
@@ -66,6 +67,7 @@
 #include "jsoncpp/include/json.h"
 
 //#define WIN32
+#define NORMALIZATION
 
 #ifdef WIN32
 extern "C" {
@@ -172,13 +174,18 @@ public:
         std::stringstream ss;
         
         ss << "{" << std::endl
-        << "  \"V\":  " << vector2json<float>(V)  	<< "," << std::endl
-        << "  \"VT\":  " << vector2json<float>(VT) << "," << std::endl
-        << "  \"dimensions\":  " << m << "," << n << "," << rank << std::endl
-        << "  \"means\":  " << vector2json<float>(means) << std::endl
+        << "\"V\":" << vector2json<float>(V) << "," << std::endl
+        << "\"VT\":" << vector2json<float>(VT) << "," << std::endl
+        << "\"dimensions\":" << "[" << m << "," << n << "," << rank << "]" << ","<< std::endl
+        << "\"means\":" << vector2json<float>(means) << std::endl
         << "}";
         
         std::string ret = ss.str();
+        FILE *f = fopen("/Users/ingejungeling/Desktop/file.txt", "w");
+        std::fprintf(f, ret.c_str());
+        fclose(f);
+
+        
         if (ret.size() > size)
         throw std::runtime_error("json string too long");
         else
@@ -191,7 +198,10 @@ public:
     {
         bool succes = reader.parse(json_string, root);
         if(!succes)
+        {
+            std::cout  << reader.getFormatedErrorMessages() << std::endl;
             return -1;
+        }
         
         const Json::Value _V = root["V"];
         if(_V.size() > 0)
@@ -280,9 +290,19 @@ public:
         for(int i = 0; i < _numbuffers; ++i)
             if(bufsizes[i] != _m)
             {
-                signalError("Buffersizes should be the same for all buffers");
+//                signalError("Buffersizes should be the same for all buffers");
                 return -1;
             }
+        
+        //output streamattributes: m = inm, n = rank
+        PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[1];
+        outattr[0] = new PiPoStreamAttributes(**streamattr);
+        
+        //output = 8 frames 1 rows 10 columns
+        outattr[0]->dims[0] = _m;
+        outattr[0]->dims[1] = 1;
+        int outbufsizes[] {8};
+        
 #ifndef WIN32
         //fortran uses row major order so n and m should be swapped in C++
         std::swap(_m, _n);
@@ -300,7 +320,8 @@ public:
 #else
         decomposition.V.resize(_n*_n,0);
 #endif
-        return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
+        
+        return propagateSetup(numbuffers, numtracks, outbufsizes, const_cast<const PiPoStreamAttributes**>(outattr));
     }
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
@@ -318,6 +339,7 @@ public:
             {
                 trainingdata[offset + i] = data[i];
 #ifndef NORMALIZATION
+//                int curRow = i / _n;
                 mean += data[i];
 #endif
             }
@@ -382,7 +404,7 @@ public:
                         else
                             ++_rank;
                     }
-                    signalWarning("Automatically removed redundant dimensions, rank =" + std::to_string(_rank));
+//                    signalWarning("Automatically removed redundant dimensions, rank =" + std::to_string(_rank));
                 }
                 
                 //resize matrices according to rank
@@ -392,7 +414,7 @@ public:
                     
                     // fill diagonal matrix of singular values
                     std::vector<float> singular(_rank *_rank, 0);
-                    for(int i = 0, j = 0; i < _rank; ++i, j += (_n+1))
+                    for(int i = 0, j = 0; i < _rank; ++i, j += (_rank+1)) //veranderd _n+1 naar _rank+1
                         singular[j] = S[i];
 #ifndef WIN32
                     U = xCrop(U, _m, _m, _m, _rank);
@@ -407,13 +429,13 @@ public:
                     decomposition.n = _n;
                     decomposition.rank = _rank;
                     decomposition.means = means;
-                    mimo_buffer* outbuf = new mimo_buffer(1,U.data(), NULL, false, NULL, 0);
+                    mimo_buffer* outbuf = new mimo_buffer(_m,U.data(), NULL, false, NULL, 0);
                     
                     return propagateTrain(itercount, trackindex, numbuffers, outbuf);
                 }
                 else
                 {
-                    signalError("SVD failed: rank < 1");
+//                    signalError("SVD failed: rank < 1");
                     return -1;
                 }
             }
@@ -430,53 +452,64 @@ public:
     {
         if(std::strncmp(model.get(), "", 3) != 0) //update local variables when model has changed
         {
-            decomposition.from_json(model.get());
-            _m = decomposition.m;
-            _n = decomposition.n;
-            _rank = decomposition.rank;
-            means = decomposition.means;
-            model.set("");
-        }
-        
-        if(height != 1)
-        {
-            signalError("Input should be a vector");
-            return -1;
-        }
-        
-        _fb = forwardbackward.get();
-        
-        unsigned int outn = 0, outm = 0;
-
-        switch(_fb)
-        {
-            case 0:
+            if(decomposition.from_json(model.get()) != -1)
             {
-                if(width != _n)
-                {
-                    signalError("Input should be a vector with length n = " + std::to_string(_n));
-                    return -1;
-                }
-                outm = 1;
-                outn = static_cast<unsigned int>(_rank);
-                break;
-            }
-            case 1:
+                _m = decomposition.m;
+                _n = decomposition.n;
+                _rank = decomposition.rank;
+                means = decomposition.means;
+                model.set("");
+            } else
             {
-                if(width != _rank)
-                {
-                    signalError("Input should be a vector with length rank = " + std::to_string(_rank));
-                    return -1;
-                }
-                outm = 1;
-                outn = static_cast<unsigned int>(_n);
-                break;
+                //parsing failed
+                return -1;
             }
-            default:
-                break;
+            
+            if(height != 1)
+            {
+                //            signalWarning("Input should be a vector");
+                return -1;
+            }
+            
+            _fb = forwardbackward.get();
+            
+            unsigned int outn = 0, outm = 0;
+            
+            switch(_fb)
+            {
+                case 0:
+                {
+                    if(width != _n)
+                    {
+                        //                    signalWarning("Input should be a vector with length n");
+                        return -1;
+                    }
+                    outm = 1;
+                    outn = static_cast<unsigned int>(_rank);
+                    break;
+                }
+                case 1:
+                {
+                    if(width != _rank)
+                    {
+                        //                    signalWarning("Input should be a vector with length rank");
+                        return -1;
+                    }
+                    outm = 1;
+                    outn = static_cast<unsigned int>(_n);
+                    break;
+                }
+                default:
+                    break;
+            }
+            
+            return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, 1);
         }
         
-        return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, 1);
+        else
+        {
+            return propagateStreamAttributes(hasTimeTags, rate, offset, 0, 0, NULL, 0, 0.0, 1);
+        }
     }
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
@@ -485,7 +518,7 @@ public:
 
         if(num!= 1)
         {
-            signalError("Wrong numframes: input to decode should be a vector");
+//            signalWarning("Wrong numframes: input to decode should be a vector");
             return -1;
         }
         
@@ -495,7 +528,7 @@ public:
             {
                 if(size!=_n)
                 {
-                    signalError("Wrong vectorlength, input should be a vector with length n");
+//                    signalWarning("Wrong vectorlength, input should be a vector with length n");
                     return -1;
                 }
 #ifndef NORMALIZATION
@@ -513,7 +546,7 @@ public:
             {
                 if(size!=_rank)
                 {
-                    signalError("Wrong vectorlength, input should be a vector with length rank");
+//                    signalWarning("Wrong vectorlength, input should be a vector with length rank");
                     return -1;
                 }
                 std::vector<float> resynthesized = xMul(values,decomposition.VT,1,_rank,_n);
