@@ -39,10 +39,10 @@
 
 /* This is a compact SVD with reduced output dimensions. The dimensions are either 
  limited according to a given rank by the user or by the numerical determined rank
- -  which is determined by filtering out the dimensions with low singular values.
+ -  which is determined by filtering out the dimensions with low singular values.\
  
  The output dimensions [rows * cols] are as follows:
- 
+ rank <= minmn
  U = M * rank
  S = rank * rank
  V = N * rank
@@ -282,7 +282,7 @@ public:
         _numbuffers = numbuffers;
         _numtracks = numtracks;
         _rank = rank.get();
-        if(_rank == -1) _rank = _m, rank.set(_m);
+        if(_rank == -1) _rank = _minmn, rank.set(_minmn);
         _autorank = autorank.get();
         
         //output streamattributes: m = inm, n = rank
@@ -295,6 +295,7 @@ public:
         
         outattr[0]->dims[0] = _m;
         outattr[0]->dims[1] = 1;
+        outattr[0]->numLabels = 0;
         int* outbufsizes = new int [numbuffers];
         for(int i = 0; i < numbuffers; ++i)
             outbufsizes[i] = _rank;
