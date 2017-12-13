@@ -180,12 +180,7 @@ public:
         << "\"means\":" << vector2json<float>(means) << std::endl
         << "}";
         
-        std::string ret = ss.str();
-        FILE *f = fopen("/Users/ingejungeling/Desktop/file.txt", "w");
-        std::fprintf(f, ret.c_str());
-        fclose(f);
-
-        
+        std::string ret = ss.str();    
         if (ret.size() > size)
         throw std::runtime_error("json string too long");
         else
@@ -199,7 +194,8 @@ public:
         bool succes = reader.parse(json_string, root);
         if(!succes)
         {
-            std::cout  << reader.getFormatedErrorMessages() << std::endl;
+            std::cout << "mimo.pca model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
+                      << "in\n" << json_string << std::endl;
             return -1;
         }
         
@@ -259,7 +255,7 @@ public:
     PiPoScalarAttr<PiPoValue> autorank;
     PiPoScalarAttr<PiPoValue> forwardbackward;
     PiPoScalarAttr<PiPoValue> rank;
-    PiPoScalarAttr<const char*> model;
+    PiPoDictionaryAttr model;
 
     svd_model_data decomposition;
     
@@ -268,7 +264,7 @@ public:
     ,   autorank(this, "svdmode", "Mode for automatic/ manual removal of redundant eigen- values and vectors", true, 0)
     ,   forwardbackward(this, "processmode", "Mode for decoding", true, 0)
     ,   rank(this, "rank", "How many singular values you want to retain in case of manual rank", true, 10)
-    ,   model(this, "Inputmodel in json format", "the model for processing", true, "")
+    ,   model(this, "model", "the model for processing", true, "")
     {}
     
     ~MiMoPca(void)
@@ -450,9 +446,9 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-        if(std::strncmp(model.get(), "", 3) != 0) //update local variables when model has changed
+        if(std::strcmp(model.get(), "") != 0) //update local variables when model has changed
         {
-            if(decomposition.from_json(model.get()) != -1)
+            if(decomposition.from_json(model.getJson()) != -1)
             {
                 _m = decomposition.m;
                 _n = decomposition.n;
