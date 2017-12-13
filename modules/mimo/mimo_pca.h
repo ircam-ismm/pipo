@@ -289,10 +289,15 @@ public:
         PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[1];
         outattr[0] = new PiPoStreamAttributes(**streamattr);
         
-        //output = 8 frames 1 rows 10 columns
+        //output = m 8 frames 1 rows rank 10 columns
+        //input =  8 frames , 120 * 80 columns, 1 rows
+        //output = 8,
+        
         outattr[0]->dims[0] = _m;
         outattr[0]->dims[1] = 1;
-        int outbufsizes[] {8};
+        int* outbufsizes = new int [numbuffers];
+        for(int i = 0; i < numbuffers; ++i)
+            outbufsizes[i] = _rank;
         
 #ifndef WIN32
         //fortran uses row major order so n and m should be swapped in C++
