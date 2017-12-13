@@ -249,7 +249,7 @@ public:
     int _m, _n, _minmn, _rank, _autorank, _fb = 0;
     rta_svd_setup_t * svd_setup = nullptr;
 #else
-    __CLPK_integer _m, _n, _minmn, _rank, _autorank, _fb = 0;
+    __CLPK_integer _m, _n, _minmn, _rank, _thresh, _autorank, _fb = 0;
 #endif
 public:
     PiPoScalarAttr<PiPoValue> autorank;
@@ -263,7 +263,7 @@ public:
     :   Mimo(parent, receiver)
     ,   autorank(this, "svdmode", "Mode for automatic/ manual removal of redundant eigen- values and vectors", true, 0)
     ,   forwardbackward(this, "processmode", "Mode for decoding", true, 0)
-    ,   rank(this, "rank", "How many singular values you want to retain in case of manual rank", true, 10)
+    ,   rank(this, "rank", "How many singular values you want to retain in case of manual rank", true, -1)
     ,   model(this, "model", "the model for processing", true, "")
     {}
     
@@ -273,22 +273,17 @@ public:
     int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
     {
         //save state
-        _m = bufsizes[0];
+        _m = 0;
+        for(int i = 0; i < numbuffers; ++i)
+            _m += bufsizes[i];
         _n = streamattr[0]->dims[0] * streamattr[0]->dims[1];
         _minmn = _m > _n ? _n : _m;
         _attr = *streamattr;
         _numbuffers = numbuffers;
         _numtracks = numtracks;
         _rank = rank.get();
+        if(_rank == -1) _rank = _m, rank.set(_m);
         _autorank = autorank.get();
-        
-        //check if buffersizes are the same
-        for(int i = 0; i < _numbuffers; ++i)
-            if(bufsizes[i] != _m)
-            {
-//                signalError("Buffersizes should be the same for all buffers");
-                return -1;
-            }
         
         //output streamattributes: m = inm, n = rank
         PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[1];
@@ -390,7 +385,7 @@ public:
                 {
                     //filter out low singular values = redundant dimensions
                     float thresh = 1e-10;
-                    _rank = 0;
+                    _thresh = 0;
                     int ssize = static_cast<int>(S.size());
                     for(int i = 0; i < ssize; i++)
                     {
@@ -398,7 +393,7 @@ public:
                         if(x < thresh)
                             S[i] = 0;
                         else
-                            ++_rank;
+                            ++_thresh;
                     }
 //                    signalWarning("Automatically removed redundant dimensions, rank =" + std::to_string(_rank));
                 }
