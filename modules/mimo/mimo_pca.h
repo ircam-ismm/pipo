@@ -293,12 +293,12 @@ public:
         //input =  8 frames , 120 * 80 columns, 1 rows
         //output = 8,
         
-        outattr[0]->dims[0] = _m;
+        outattr[0]->dims[0] = _rank;
         outattr[0]->dims[1] = 1;
         outattr[0]->numLabels = 0;
         int* outbufsizes = new int [numbuffers];
         for(int i = 0; i < numbuffers; ++i)
-            outbufsizes[i] = _rank;
+            outbufsizes[i] = _m;
         
 #ifndef WIN32
         //fortran uses row major order so n and m should be swapped in C++
