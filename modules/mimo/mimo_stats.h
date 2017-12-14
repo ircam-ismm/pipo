@@ -167,7 +167,7 @@ public:
     // for the sake of the example: reserve space for training output data when iterating
     traindata_.resize(numbuffers_);
     for (int i = 0; i < numbuffers_; i++)
-      traindata_[i].resize(tracksize[i]);
+      traindata_[i].resize(tracksize[i] * size_);
 
     // propagate same buffer layout
     return propagateSetup(numbuffers, numtracks, tracksize, streamattr);
@@ -185,6 +185,7 @@ public:
       for (int buf = 0; buf < numbuffers; buf++)
       {
 	const PiPoValue *data = buffers[buf].data;
+        printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, &traindata_[buf][0]);
 
 	for (int i = 0; i < buffers[buf].numframes; i++)
 	{
@@ -237,7 +238,15 @@ public:
 	float factor = alpha.get() * itercount;
 	PiPoValue *data    = buffers[bufferindex].data; // indata is always original data, we want to iterate on previous output
 	PiPoValue *outdata = outbufs[bufferindex].data = &traindata_[bufferindex][0];
-      
+#if DEBUG
+        printf("  stats norm buf %d  data %p  outdata %p\n", bufferindex, data, outdata);
+        if (data == NULL)
+        {
+          printf("\nURGH! data is NULL, this shouldn't happen!!!!!!!!!!!!\n")
+          return -1;
+        }
+#endif
+
 	for (int i = 0; i < numframes; i++)
 	{
 	  int mtxsize = stream_.hasVarSize ? buffers[bufferindex].varsize[i] : size_;
@@ -274,9 +283,9 @@ public:
   /** return trained model parameters */
   stats_model_data *getmodel () override  { return &stats_;  }
 
-  double getmetric () override { return distance_; }
+  bool converged (double *metric) override { return false; }
 
-  int maxiter () override { return 10; }
+  int maxiter () override { return 3; }
   
     
   /****************************************************************************
