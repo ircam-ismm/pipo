@@ -323,7 +323,7 @@ public:
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        const int tracksize = _m * _n;
+        const int tracksize = (_m / _numbuffers) * _n;
         
         for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
