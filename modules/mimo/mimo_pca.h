@@ -282,17 +282,11 @@ public:
         _numbuffers = numbuffers;
         _numtracks = numtracks;
         _rank = rank.get();
-        if(_rank == -1) _rank = _minmn, rank.set(_minmn);
+        if(_rank == -1) _rank = _minmn;
         _autorank = autorank.get();
         
-        //output streamattributes: m = inm, n = rank
         PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[1];
         outattr[0] = new PiPoStreamAttributes(**streamattr);
-        
-        //output = m 8 frames 1 rows rank 10 columns
-        //input =  8 frames , 120 * 80 columns, 1 rows
-        //output = 8,
-        
         outattr[0]->dims[0] = _rank;
         outattr[0]->dims[1] = 1;
         outattr[0]->numLabels = 0;
@@ -335,23 +329,24 @@ public:
             for(int i = 0; i < tracksize; ++i)
             {
                 trainingdata[offset + i] = data[i];
-#ifndef NORMALIZATION
 //                int curRow = i / _n;
                 mean += data[i];
-#endif
             }
+            
+            mean /= (float)tracksize;
+            means.push_back(mean);
 
 #ifndef NORMALIZATION
             //normalize by substracing mean
-            mean /= (float)tracksize;
             for(int i = 0; i < tracksize; ++i)
                 trainingdata[offset+i] -= mean;
-            means.push_back(mean);
 #endif
             //**** calculate SVD when numbuffers is reached
             
             if(bufferindex == _numbuffers - 1 && trackindex == _numtracks - 1)
             {
+                std::vector<float> inputmatrix = trainingdata;
+                
                 float* U_ptr = U.data();
                 float* S_ptr = S.data();
                 float* VT_ptr = decomposition.VT.data();
@@ -413,6 +408,8 @@ public:
                     std::vector<float> singular(_rank *_rank, 0);
                     for(int i = 0, j = 0; i < _rank; ++i, j += (_rank+1)) //veranderd _n+1 naar _rank+1
                         singular[j] = S[i];
+                    
+                    
 #ifndef WIN32
                     U = xCrop(U, _m, _m, _m, _rank);
                     decomposition.VT = xCrop(decomposition.VT, _n, _n, _rank, _n);
@@ -426,8 +423,8 @@ public:
                     decomposition.n = _n;
                     decomposition.rank = _rank;
                     decomposition.means = means;
-                    mimo_buffer* outbuf = new mimo_buffer(_m,U.data(), NULL, false, NULL, 0);
-                    
+                    std::vector<float> outdata = xMul(inputmatrix, decomposition.V, _m, _n, _rank);
+                    mimo_buffer* outbuf = new mimo_buffer(_m,outdata.data(), NULL, false, NULL, 0);
                     return propagateTrain(itercount, trackindex, numbuffers, outbuf);
                 }
                 else
@@ -447,83 +444,74 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-        if(std::strcmp(model.get(), "") != 0) //update local variables when model has changed
+        if(decomposition.from_json(model.getJson()) != -1)
         {
-            if(decomposition.from_json(model.getJson()) != -1)
-            {
-                _m = decomposition.m;
-                _n = decomposition.n;
-                _rank = decomposition.rank;
-                means = decomposition.means;
-                model.set("");
-            } else
-            {
-                //parsing failed
-                return -1;
-            }
-            
-            if(height != 1)
-            {
-                //            signalWarning("Input should be a vector");
-                return -1;
-            }
-            
-            _fb = forwardbackward.get();
-            
-            unsigned int outn = 0, outm = 0;
-            
-            switch(_fb)
-            {
-                case 0:
-                {
-                    if(width != _n)
-                    {
-                        //                    signalWarning("Input should be a vector with length n");
-                        return -1;
-                    }
-                    outm = 1;
-                    outn = static_cast<unsigned int>(_rank);
-                    break;
-                }
-                case 1:
-                {
-                    if(width != _rank)
-                    {
-                        //                    signalWarning("Input should be a vector with length rank");
-                        return -1;
-                    }
-                    outm = 1;
-                    outn = static_cast<unsigned int>(_n);
-                    break;
-                }
-                default:
-                    break;
-            }
-            
-            return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, 1);
+            _m = decomposition.m;
+            _n = decomposition.n;
+            _rank = decomposition.rank;
+            means = decomposition.means;
+        } else
+        {
+            std::cout << "parsing failed" << std::endl;
+            //parsing failed
+            return -1;
         }
         
-        else
+        if(height != 1)
         {
-            return propagateStreamAttributes(hasTimeTags, rate, offset, 0, 0, NULL, 0, 0.0, 1);
+            //            signalWarning("Input should be a vector");
+            return -1;
         }
+        
+        _fb = forwardbackward.get();
+        
+        unsigned int outn = 0, outm = 0;
+        
+        switch(_fb)
+        {
+            case 0:
+            {
+                if(width != _n)
+                {
+                    //                    signalWarning("Input should be a vector with length n");
+                    return -1;
+                }
+                outm = 1;
+                outn = static_cast<unsigned int>(_rank);
+                break;
+            }
+            case 1:
+            {
+                if(width != _rank)
+                {
+                    //                    signalWarning("Input should be a vector with length rank");
+                    return -1;
+                }
+                outm = 1;
+                outn = static_cast<unsigned int>(_n);
+                break;
+            }
+            default:
+                break;
+        }
+        return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, maxFrames);
     }
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         _fb = forwardbackward.get();
 
-        if(num!= 1)
-        {
-//            signalWarning("Wrong numframes: input to decode should be a vector");
-            return -1;
-        }
+//        if(num!= 1)
+//        {
+////            signalWarning("Wrong numframes: input to decode should be a vector");
+//            return -1;
+//        }
         
         switch(_fb)
         {
             case 0: //forward
             {
-                if(size!=_n)
+                if(size!=_n) //<---- should be rank?
                 {
 //                    signalWarning("Wrong vectorlength, input should be a vector with length n");
                     return -1;
@@ -536,8 +524,9 @@ public:
                 for(unsigned int i = 0; i < size; ++i)
                     values[i] -= mean;
 #endif
-                std::vector<float> features = xMul(values, decomposition.V, 1, _n, static_cast<int>(_rank));
-                return propagateFrames(time, weight, features.data(), _rank, 1);
+                std::vector<float> features = xMul(values, decomposition.V, num, _n, static_cast<int>(_rank));
+                
+                return propagateFrames(time, weight, features.data(), _rank, num);
             }
             case 1: //backward
             {
