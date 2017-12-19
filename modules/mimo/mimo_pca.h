@@ -67,7 +67,7 @@
 #include "jsoncpp/include/json.h"
 
 //#define WIN32
-#define NORMALIZATION
+#define NONORMALIZATION
 
 #ifdef WIN32
 extern "C" {
@@ -246,10 +246,10 @@ public:
     std::vector<float> trainingdata;
     std::vector<float> U, S, work, means;
 #ifdef WIN32
-    int _m, _n, _minmn, _rank, _autorank, _fb = 0;
+    int _m = 0, _n = 0, _minmn = 0, _rank = 0, _autorank = 0, _fb = 0;
     rta_svd_setup_t * svd_setup = nullptr;
 #else
-    __CLPK_integer _m, _n, _minmn, _rank, _thresh, _autorank, _fb = 0;
+    __CLPK_integer _m = 0, _n = 0, _minmn = 0, _rank = 0, _thresh = 0, _autorank = 0, _fb = 0;
 #endif
 public:
     PiPoScalarAttr<PiPoValue> autorank;
@@ -297,20 +297,18 @@ public:
 #ifndef WIN32
         //fortran uses row major order so n and m should be swapped in C++
         std::swap(_m, _n);
-#endif
+        decomposition.VT.resize(_n*_n,0);
+#else
+        decomposition.V.resize(_n*_n,0);
+#emdof
         //reserve space for training data and means
         trainingdata.resize(_m * _n);
-#ifndef NORMALIZATION
-        means.reserve(numbuffers * numtracks);
+#ifndef NONORMALIZATION
+        means.resize(numbuffers * numtracks * _n);
 #endif
         //reserve space for output/ work arrays of svd
         S.resize(_minmn,0);
         U.resize(_m*_m,0);
-#ifndef WIN32
-        decomposition.VT.resize(_n*_n,0);
-#else
-        decomposition.V.resize(_n*_n,0);
-#endif
         
         return propagateSetup(numbuffers, numtracks, outbufsizes, const_cast<const PiPoStreamAttributes**>(outattr));
     }
@@ -325,21 +323,29 @@ public:
             
             //queue input till all buffers are copied
             const int offset = (bufferindex * _numtracks * tracksize) + (trackindex * tracksize);
-            float mean = 0;
             for(int i = 0; i < tracksize; ++i)
             {
                 trainingdata[offset + i] = data[i];
-//                int curRow = i / _n;
-                mean += data[i];
+                //for each column += data[i]
+                int curcol = (bufferindex * _numtracks) + trackindex + (i % _m);
+#ifndef NONORMALIZATION
+                means[curcol] += data[i];
+#endif
             }
-            
-            mean /= (float)tracksize;
-            means.push_back(mean);
 
-#ifndef NORMALIZATION
+#ifndef NONORMALIZATION
+            //divide accumulated values by m to get mean
+            for(int i = 0; i < _m; ++i)
+                means[i] /= (_n / _numbuffers);
+            
             //normalize by substracing mean
             for(int i = 0; i < tracksize; ++i)
-                trainingdata[offset+i] -= mean;
+            {
+                int curcol = (bufferindex * _numtracks) + trackindex + (i % _m);
+                float curmean = means[curcol];
+                trainingdata[offset + i] -= curmean;
+            }
+
 #endif
             //**** calculate SVD when numbuffers is reached
             
@@ -409,7 +415,6 @@ public:
                     for(int i = 0, j = 0; i < _rank; ++i, j += (_rank+1)) //veranderd _n+1 naar _rank+1
                         singular[j] = S[i];
                     
-                    
 #ifndef WIN32
                     U = xCrop(U, _m, _m, _m, _rank);
                     decomposition.VT = xCrop(decomposition.VT, _n, _n, _rank, _n);
@@ -454,15 +459,10 @@ public:
         {
             std::cout << "parsing failed" << std::endl;
             //parsing failed
-            return -1;
+//            return -1;
         }
         
-        if(height != 1)
-        {
-            //            signalWarning("Input should be a vector");
-            return -1;
-        }
-        
+//        
         _fb = forwardbackward.get();
         
         unsigned int outn = 0, outm = 0;
@@ -471,7 +471,7 @@ public:
         {
             case 0:
             {
-                if(width != _n)
+                if(width*height != _n)
                 {
                     //                    signalWarning("Input should be a vector with length n");
                     return -1;
@@ -482,7 +482,7 @@ public:
             }
             case 1:
             {
-                if(width != _rank)
+                if(width*height != _rank)
                 {
                     //                    signalWarning("Input should be a vector with length rank");
                     return -1;
@@ -500,23 +500,17 @@ public:
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
         _fb = forwardbackward.get();
-
-//        if(num!= 1)
-//        {
-////            signalWarning("Wrong numframes: input to decode should be a vector");
-//            return -1;
-//        }
         
         switch(_fb)
         {
             case 0: //forward
             {
-                if(size!=_n) //<---- should be rank?
+                if(size!=_n) 
                 {
 //                    signalWarning("Wrong vectorlength, input should be a vector with length n");
                     return -1;
                 }
-#ifndef NORMALIZATION
+#ifndef NONORMALIZATION
                 float mean = 0;
                 for(unsigned int i = 0; i < size; ++i)
                     mean += values[i];
@@ -536,7 +530,7 @@ public:
                     return -1;
                 }
                 std::vector<float> resynthesized = xMul(values,decomposition.VT,1,_rank,_n);
-#ifndef NORMALIZATION
+#ifndef NONORMALIZATION
                 for(unsigned int i = 0; i < _n; ++i)
                     resynthesized[i] += means[i];
 #endif
