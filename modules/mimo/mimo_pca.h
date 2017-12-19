@@ -34,6 +34,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifndef mimo_pca_h
 #define mimo_pca_h
 
@@ -300,7 +301,7 @@ public:
         decomposition.VT.resize(_n*_n,0);
 #else
         decomposition.V.resize(_n*_n,0);
-#emdof
+#endif
         //reserve space for training data and means
         trainingdata.resize(_m * _n);
 #ifndef NONORMALIZATION
@@ -545,4 +546,4 @@ public:
     }
 };
     
-#endif /* mimo_pca_h */
+#endif/* mimo_pca_h */
