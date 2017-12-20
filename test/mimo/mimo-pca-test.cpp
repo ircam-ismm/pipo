@@ -1,3 +1,22 @@
+/*
+* @file mimo-pca-test.cpp
+* @author Ward Nijman
+*
+* @brief unit-test of mimo.pca
+*
+* @copyright Copyright (C) 2016 by IRCAM – Centre Pompidou, Paris, France.
+* All rights reserved.
+
+* @overview This unit-test uses input matrices generated in matlab. The output is compared
+* to the output from matlab to check it's validity. From test 1 till 6 the output matrices
+* VT, S and U are compared and afterwards the forward and backward transformation are
+* compared. From test 6 till 10 we feed the program matrices with either identical columns
+* or identical rows. Only the first dimension should be consistent in the resulting matrix
+* of singular values. Thus we check the whole matrix of S and a forward transformation with
+* only the the first relevant column of V. Because VT and U differ between different SVD 
+* calculations the matrices are compared by their respective absolute approximate.
+*/
+
 #include "../catch.hpp"
 
 #define NONORMALIZATION
@@ -138,6 +157,7 @@ std::tuple<std::vector<float>,int,int> bw8 = parseMatrix("pca-matlab-test/output
 std::tuple<std::vector<float>,int,int> bw9 = parseMatrix("pca-matlab-test/output/bw9.txt");
 std::tuple<std::vector<float>,int,int> bw10 = parseMatrix("pca-matlab-test/output/bw10.txt");
 
+// **** helper function for generating a pca-setup and first iteration
 
 int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vector<float>,int,int> matrix)
 {
@@ -375,9 +395,6 @@ TEST_CASE("MiMo-PCA")
         }
     }
     
-    /*In the next four tests we feed the program matrices with either identical columns or identical
-    rows. Only the first dimension should be relevant in the resulting matrix of singular values. 
-    So we check the matrix of S and a forward transformation with only the the first column of V */
     GIVEN("a matrix with same cols, square m7:")
     {
         MiMoPca pca(&parent);
