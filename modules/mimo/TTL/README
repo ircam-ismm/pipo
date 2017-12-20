@@ -1,0 +1,25 @@
+--------------------------------------------------------------------------------
+Thank you for downloading the TTL library.  This library was developed
+by the Geometry Group at SINTEF ICT, Department of Applied
+Mathematics (http://www.sintef.no/math).
+
+Requirements:
+* Boost
+  www.boost.org
+* CMake
+  www.cmake.org
+
+A few comments on the current distribution:
+
+(1) You can generate doxygen information by typing 'doxygen' in the base
+    directory.
+(2) In order to compile/install the library, you need to use CMake. See 
+    the INSTALL file.
+(3) In order to compile, you need to have the 'boost' library installed on 
+    your system.
+(4) For further information on the TTL library, see the file README-TTL.txt.
+
+Good luck!
+
+
+ 
