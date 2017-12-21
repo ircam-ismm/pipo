@@ -247,20 +247,22 @@ public:
 class MiMoPca: public Mimo
 {
 public:
+    enum Direction { Forward = 0, Backward = 1 };
     int _numbuffers, _numtracks, _bufsize;
     const PiPoStreamAttributes* _attr;
     std::vector<float> trainingdata;
     std::vector<float> U, S, work, means;
 #ifdef WIN32
-    int _m = 0, _n = 0, _minmn = 0, _rank = 0, _autorank = 0, _fb = 0;
+    int _m = 0, _n = 0, _minmn = 0, _rank = 0, _autorank = 0;
+    enum Direction _fb = Forward;
     rta_svd_setup_t * svd_setup = nullptr;
 #else
     __CLPK_integer _m = 0, _n = 0, _minmn = 0, _rank = 0, _thresh = 0, _autorank = 0, _fb = 0;
 #endif
 public:
-    PiPoScalarAttr<PiPoValue> autorank;
-    PiPoScalarAttr<PiPoValue> forwardbackward;
-    PiPoScalarAttr<PiPoValue> rank;
+    PiPoScalarAttr<int> autorank;
+    PiPoScalarAttr<PiPo::Enumerate> forwardbackward;
+    PiPoScalarAttr<int> rank;
     PiPoDictionaryAttr model;
 
     svd_model_data decomposition;
@@ -268,10 +270,13 @@ public:
     MiMoPca(Parent *parent, Mimo *receiver = nullptr)
     :   Mimo(parent, receiver)
     ,   autorank(this, "svdmode", "Mode for automatic/ manual removal of redundant eigen- values and vectors", true, 0)
-    ,   forwardbackward(this, "processmode", "Mode for decoding", true, 0)
+    ,   forwardbackward(this, "direction", "Mode for decoding: forward or backward", true, Forward)
     ,   rank(this, "rank", "How many singular values you want to retain in case of manual rank", true, -1)
     ,   model(this, "model", "the model for processing", true, "")
-    {}
+    {
+	forwardbackward.addEnumItem("forward",  "Forward transformation from input space to principal component space");
+	forwardbackward.addEnumItem("backward", "Backward transformation from principal component space to input space");
+    }
     
     ~MiMoPca(void)
     {}
@@ -478,7 +483,7 @@ public:
         
         switch(_fb)
         {
-            case 0:
+            case Forward:
             {
                 if(width*height != _n)
                 {
@@ -489,7 +494,7 @@ public:
                 outn = static_cast<unsigned int>(_rank);
                 break;
             }
-            case 1:
+            case Backward:
             {
                 if(width*height != _rank)
                 {
@@ -508,11 +513,9 @@ public:
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
-        _fb = forwardbackward.get();
-        
         switch(_fb)
         {
-            case 0: //forward
+	    case Forward:
             {
                 if(size!=_n) 
                 {
@@ -531,7 +534,7 @@ public:
                 
                 return propagateFrames(time, weight, features.data(), _rank, num);
             }
-            case 1: //backward
+	    case Backward:
             {
                 if(size!=_rank)
                 {
