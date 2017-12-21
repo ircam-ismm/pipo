@@ -35,19 +35,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef mimo_pca_h
-#define mimo_pca_h
-
-/* This is a compact SVD with reduced output dimensions. The dimensions are either 
+/* This is a compact SVD with reduced output dimensions. The dimensions are either
  limited according to a given rank by the user or by the numerical determined rank
- -  which is determined by filtering out the dimensions with low singular values.\
+ -  which is determined by filtering out the dimensions with low singular values.
  
  The output dimensions [rows * cols] are as follows:
- rank <= minmn
  U = M * rank
  S = rank * rank
  V = N * rank
  VT = rank * N
+ 
+ The training stage propagates the input projected onto it's feature space.
+ 
+ This is formulated as follows:
+ 
+ output = M * V;
  
  The decoding step provides a forward transformation - into feature space - and a
  backward transformation - from feature space back to input space.
@@ -58,13 +60,16 @@
  resynthesized = vec[1,rank] * VT[rank,n];
 
  */
-#include <cstdio> //file writing can be removed
-#include <iostream>
+
+
+#ifndef mimo_pca_h
+#define mimo_pca_h
 
 #include "mimo.h"
 #include <vector>
 #include <sstream>
 #include <stdexcept>
+#include <iostream>
 #include "jsoncpp/include/json.h"
 
 //#define WIN32
@@ -227,7 +232,7 @@ public:
         } else
             return -1;
         const Json::Value _means = root["means"];
-        if(_means.size() > 0)
+        if(_means.size() >= 0)
         {
             means.resize(_means.size());
             for(unsigned int i = 0; i < _means.size(); ++i)
@@ -328,8 +333,8 @@ public:
             {
                 trainingdata[offset + i] = data[i];
                 //for each column += data[i]
-                int curcol = (bufferindex * _numtracks) + trackindex + (i % _m);
 #ifndef NONORMALIZATION
+                int curcol = (bufferindex * _numtracks) + trackindex + (i % _m);
                 means[curcol] += data[i];
 #endif
             }
@@ -430,8 +435,11 @@ public:
                     decomposition.rank = _rank;
                     decomposition.means = means;
                     std::vector<float> outdata = xMul(inputmatrix, decomposition.V, _m, _n, _rank);
-                    mimo_buffer* outbuf = new mimo_buffer(_m,outdata.data(), NULL, false, NULL, 0);
-                    return propagateTrain(itercount, trackindex, numbuffers, outbuf);
+                    std::vector<mimo_buffer> outbufs(1);
+                    outbufs.assign(buffers, buffers + 1);
+                    outbufs[0].data = outdata.data();
+                    outbufs[0].numframes = _m;
+                    return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
                 }
                 else
                 {
