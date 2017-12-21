@@ -73,7 +73,7 @@
 #include "jsoncpp/include/json.h"
 
 //#define WIN32
-#define NONORMALIZATION
+//#define NONORMALIZATION
 
 #ifdef WIN32
 extern "C" {
@@ -172,7 +172,7 @@ public:
     
     int json_size() override
     {
-        return (V.size() + VT.size())*20;
+        return (V.size() + VT.size() + means.size())*20;
     }
     
     char* to_json (char* out, int size) throw() override
@@ -310,7 +310,7 @@ public:
         //reserve space for training data and means
         trainingdata.resize(_m * _n);
 #ifndef NONORMALIZATION
-        means.resize(numbuffers * numtracks * _n);
+        means.resize(numbuffers * numtracks * _m);
 #endif
         //reserve space for output/ work arrays of svd
         S.resize(_minmn,0);
