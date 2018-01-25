@@ -274,8 +274,8 @@ public:
     ,   rank(this, "rank", "How many singular values you want to retain in case of manual rank", true, -1)
     ,   model(this, "model", "the model for processing", true, "")
     {
-	forwardbackward.addEnumItem("forward",  "Forward transformation from input space to principal component space");
-	forwardbackward.addEnumItem("backward", "Backward transformation from principal component space to input space");
+        forwardbackward.addEnumItem("forward",  "Forward transformation from input space to principal component space");
+        forwardbackward.addEnumItem("backward", "Backward transformation from principal component space to input space");
     }
     
     ~MiMoPca(void)
@@ -345,7 +345,8 @@ public:
             }
 
 #ifndef NONORMALIZATION
-            //divide accumulated values by m to get mean
+            
+            //divide accumulated values by m to get mean 
             for(int i = 0; i < _m; ++i)
                 means[i] /= (_n / _numbuffers);
             
@@ -523,12 +524,8 @@ public:
                     return -1;
                 }
 #ifndef NONORMALIZATION
-                float mean = 0;
                 for(unsigned int i = 0; i < size; ++i)
-                    mean += values[i];
-                mean /= (float)size;
-                for(unsigned int i = 0; i < size; ++i)
-                    values[i] -= mean;
+                    values[i] -= means[i % _n];
 #endif
                 std::vector<float> features = xMul(values, decomposition.V, num, _n, static_cast<int>(_rank));
                 
