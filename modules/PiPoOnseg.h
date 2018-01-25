@@ -423,13 +423,14 @@ public:
     {
       /* end of segment (new onset or below off threshold) */
       int outputSize = this->outputValues.size();
-      
-      this->outputValues[0] = duration;
+
+      if (this->haveduration)
+        this->outputValues[0] = duration;
       
       /* get temporal modelling */
       if(outputSize > 1)
-        this->tempMod.getValues(&this->outputValues[1], outputSize - 1, true);
-      
+        this->tempMod.getValues(&this->outputValues[this->haveduration], outputSize - this->haveduration, true);
+
       /* report segment */
       return this->propagateFrames(this->offset + this->onsetTime, 0.0, &this->outputValues[0], outputSize, 1);
     }
