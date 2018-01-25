@@ -234,6 +234,22 @@ public:
     
     return this->propagateReset();
   };
+
+  // helper function: get requested temporal modelling values and propagate
+  int propagate (double time, double weight, double duration)
+  {
+    int outsize = this->outputValues.size();
+
+    if (this->haveduration)
+      this->outputValues[0] = duration;
+          
+    /* get temporal modelling */
+    if (outsize > 1)
+      this->tempMod.getValues(&this->outputValues[this->haveduration], outsize - this->haveduration, true);
+          
+    /* report segment */
+    return this->propagateFrames(time, weight, &this->outputValues[0], outsize, 1);
+  }
   
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
@@ -372,19 +388,9 @@ public:
         double duration = time - this->onsetTime;
         
         if(this->segIsOn && (frameIsOnset || energy < offThreshold) && duration >= durationThreshold)
-        {
-          /* end of segment (new onset or energy below off threshold) */
-          int outputSize = this->outputValues.size();
-
-	  if (this->haveduration)
-	    this->outputValues[0] = duration;
-          
-          /* get temporal modelling */
-          if(outputSize > 1)
-            this->tempMod.getValues(&this->outputValues[this->haveduration], outputSize - this->haveduration, true);
-          
-          /* report segment */
-          ret = this->propagateFrames(this->offset + this->onsetTime, weight, &this->outputValues[0], outputSize, 1);
+        { /* end of segment (new onset or energy below off threshold) */
+	  // get requested temporal modelling values and propagate
+	  ret = propagate(this->offset + this->onsetTime, weight, duration);
         }
         
         /* segment on/off (segment has at least one frame) */
@@ -420,19 +426,9 @@ public:
     //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
 
     if(this->segIsOn && duration >= durationThreshold)
-    {
-      /* end of segment (new onset or below off threshold) */
-      int outputSize = this->outputValues.size();
-
-      if (this->haveduration)
-        this->outputValues[0] = duration;
-      
-      /* get temporal modelling */
-      if(outputSize > 1)
-        this->tempMod.getValues(&this->outputValues[this->haveduration], outputSize - this->haveduration, true);
-
-      /* report segment */
-      return this->propagateFrames(this->offset + this->onsetTime, 0.0, &this->outputValues[0], outputSize, 1);
+    { /* end of segment (new onset or below off threshold) */
+      // get requested temporal modelling values and propagate
+      return propagate(this->offset + this->onsetTime, 0.0, duration);
     }
     
     return this->propagateFinalize(inputEnd);
