@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#undef DEBUG
+#define DEBUG_CHOP 0
 
 
 class PiPoChop : public PiPo
@@ -104,7 +104,7 @@ public:
 			                  const char **labels, bool hasVarSize, double domain,
 			                  unsigned int maxFrames)
   {
-#ifdef DEBUG
+#if DEBUG_CHOP
   printf("PiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
 	  "varsize %d  domain %f  maxframes %d\n",
 	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
@@ -161,7 +161,7 @@ public:
 
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-#ifdef DEBUG
+#if DEBUG_CHOP
     //printf("PiPoChop frames time %f (next %f)  size %d  num %d\n", time, nextTime, size, num);
 #endif
 
@@ -183,7 +183,7 @@ public:
         /* get temporal modelling */
         tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
 
-#ifdef DEBUG
+#if DEBUG_CHOP
         printf("   segment! time %f at input time %f  nextTime %f outsize %d\n",
                nextTime - chopSize, time, nextTime, outsize);
 #endif
@@ -214,7 +214,7 @@ public:
                     ? inputEnd - (nextTime - chopSizeA.get())
                     : inputEnd - offsetA.get();
 
-#ifdef DEBUG
+#if DEBUG_CHOP
     printf("PiPoChop finalize time %f  duration %f  size %ld\n", inputEnd, duration, outValues.size());
 #endif
 
