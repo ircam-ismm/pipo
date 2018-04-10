@@ -46,13 +46,16 @@ class PiPoResample : public PiPo
   
 public:
   PiPoScalarAttr<PiPo::Enumerate> mode;
-  PiPoScalarAttr<double>  increment;
+  PiPoScalarAttr<double> factor;
+  PiPoScalarAttr<double> targetrate;
 private:
   
   double inputIncr;
   int inputIndex;
   int outputIndex;
   int timeTaggedInput;
+  double targetRate;
+  double targetPeriod;
   
   float *vector;
   int size;
@@ -61,7 +64,8 @@ private:
 public:
   PiPoResample(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  increment(this, "increment", "increment", true, 1.0),
+  factor(this, "factor", "resample factor", true, 1.0),
+  targetrate(this, "targetrate", "output samplerate", true, 1.0),
   mode(this, "mode", "resample mode", true, Nearest)
   {
     this->mode.addEnumItem("off", "Resample Off");
@@ -71,12 +75,12 @@ public:
     this->inputIndex = 0;
     this->outputIndex = 0;
     this->timeTaggedInput = 0;
+    this->targetRate = 1.;
+    this->targetPeriod = 1000.;
     
     this->vector = NULL;
     this->size = 0;
     this->maxFrames = 0;
-    
-    this->vector = NULL;
   }
   
   ~PiPoResample(void)
@@ -88,17 +92,32 @@ public:
   int
   streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    this->inputIncr = this->increment.get();
-    double factor = 1.0 / this->inputIncr;
-    int maxOutBlockSize = (int)ceil(maxFrames * factor);
+    double outFrameRate, factor;
+    int maxOutBlockSize;
+    if(hasTimeTags)
+    {
+      this->targetRate = this->targetrate.get();
+      if(this->targetRate < 1.) this->targetRate = 1.;
+      this->targetPeriod = 1000.0 / this->targetRate;
+      
+      outFrameRate = this->targetRate;
+      factor = outFrameRate / rate;
+    }
+    else
+    {
+      this->inputIncr = fabs(this->factor.get());
+      factor = 1.0 / this->inputIncr;
+      outFrameRate = rate * factor;
+    }
+
+    maxOutBlockSize = (int)ceil(maxFrames * factor);
     
     this->timeTaggedInput = hasTimeTags;
-    
-    this->vector = (float *)realloc(this->vector, this->size * this->maxFrames * sizeof(float));
-    this->size = width * size;
     this->maxFrames = maxOutBlockSize;
+    this->size = width * size;
+    this->vector = (float *)realloc(this->vector, this->size * this->maxFrames * sizeof(float));
     
-    return this->propagateStreamAttributes(0, rate * factor, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
+    return this->propagateStreamAttributes(0, outFrameRate, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
   }
   
   int
@@ -128,15 +147,31 @@ public:
         int inputIndex = this->inputIndex;
         int outputIndex = this->outputIndex;
         
-        for(unsigned int i = 0; i < num; i++)
+        if(this->timeTaggedInput)
         {
-          while((double)outputIndex * this->inputIncr < (double)inputIndex + 0.5)
+          for(unsigned int i = 0; i < num; i++)
           {
-            memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
-            outputIndex++;
-            numOutFrames++;
+            while((double)outputIndex * this->targetPeriod < time && numOutFrames < this->maxFrames)
+            {
+              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+              outputIndex++;
+              numOutFrames++;
+            }
           }
-          
+          inputIndex++;
+        }
+        else
+        {
+          double factor = this->factor.get();
+          for(unsigned int i = 0; i < num; i++)
+          {
+            while((double)outputIndex * factor < (double)inputIndex*num + i + 0.5)
+            {
+              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+              outputIndex++;
+              numOutFrames++;
+            }
+          }
           inputIndex++;
         }
         
@@ -147,7 +182,9 @@ public:
       }
     }
     
-    return this->propagateFrames(time, weight, this->vector, size, numOutFrames);
+    if(numOutFrames > 0)
+      return this->propagateFrames(NULL, weight, this->vector, size, numOutFrames);
+    else return 0;
   }
 }; /* _PIPO_RESAMPLE_H_ */
 
