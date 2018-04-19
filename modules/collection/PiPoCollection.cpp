@@ -49,7 +49,7 @@
 #include "PiPoConst.h"
 #include "PiPoDct.h"
 #include "PiPoDelta.h"
-// #include "PiPoDescr.h" // new name of PiPoBasic (?)
+#include "PiPoDescr.h" // new name of PiPoBasic
 #include "PiPoFft.h"
 #include "PiPoFiniteDif.h"
 #include "PiPoGate.h"
@@ -124,7 +124,7 @@ public:
     include("const", new PiPoCreator<PiPoConst>);
     include("dct", new PiPoCreator<PiPoDct>);
     include("delta", new PiPoCreator<PiPoDelta>);
-    // include("descr", new PiPoCreator<PiPoDescr>); // << new PiPoBasic ?
+    include("descr", new PiPoCreator<PiPoDescr>); // << new PiPoBasic
     include("fft", new PiPoCreator<PiPoFft>);
     include("finitedif", new PiPoCreator<PiPoFiniteDif>);
     include("gate", new PiPoCreator<PiPoGate>);
