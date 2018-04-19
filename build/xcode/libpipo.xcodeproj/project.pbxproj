@@ -32,6 +32,7 @@
 
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
+		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; settings = {ASSET_TAGS = (); }; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
@@ -118,6 +119,7 @@
 
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
+		21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDescr.h; path = ../../modules/PiPoDescr.h; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
 		315B904B1FB4B9980005150B /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../sdk/src/PiPo.h; sourceTree = "<group>"; };
@@ -344,6 +346,7 @@
 				31C2B3A31FB0D43F001A134E /* PiPoConst.h */,
 				31C2B3A41FB0D43F001A134E /* PiPoDct.h */,
 				31C2B3A51FB0D43F001A134E /* PiPoDelta.h */,
+				21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */,
 				31C2B3A61FB0D43F001A134E /* PiPoFft.h */,
 				31C2B3A71FB0D43F001A134E /* PiPoFiniteDif.h */,
 				31C2B3A81FB0D43F001A134E /* PiPoGate.h */,
@@ -667,6 +670,7 @@
 				31C2B3DD1FB0D43F001A134E /* PiPoPsy.h in Headers */,
 				31C2B3DE1FB0D43F001A134E /* PiPoRms.h in Headers */,
 				31C2B4041FB0D4D8001A134E /* BayesianFilter.h in Headers */,
+				21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */,
 				31C2B3F91FB0D4A7001A134E /* finitedifferences.h in Headers */,
 				31C2B3C91FB0D43F001A134E /* PiPoDct.h in Headers */,
 				31C2B3D91FB0D43F001A134E /* PiPoMoments.h in Headers */,
@@ -883,7 +887,6 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CODE_SIGN_IDENTITY = "-";
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -914,7 +917,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				HEADER_SEARCH_PATHS = (
@@ -931,8 +933,8 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -984,6 +986,7 @@
 					vecLib,
 				);
 				PREBINDING = YES;
+				SDKROOT = macosx10.8;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -994,8 +997,8 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -1044,6 +1047,7 @@
 					vecLib,
 				);
 				PREBINDING = YES;
+				SDKROOT = macosx10.8;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
