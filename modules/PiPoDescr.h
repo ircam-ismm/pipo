@@ -103,6 +103,7 @@ public:
     this->addAttr(this, "minfreq", "Lowest Frequency that is detectable", &yin.minFreq);
     this->addAttr(this, "downsampling", "Yin Downsampling Exponent", &yin.downSampling);
     this->addAttr(this, "threshold", "Yin Periodicity Threshold", &yin.yinThreshold);
+    this->addAttr(this, "moments", "Number of Moments", &moments.order);
 
     // init attributes
     slice.size.set(1710);
@@ -112,13 +113,15 @@ public:
     fft.mode.set("power");
     fft.weighting.set("itur468");
     sum.colname.set("Loudness");
+    moments.scaling.set("Domain");
+
+    // magic setting to scale from linear to dB
     scale.inMin.set(0, 1.);
     scale.inMax.set(0, 10.);
     scale.outMin.set(0, 0.);
     scale.outMax.set(0, 10.);
     scale.func.set("log");
     scale.base.set(10);
-    moments.scaling.set("Domain");
   }
 
 /*  virtual ~PiPoDescr ()
