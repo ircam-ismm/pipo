@@ -208,7 +208,8 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   {
     try {
       // init idesc
-      idesc_ = new idescx(rate, winlen, hoplen, this);
+      if (idesc_) delete idesc_;
+      idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
 
       // set up idesc params from pipo attrs
 #     define IDESC_PARAM(TYPE, NAME, DEFAULT, BLURB) \
