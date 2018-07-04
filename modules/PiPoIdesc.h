@@ -79,12 +79,20 @@ public:
   idescx (double sr, double winsize, double hopsize, PiPoIdesc *_pipo)
   : idesc(sr, winsize, hopsize),
     pipo(_pipo)
-  { };
+  {
+    this->sr = sr;
+    this->winsize = winsize;
+    this->hopsize = hopsize;
+  };
 
   // dummy setters to keep IDESC_PARAM macro happy
   void set_WindowSize (int ws) {};
   void set_HopSize (int hs) {};
 
+  double get_WindowSize() {return winsize;};
+  double get_HopSize() {return hopsize;};
+  double get_sr() {return sr;};
+  
   // set chroma limits as one band: fixed num = 1!
   void set_chromarange_band_limits (int num, float *bands)
   {
@@ -104,6 +112,9 @@ public:
 
 private:
   PiPoIdesc *pipo;	// pointer to containing object to query chroma range
+  double sr;
+  double winsize;
+  double hopsize;
 };
 
 
@@ -208,9 +219,19 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   {
     try {
       // init idesc
-      if (idesc_) delete idesc_;
-      idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
-
+      //if (idesc_) delete idesc_;
+      //idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
+      if(idesc_ == NULL)
+        idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
+      else
+      {
+        if(idesc_->get_sr() != rate || idesc_->get_WindowSize() != winlen || idesc_->get_HopSize() != hoplen)
+        {
+          delete idesc_;
+          idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
+        }
+      }
+      
       // set up idesc params from pipo attrs
 #     define IDESC_PARAM(TYPE, NAME, DEFAULT, BLURB) \
       idesc_->set_ ## NAME(NAME.get());
@@ -337,7 +358,7 @@ int PiPoIdesc::reset (void)
 
   if (idesc_)
   {
-    try {
+    /*try {
       // rebuild idesc graph to start over (necessary after finalize)
       // assume sizes have not changed
       idesc_->build_descriptors();
@@ -347,7 +368,7 @@ int PiPoIdesc::reset (void)
 #endif
       signalError(std::string("pipo.ircamdescriptor reset error: IrcamDescriptor library: ") + e.what());
       return -1;
-    }
+    }*/
 
     status_ = 0;
 
