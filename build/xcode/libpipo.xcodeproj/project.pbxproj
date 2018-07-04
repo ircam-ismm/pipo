@@ -103,6 +103,7 @@
 		31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */; };
 		31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */; };
 		31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */; };
+		3B0D90C72056A8FB00FD0CFC /* PiPoResample.h in Headers */ = {isa = PBXBuildFile; fileRef = 3B0D90C62056A8FB00FD0CFC /* PiPoResample.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -277,6 +278,7 @@
 		31D2EEAA1ED72EB9002E9F6A /* pipolayout.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = pipolayout.xml; path = ../doxygen/pipolayout.xml; sourceTree = "<group>"; };
 		31D2EEAB1ED72EB9002E9F6A /* pipostyle.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = pipostyle.css; path = ../doxygen/pipostyle.css; sourceTree = "<group>"; };
 		31D2EEAC1ED72EB9002E9F6A /* pipotabs.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = pipotabs.css; path = ../doxygen/pipotabs.css; sourceTree = "<group>"; };
+		3B0D90C62056A8FB00FD0CFC /* PiPoResample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoResample.h; path = ../../modules/PiPoResample.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -363,6 +365,7 @@
 				31C2B3B61FB0D43F001A134E /* PiPoOnseg.h */,
 				31C2B3B71FB0D43F001A134E /* PiPoPeaks.h */,
 				31C2B3B81FB0D43F001A134E /* PiPoPsy.h */,
+				3B0D90C62056A8FB00FD0CFC /* PiPoResample.h */,
 				31C2B3B91FB0D43F001A134E /* PiPoRms.h */,
 				31C2B3BA1FB0D43F001A134E /* PiPoScale.h */,
 				31C2B3BB1FB0D43F001A134E /* PiPoSelect.h */,
@@ -657,6 +660,7 @@
 				31C2B3E61FB0D43F001A134E /* TempMod.h in Headers */,
 				31C2B3E41FB0D43F001A134E /* PiPoWavelet.h in Headers */,
 				31C2B3E01FB0D43F001A134E /* PiPoSelect.h in Headers */,
+				3B0D90C72056A8FB00FD0CFC /* PiPoResample.h in Headers */,
 				31C2B3C61FB0D43F001A134E /* PiPoBranch.h in Headers */,
 				31C2B3C41FB0D43F001A134E /* PiPoBayesFilter.h in Headers */,
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
