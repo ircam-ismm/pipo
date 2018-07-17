@@ -81,8 +81,8 @@ private:
   BiquadTypeE biquadType;;
   FilteringModeE filterMode;
 
-  unsigned int frameWidth;
-  unsigned int frameHeight;
+  int frameWidth;
+  int frameHeight;
 
   double frameRate;
   std::vector<PiPoValue> outValues;
@@ -134,6 +134,9 @@ public:
     this->biquadGain = this->gainA.get();
     this->biquadQuality = this->QA.get();
 
+	this->f0 = 0.0;
+	this->normF0 = 0.0;
+
     // constant
     this->biquadQNormalisation = M_SQRT1_2;
 
@@ -176,15 +179,17 @@ public:
 
   unsigned int getBiquadStatesNumber()
   {
+	unsigned int numStates = 4;	
     switch (this->biquadType)
     {
       case DF1BiquadType:
-        return 4;
+        numStates = 4;
         break;
       case DF2TBiquadType:
-        return 2;
+        numStates = 2;
         break;
     }
+	return numStates;
   }
 
   void initBiquadStates()
