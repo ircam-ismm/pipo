@@ -146,7 +146,8 @@ public:
           break;
       }
     }
-    
+
+    // output slice as column vector of length frameSize
     return this->propagateStreamAttributes(0, rate / (double)hopSize, offset, 1, frameSize, labels, 0, (double)frameSize / rate, 1);
   }
   
@@ -159,7 +160,7 @@ public:
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    int inputIndex = this->inputIndex;
+    int inputIndex = this->inputIndex; // buffer write pointer
     unsigned int outputSize = this->frame.size();
     NormModeE normMode = (enum NormModeE)this->norm.get();
     int frameIndex = 0;
@@ -179,7 +180,7 @@ public:
         else
         {
           for(unsigned int i = 0, j = 0; i < numInput; i++, j += size)
-            this->buffer[inputIndex + i] = values[j];
+	    this->buffer[inputIndex + i] = values[j];	// copy first element of each input frame to buffer
         }
         
         inputIndex += numInput;
