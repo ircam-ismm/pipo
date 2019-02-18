@@ -213,7 +213,7 @@ public:
       return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
   }
   
-  int reset(void)
+  int reset(void) override
   {
     this->buffer.reset();
     
@@ -251,7 +251,7 @@ public:
     return this->propagateFrames(time, weight, &this->outputValues[0], outsize, 1);
   }
   
-  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
+  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
   {
     double onsetThreshold = this->threshold.get();
     double minimumInterval = this->mininter.get();
