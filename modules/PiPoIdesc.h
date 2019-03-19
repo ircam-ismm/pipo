@@ -219,19 +219,15 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   {
     try {
       // init idesc
-      //if (idesc_) delete idesc_;
-      //idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
-      if(idesc_ == NULL)
-        idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
-      else
+      if (idesc_ != NULL  &&  (idesc_->get_sr() != rate  ||  idesc_->get_WindowSize() != winlen  ||  idesc_->get_HopSize() != hoplen))
       {
-        if(idesc_->get_sr() != rate || idesc_->get_WindowSize() != winlen || idesc_->get_HopSize() != hoplen)
-        {
-          delete idesc_;
-          idesc_ = new idescx(rate, winlen, hoplen, this); //todo: only if params changed
-        }
+	delete idesc_;	// reinit only first time or if params changed
+	idesc_ = NULL;
       }
       
+      if (idesc_ == NULL)
+	idesc_ = new idescx(rate, winlen, hoplen, this); 
+
       // set up idesc params from pipo attrs
 #     define IDESC_PARAM(TYPE, NAME, DEFAULT, BLURB) \
       idesc_->set_ ## NAME(NAME.get());
