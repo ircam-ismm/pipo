@@ -95,7 +95,7 @@ public:
   PiPoOnseg(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
-    colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
+    colindex(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
     numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
     fltsize(this, "filtersize", "Filter Size", true, 3),
     threshold(this, "threshold", "Onset Threshold", false, 5),

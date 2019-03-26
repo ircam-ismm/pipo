@@ -78,7 +78,7 @@ public:
   PiPoSelect(Parent *parent, PiPo *receiver = NULL) :
   PiPo(parent, receiver),
   colNames(this, "cols", "List of Names or Indices of Columns to Select [DEPRECATED]", true, 0, 0),
-  colIndices(this, "columns", "List of Column Indices to select", true, 0, 0),
+  colIndices(this, "columns", "List of Column Indices to select (starting with 0)", true, 0, 0),
   rowIndices(this, "rows", "List of Row Indices to Select", true, 0, 0)
   {
     this->frameWidth = 0;
@@ -133,7 +133,7 @@ public:
     {
       for (unsigned int i = 0; i < ciSize; ++i)
       {
-        if (this->_colIndices[i] != this->colIndices[i])
+	if (this->_colIndices[i] != this->colIndices.getInt(i))
         {
           colIndicesChanged = true;
           break;
@@ -170,7 +170,9 @@ public:
       this->_colIndices.clear();
       for (unsigned int i = 0; i < ciSize; ++i)
       {
-        this->_colIndices.push_back(this->colIndices[i]);
+	  this->_colIndices.push_back(this->colIndices.getInt(i));
+
+        printf("use col %d at pos %d (attr type %s)\n", this->colIndices.getInt(i), i, typeid(this->colIndices[0]).name());
       }
 
       // copy new col names

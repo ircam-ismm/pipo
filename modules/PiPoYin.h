@@ -51,7 +51,7 @@ extern "C" {
 #include <algorithm>
 #include <cstdlib>
 
-#define PIPO_YIN_DEBUG 1
+#define PIPO_YIN_DEBUG 0
 
 static const unsigned int yin_max_mins = 128;
 
