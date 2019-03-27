@@ -398,7 +398,7 @@ public:
         }
         else
         {
-            //signalWarning(Error.. rank < 1, not propagating output);
+            signalWarning("Error.. rank < 1, not propagating output");
         }
 
         return propagateTrain(itercount, trackindex, numbuffers, buffers);
@@ -440,7 +440,7 @@ public:
             }
             default:
             {
-                //signalWarning("Mode can either be "backward" or forward");
+                signalWarning("Mode can either be 'backward' or 'forward'");
                 break;
             }
         }
@@ -455,7 +455,7 @@ public:
             {
                 if(size<_n)
                 {
-                    //signalWarning("Vector too short, input should be a vector with length n");
+                    signalWarning("Vector too short, input should be a vector with length n");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
 
@@ -470,7 +470,7 @@ public:
             {
                 if(size<_rank)
                 {
-                    //signalWarning("Vector too short, input should be a vector with length rank");
+                    signalWarning("Vector too short, input should be a vector with length rank");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
                 
@@ -484,7 +484,7 @@ public:
                 
             default:
             {
-                //signalWarning("Error... invalid decoding mode selected");
+                signalWarning("Error... invalid decoding mode selected");
                 return propagateFrames(time, weight, nullptr, 0, 0);
                 break;
             }
