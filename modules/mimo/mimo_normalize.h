@@ -115,7 +115,11 @@ public:
                 {
                     PiPoValue min = _model->min[j];
                     PiPoValue max = _model->max[j];
-                    PiPoValue normalized = (data[j] - min) / (max - min);
+                    PiPoValue normalized;
+                    if(abs(max-min) < 1e-06)
+                        normalized = 0;
+                    else
+                        normalized = (data[j] - min) / (float)(max - min);
                     _traindata[bufferindex][(i*mtxsize)+j] = normalized;
                 }
                 data += _size;
