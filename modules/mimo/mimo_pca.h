@@ -129,6 +129,9 @@ public:
         
     int from_json (const char* json_string) override
     {
+        if (json_string == NULL  ||  json_string[0] == 0)
+          return -1; // empty string
+
         bool succes = reader.parse(json_string, root);
         if(!succes)
         {
@@ -272,8 +275,8 @@ public:
 
         S.resize(_minmn,0.f);
         A.resize(_m * _n);
-        means.resize(numbuffers * numtracks * _n);
-        
+      means.resize(numbuffers * numtracks * _n); /// ??? should be _n
+
 #ifdef WIN32
         Vt.resize(_n*_n,0.f);
         U.resize(_m*_m,0.f);
@@ -289,8 +292,8 @@ public:
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        const int tracksize = (_m / _numbuffers) * _n;
-        
+      const int tracksize = (_m / _numbuffers) * _n; /// ??? use bufsizes[i] or outbufsizes[i]
+
         for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
             float* data = buffers[bufferindex].data;
@@ -341,7 +344,7 @@ public:
         if(_rank == -1) //calculate rank
         {
             _rank = 0;
-            float thresh = 1e-6;
+            float thresh = 1e-6; //TBD: make the cutoff for auto rank mode a parameter?
             int ssize = static_cast<int>(S.size());
             for(int i = 0; i < ssize; i++)
             {
@@ -394,15 +397,15 @@ public:
             
             std::fill(means.begin(), means.end(), 0);
             
-            return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+          return propagateTrain(itercount, trackindex, 1, &outbufs[0]); // todo: propagate numbuffers of output data (split features according to original bufsizes)
         }
         else
         {
             signalWarning("Error.. rank < 1, not propagating output");
         }
 
-        return propagateTrain(itercount, trackindex, numbuffers, buffers);
-    }
+        return propagateTrain(itercount, trackindex, numbuffers, buffers); // TBD: what to propagate in case of error?
+    } // end train
     
     mimo_model_data *getmodel ()
     {
@@ -419,7 +422,16 @@ public:
             _rank = decomposition.rank;
             means = decomposition.means;
         }
-        
+        else
+        { // not configued yet, TBD: will output empty (1, 1) matrix
+          _m = 1;
+          _n = 1;
+          _minmn = 1;
+          _rank = 1;
+          means.clear();
+	  signalWarning("PCA not configured yet.");
+        }
+
         _fb = forwardbackward.get();
         
         unsigned int outn = 0, outm = 0;
@@ -449,6 +461,11 @@ public:
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
+      if (means.size() == 0)
+      { // not configued yet, TBD: will output empty (1, 1) matrix
+        return propagateFrames(time, weight, nullptr, 0, 0);
+      }
+      else
         switch(_fb)
         {
 	    case Forward:
