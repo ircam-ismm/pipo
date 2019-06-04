@@ -32,7 +32,7 @@
 
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
-		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; settings = {ASSET_TAGS = (); }; };
+		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
@@ -990,7 +990,7 @@
 					vecLib,
 				);
 				PREBINDING = YES;
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1051,7 +1051,7 @@
 					vecLib,
 				);
 				PREBINDING = YES;
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
