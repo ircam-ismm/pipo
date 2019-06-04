@@ -222,7 +222,7 @@ public:
         if (this->segison  &&  ((energy < offThreshold  &&  duration >= durationThreshold)
                                 || (maxsize > 0  &&  time >= this->onsettime + maxsize)))
         { // energy below off threshold or max segment size exceeded
-          int outputsize = this->outputvalues.size();
+          long outputsize = this->outputvalues.size();
           
           this->outputvalues[0] = duration;
           
@@ -267,7 +267,7 @@ public:
     if (this->segison && duration >= durationThreshold)
     {
       /* end of segment (new onset or below off threshold) */
-      int outputsize = this->outputvalues.size();
+      long outputsize = this->outputvalues.size();
       
       this->outputvalues[0] = duration;
       

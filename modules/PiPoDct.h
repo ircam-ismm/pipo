@@ -128,9 +128,9 @@ public:
   {
     for(unsigned int i = 0; i < num; i++)
     {
-      rta_dct(&this->frame[0], values, &this->weights[0], this->inputSize, this->frame.size());
+      rta_dct(&this->frame[0], values, &this->weights[0], this->inputSize, (unsigned int) this->frame.size());
 
-      int ret = this->propagateFrames(time, weight, &this->frame[0], this->frame.size(), 1);
+      int ret = this->propagateFrames(time, weight, &this->frame[0], (unsigned int) this->frame.size(), 1);
 
       if(ret != 0)
         return ret;

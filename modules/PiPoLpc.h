@@ -116,8 +116,8 @@ public:
         {
             if (this->frameSize > 1)
 	    {
-                rta_lpc(&this->coefs[0], this->coefs.size(), &(this->error), &this->corr[0], values, this->frameSize);
-                ret = this->propagateFrames(time, weight, &this->coefs[0], this->coefs.size(), 1);
+                rta_lpc(&this->coefs[0], (unsigned int) this->coefs.size(), &(this->error), &this->corr[0], values, this->frameSize);
+                ret = this->propagateFrames(time, weight, &this->coefs[0], (unsigned int) this->coefs.size(), 1);
             }
 	    else
 	    {

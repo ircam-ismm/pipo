@@ -161,7 +161,7 @@ public:
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     int inputIndex = this->inputIndex; // buffer write pointer
-    unsigned int outputSize = this->frame.size();
+    unsigned int outputSize = (unsigned int) this->frame.size();
     NormModeE normMode = (enum NormModeE)this->norm.get();
     int frameIndex = 0;
 

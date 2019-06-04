@@ -228,7 +228,7 @@ public:
 
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-    unsigned int numBands = this->bands.size();
+    unsigned int numBands = (unsigned int) this->bands.size();
     bool log = this->log.get();
     float p = this->power.get();
     float *spectrum;
@@ -254,7 +254,7 @@ public:
 
       if (complex_input)
       { // convert to power spectrum
-        specsize = power_spectrum.size();
+        specsize = (unsigned int) power_spectrum.size();
         spectrum = &(power_spectrum[0]);
 
         for (int i = 0; i < specsize; i++)

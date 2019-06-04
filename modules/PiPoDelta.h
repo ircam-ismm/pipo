@@ -192,7 +192,7 @@ public:
             frame[i] *= normalization_factor;
         }
 
-        ret = this->propagateFrames(time, weight, &frame[0], frame.size(), 1);
+        ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);
       }
 
       if (ret != 0)

@@ -238,7 +238,7 @@ public:
   // helper function: get requested temporal modelling values and propagate
   int propagate (double time, double weight, double duration)
   {
-    int outsize = this->outputValues.size();
+    long outsize = this->outputValues.size();
 
     if (this->haveduration)
       this->outputValues[0] = duration;

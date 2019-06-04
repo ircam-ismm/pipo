@@ -174,7 +174,7 @@ public:
       // at first crossing of offset, nextTime == offset + duration
       if (time >= nextTime)
       {
-        int outsize = outValues.size();
+        int outsize = (int) outValues.size();
 
         if (reportDuration != 0)
           //TBD: calculate actual duration quantised to frame hops?
@@ -221,7 +221,7 @@ public:
     if (true) // want last smaller segment? duration >= chopSizeA.get())
     {
       /* end of segment (new onset or below off threshold) */
-      int outsize = outValues.size();
+      int outsize = (int) outValues.size();
 
       if (reportDuration != 0)
         // calculate actual duration of last chop
