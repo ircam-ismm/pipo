@@ -33,7 +33,8 @@
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
-		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; settings = {ATTRIBUTES = (Required, ); }; };
+		21F99D9A1FBC65CC003A78DB /* mimo-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */; };
+		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
 		3164882B1FC225E60086FEDF /* rta_delta.c in Sources */ = {isa = PBXBuildFile; fileRef = 316488011FC224450086FEDF /* rta_delta.c */; };
@@ -845,6 +846,7 @@
 				1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */,
 				316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
+				21F99D9A1FBC65CC003A78DB /* mimo-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -938,7 +940,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "compiler-default";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -1002,7 +1004,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "compiler-default";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;

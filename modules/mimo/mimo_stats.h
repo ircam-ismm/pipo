@@ -242,7 +242,7 @@ public:
         printf("  stats norm buf %d  data %p  outdata %p\n", bufferindex, data, outdata);
         if (data == NULL)
         {
-          printf("\nURGH! data is NULL, this shouldn't happen!!!!!!!!!!!!\n")
+          printf("\nURGH! data is NULL, this shouldn't happen!!!!!!!!!!!!\n");
           return -1;
         }
 #endif
@@ -283,7 +283,7 @@ public:
   /** return trained model parameters */
   stats_model_data *getmodel () override  { return &stats_;  }
 
-  bool converged (double *metric) override { return false; }
+  bool converged (double *metric)  { return false; }
 
   int maxiter () override { return 3; }
   

@@ -12,5 +12,5 @@ build/doxygen/pipo-sdk.doxygen
 doc/pipo-sdk.doxygen
 doc/pipo_long.doxygen
 doc/html/**
-
 modules/rta-lib/include/rta_configuration_gathered_bits.h
+DerivedData
