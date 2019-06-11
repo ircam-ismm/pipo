@@ -1,33 +1,34 @@
 
 SRC_ROOT	= ../..
-RTA_DIR		= $(SRC_ROOT)/modules/rta
+RTA_ROOT	= $(SRC_ROOT)/modules/rta
+RTA_DIR		= $(RTA_ROOT)/src
 OBJ_DIR		= obj
 LIB_DIR		= lib
 
 pipo-headers = \
-	$(SRC_ROOT)/sdk/include/PiPo.h \
-	$(SRC_ROOT)/sdk/include/PiPoParallel.h \
-	$(SRC_ROOT)/sdk/include/PiPoSequence.h \
-	$(SRC_ROOT)/sdk/host/PiPoHost.h \
-	$(SRC_ROOT)/sdk/collection/PiPoCollection.h
+	$(SRC_ROOT)/sdk/src/PiPo.h \
+	$(SRC_ROOT)/sdk/src/PiPoParallel.h \
+	$(SRC_ROOT)/sdk/src/PiPoSequence.h \
+	$(SRC_ROOT)/sdk/src/host/PiPoHost.h \
+	$(SRC_ROOT)/sdk/src/host/PiPoCollection.h
 
 pipo-sources = \
         $(SRC_ROOT)/modules/collection/PiPoCollection.cpp \
-        $(RTA_DIR)/misc/rta_correlation.c \
-        $(RTA_DIR)/misc/rta_delta.c \
-        $(RTA_DIR)/misc/rta_mean_variance.c \
-        $(RTA_DIR)/misc/rta_yin.c \
-        $(RTA_DIR)/common/rta_bpf.c \
-        $(RTA_DIR)/common/rta_int.c \
-        $(RTA_DIR)/misc/rta_bands.c \
-        $(RTA_DIR)/misc/rta_biquad.c \
-        $(RTA_DIR)/misc/rta_dct.c \
-        $(RTA_DIR)/misc/rta_fft.c \
-        $(RTA_DIR)/misc/rta_mel.c \
-        $(RTA_DIR)/misc/rta_moments.c \
-        $(RTA_DIR)/misc/rta_onepole.c \
-        $(RTA_DIR)/misc/rta_selection.c \
-        $(RTA_DIR)/psy/psy.c
+        $(RTA_DIR)/signal/rta_correlation.c \
+        $(RTA_DIR)/signal/rta_delta.c \
+        $(RTA_DIR)/signal/rta_yin.c \
+        $(RTA_DIR)/statistics/rta_mean_variance.c \
+        $(RTA_DIR)/util/rta_bpf.c \
+        $(RTA_DIR)/util/rta_int.c \
+        $(RTA_DIR)/signal/rta_bands.c \
+        $(RTA_DIR)/signal/rta_biquad.c \
+        $(RTA_DIR)/signal/rta_dct.c \
+        $(RTA_DIR)/signal/rta_fft.c \
+        $(RTA_DIR)/signal/rta_mel.c \
+        $(RTA_DIR)/signal/rta_moments.c \
+        $(RTA_DIR)/signal/rta_onepole.c \
+        $(RTA_DIR)/signal/rta_psy.c \
+        $(RTA_DIR)/statistics/rta_selection.c
 
 pipo-sourcesx = $(notdir $(pipo-sources:%.cpp=%.c))
 pipo-objects = $(pipo-sourcesx:%.c=$(OBJ_DIR)/%.o)
@@ -37,18 +38,21 @@ VPATH = $(pipo-sourcedirs) $(OBJ_DIR)
 
 INCLUDE += -I. \
 	-I$(RTA_DIR) \
-	-I$(RTA_DIR)/common \
-	-I$(RTA_DIR)/misc \
-	-I$(RTA_DIR)/psy \
-	-I$(SRC_ROOT)/sdk/include \
-	-I$(SRC_ROOT)/sdk/host \
+	-I$(RTA_DIR)/signal \
+	-I$(RTA_DIR)/statistics \
+	-I$(RTA_DIR)/recognition \
+	-I$(RTA_DIR)/util \
+	-I$(RTA_ROOT)/bindings/lib \
+	-I$(SRC_ROOT)/sdk/src \
+	-I$(SRC_ROOT)/sdk/src/host \
 	-I$(SRC_ROOT)/modules \
-	-I$(SRC_ROOT)/sdk/collection
+	-I$(SRC_ROOT)/modules/finitedifferences \
+	-I$(SRC_ROOT)/modules/bayesfilter/src
 
 # compiler flags common to c and c++
 FLAGS = -g -O3 $(INCLUDE)  -fpermissive
 CFLAGS   += $(FLAGS) -std=c99
-CXXFLAGS += $(FLAGS)
+CXXFLAGS += $(FLAGS) -std=c++11
 
 pipo-lib = $(LIB_DIR)/libpipo.a
 
