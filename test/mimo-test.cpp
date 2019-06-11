@@ -35,7 +35,7 @@ public:
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
     return -1;
-  };
+  }
 
   // forwarding to PiPoTestReceiver:
   void zero ()
