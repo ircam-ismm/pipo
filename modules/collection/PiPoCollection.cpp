@@ -39,7 +39,7 @@
 #include "PiPoCollection.h"
 
 #include "PiPoOp.h"
- #include "PiPoGraph.h"
+#include "PiPoGraph.h"
 
 #include "PiPoIdentity.h"
 #include "PiPoBands.h"
