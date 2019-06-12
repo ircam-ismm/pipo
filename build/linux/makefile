@@ -52,7 +52,7 @@ INCLUDE += -I. \
 # compiler flags common to c and c++
 FLAGS = -g -O3 $(INCLUDE)  -fpermissive
 CFLAGS   += $(FLAGS) -std=c99
-CXXFLAGS += $(FLAGS) -std=c++11
+CXXFLAGS += $(FLAGS) -std=gnu++11
 
 pipo-lib = $(LIB_DIR)/libpipo.a
 
