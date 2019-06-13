@@ -50,9 +50,12 @@ INCLUDE += -I. \
 	-I$(SRC_ROOT)/modules/bayesfilter/src
 
 # compiler flags common to c and c++
-FLAGS = -g -O3 $(INCLUDE)  -fpermissive
+FLAGS = -g -O3 $(INCLUDE)
 CFLAGS   += $(FLAGS) -std=c99
-CXXFLAGS += $(FLAGS) -std=gnu++11
+# with gnu c++ all everything is easy
+#CXXFLAGS += $(FLAGS) -std=gnu++11 -fpermissive
+# with clang, -fext-numeric-literals is needed for complex definition
+CXXFLAGS += $(FLAGS) -std=c++11 -fpermissive -fext-numeric-literals
 
 pipo-lib = $(LIB_DIR)/libpipo.a
 
