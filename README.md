@@ -99,5 +99,14 @@ The host-level `PiPoCollection` class is a module factory, able to instantiate c
 It provides all the native PiPo modules and can be extended with third-party PiPo modules, thus allowing to create a wide number
 of combinations.
 
+## Dependencies
 
+Pipo depends on the following sources in submodules:
+- sdk from https://github.com/Ircam-RnD/pipo-sdk.git, branch develop
+- modules/rta from https://github.com/Ircam-RnD/rta-lib.git, branch master
+- modules/bayesfilter from https://github.com/Ircam-RnD/bayesfilter.git
+- modules/wavelet from https://github.com/Ircam-RnD/wavelet.git
 
+After first git clone, initialise the submodules with:
+
+``git submodule update --remote --merge``
