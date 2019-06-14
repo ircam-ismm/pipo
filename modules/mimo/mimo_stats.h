@@ -240,9 +240,10 @@ public:
 	PiPoValue *outdata = outbufs[bufferindex].data = &traindata_[bufferindex][0];
 #if DEBUG
         printf("  stats norm buf %d  data %p  outdata %p\n", bufferindex, data, outdata);
-        if (data == NULL)
+        if (data == NULL  ||  outdata == NULL)
         {
-          printf("\nURGH! data is NULL, this shouldn't happen!!!!!!!!!!!!\n");
+          printf("\nURGH! data or outdata is NULL, this shouldn't happen!!!!!!!!!!!!\n");
+          signalError("\nURGH! data or outdata is NULL, this shouldn't happen!!!!!!!!!!!!\n");
           return -1;
         }
 #endif
