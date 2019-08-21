@@ -49,6 +49,7 @@
 class PiPoSlice : public PiPo
 {
 public:
+  enum UnitE { SamplesUnit = 0, MillisecondsUnit = 1 };
   enum WindowTypeE { UndefinedWindow = -1, NoWindow = 0, HannWindow, HammingWindow, BlackmanWindow, BlackmanHarrisWindow, SineWindow, NumWindows };
   enum NormModeE { UndefinedNorm = -1, NoNorm = 0, LinearNorm, PowerNorm };
   
@@ -68,6 +69,7 @@ private:
 public:
   PiPoScalarAttr<int> size;
   PiPoScalarAttr<int> hop;
+  PiPoScalarAttr<PiPo::Enumerate> unit;
   PiPoScalarAttr<PiPo::Enumerate> wind;
   PiPoScalarAttr<PiPo::Enumerate> norm;
   
@@ -76,6 +78,7 @@ public:
   buffer(), frame(), window(),
   size(this, "size", "Slice Frame Size", true, 2048),
   hop(this, "hop", "Slice Hop Size", true, 512),
+  unit(this, "unit", "Slice Size Unit", true, SamplesUnit),
   wind(this, "wind", "Slice Window Type", true, HannWindow),
   norm(this, "norm", "Normalize Slice", true, NoNorm)
   {
@@ -87,6 +90,9 @@ public:
     this->inputStride = 0;
     this->inputHop = 0;
     
+    this->unit.addEnumItem("samples", "Samples");
+    this->unit.addEnumItem("ms", "milliseconds");
+
     this->wind.addEnumItem("none", "No window");
     this->wind.addEnumItem("hann", "Hann window");
     this->wind.addEnumItem("hamming", "Hamming window");
@@ -104,6 +110,22 @@ public:
     unsigned int frameSize = std::max(1, this->size.get());
     unsigned int hopSize = std::max(1, this->hop.get());
 
+    switch (this->unit.get())
+    {
+      case MillisecondsUnit:
+	// we expect signal input, so one frame is one sample
+	frameSize *= 0.001 * rate;
+	hopSize   *= 0.001 * rate;
+      break;
+	
+      case SamplesUnit:
+      break;
+
+      default:
+	signalError("Invalid unit");
+      return -1;
+    }
+    
     enum WindowTypeE windowType = (enum WindowTypeE)this->wind.get();
     enum NormModeE normMode = (enum NormModeE)this->norm.get();
     unsigned int inputStride = width * size;
