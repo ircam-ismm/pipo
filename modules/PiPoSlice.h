@@ -67,20 +67,20 @@ private:
   unsigned int inputHop;
  
 public:
-  PiPoScalarAttr<int> size;
-  PiPoScalarAttr<int> hop;
+  PiPoScalarAttr<double> size;
+  PiPoScalarAttr<double> hop;
   PiPoScalarAttr<PiPo::Enumerate> unit;
   PiPoScalarAttr<PiPo::Enumerate> wind;
   PiPoScalarAttr<PiPo::Enumerate> norm;
   
-  PiPoSlice(Parent *parent, PiPo *receiver = NULL) :
-  PiPo(parent, receiver),
-  buffer(), frame(), window(),
-  size(this, "size", "Slice Frame Size", true, 2048),
-  hop(this, "hop", "Slice Hop Size", true, 512),
-  unit(this, "unit", "Slice Size Unit", true, SamplesUnit),
-  wind(this, "wind", "Slice Window Type", true, HannWindow),
-  norm(this, "norm", "Normalize Slice", true, NoNorm)
+  PiPoSlice(Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver),
+    buffer(), frame(), window(),
+    size(this, "size", "Slice Frame Size", true, 2048),
+    hop (this, "hop", "Slice Hop Size", true, 512),
+    unit(this, "unit", "Slice Size Unit", true, SamplesUnit),
+    wind(this, "wind", "Slice Window Type", true, HannWindow),
+    norm(this, "norm", "Normalize Slice", true, NoNorm)
   {
     this->windowType = UndefinedWindow;
     this->normMode = UndefinedNorm;
@@ -107,18 +107,19 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    unsigned int frameSize = std::max(1, this->size.get());
-    unsigned int hopSize = std::max(1, this->hop.get());
+    unsigned int frameSize, hopSize;
 
     switch (this->unit.get())
     {
       case MillisecondsUnit:
 	// we expect signal input, so one frame is one sample
-	frameSize *= 0.001 * rate;
-	hopSize   *= 0.001 * rate;
+	frameSize = std::max(1., this->size.get() * 0.001 * rate);
+	hopSize   = std::max(1., this->hop.get()  * 0.001 * rate);
       break;
 	
       case SamplesUnit:
+	frameSize = std::max(1., this->size.get());
+	hopSize   = std::max(1., this->hop.get());
       break;
 
       default:
