@@ -51,9 +51,11 @@ extern "C" {
 #include <algorithm>
 #include <cstdlib>
 
-#define PIPO_YIN_DEBUG 0
+#ifdef DEBUG
+#  define PIPO_YIN_DEBUG 0
+#endif
 
-static const unsigned int yin_max_mins = 128;
+static const unsigned int yin_max_mins = 128; // maximum number of minima searched by yin
 
 class PiPoYin : public PiPo
 {
@@ -72,10 +74,10 @@ public:
   // constructor
   PiPoYin (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  minFreq(this, "minfreq", "Minimum Frequency", true, 24.0),  // just ok for 2048 sample slices
-  downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
-  yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
-  buffer_(NULL), corr_(NULL)
+    minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
+    downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
+    yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+    yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
     
@@ -109,9 +111,18 @@ public:
     double sampleRate = (double) height / domain;
     double down = 1 << std::max<int>(0, downSampling.get());	// downsampling factor
     int    downsize = height / down;		// downsampled input frame size
-    sr_   = sampleRate / down;			// effective sample rate
-    ac_size_ = (int) ceil(sr_ / minFreq.get()) + 2;
-    
+    double minf = minFreq.get();
+
+    sr_ = sampleRate / down;			// effective sample rate
+
+    // downsize / 2 >= ac_size for good results
+    ac_size_ = minf > 0  ?  (int) ceil(sr_ / minf) + 2  :  downsize / 2;
+
+#if PIPO_YIN_DEBUG
+    printf("  sr %f down %f --> sr %f downsize %d,  minfreq %f --> %f,  ac_size %d \n",
+	   sampleRate, down, sr_, downsize, minf, sr_ / (downsize / 2), ac_size_);
+#endif
+
     /* check size */
     if (downsize > ac_size_)
     {
