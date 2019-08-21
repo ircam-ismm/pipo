@@ -100,6 +100,7 @@ public:
     // propagate attributes from member PiPos
     this->addAttr(this, "winsize", "Window Size", &slice.size);
     this->addAttr(this, "hopsize", "Hop Size", &slice.hop);
+    this->addAttr(this, "unit", "Size Unit", &slice.unit);
     this->addAttr(this, "minfreq", "Lowest Frequency that is detectable", &yin.minFreq);
     this->addAttr(this, "downsampling", "Yin Downsampling Exponent", &yin.downSampling);
     this->addAttr(this, "threshold", "Yin Periodicity Threshold", &yin.yinThreshold);
@@ -108,8 +109,9 @@ public:
     // init attributes
     slice.size.set(1710);
     slice.hop.set(128);
+    slice.unit.set(0);	// samples
     slice.norm.set("power");
-    yin.minFreq.set(50);
+    yin.minFreq.set(0); // adapt to slice size and sr
     fft.mode.set("power");
     fft.weighting.set("itur468");
     sum.colname.set("Loudness");
