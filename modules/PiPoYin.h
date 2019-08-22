@@ -103,7 +103,7 @@ public:
     
     if (domain == 0)
     { // error: frames must have a duration
-      signalError(std::string("input stream domain is zero"));
+      signalError(std::string("input stream domain is zero (yin needs sliced audio frames as input)"));
       return -1;
     }
     
