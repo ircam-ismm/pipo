@@ -107,9 +107,9 @@ public:
     this->addAttr(this, "moments", "Number of Moments", &moments.order);
 
     // init attributes
+    slice.unit.set("samples");	// must stay at default setting of "samples"
     slice.size.set(1710);
     slice.hop.set(128);
-    slice.unit.set(0);	// samples
     slice.norm.set("power");
     yin.minFreq.set(0); // adapt to slice size and sr
     fft.mode.set("power");
