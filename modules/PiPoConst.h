@@ -51,31 +51,31 @@ extern "C" {
 class PiPoConst : public PiPo
 {
 public:
-  PiPoScalarAttr<float> value;
-  PiPoScalarAttr<const char *> name;
+  PiPoVarSizeAttr<float> value_attr_;
+  PiPoVarSizeAttr<const char *> name_attr_;
 
   PiPoConst (Parent *parent, PiPo *receiver = NULL);
   ~PiPoConst (void);
 
   int streamAttributes (bool hasTimeTags, double rate, double offset,
                         unsigned int width, unsigned int size, const char **labels,
-                        bool hasVarSize, double domain, unsigned int maxFrames);
+                        bool hasVarSize, double domain, unsigned int maxframes);
   int finalize (double inputEnd);
   int reset (void);
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num);
 
 private:
-  int numCols;
-  int maxDescrNameLength;
-  std::vector<PiPoValue> outValues;
+  int numconstcols_;	// number of added constant columns
+  int numoutcols_;	// number of output columns
+  std::vector<PiPoValue> outvalues_;
 };
 
 
 inline PiPoConst::PiPoConst (Parent *parent, PiPo *receiver)
 : PiPo(parent, receiver),
-  value(this, "value", "value to store for added column", false, 0),
-  name(this, "name",  "name of added column", true, "Constant"),
-  numCols(0), maxDescrNameLength(64), outValues(NULL)
+  value_attr_(this, "value", "list values to store for added columns", false, 1, 0.0f),
+  name_attr_(this, "name",  "names of added columns", true, 1, "Constant"),
+  numconstcols_(1), numoutcols_(1)
 {}
 
 inline PiPoConst::~PiPoConst(void)
@@ -91,51 +91,46 @@ inline PiPoConst::~PiPoConst(void)
 inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double offset,
                                         unsigned int width, unsigned int height,
                                         const char **labels, bool hasVarSize,
-                                        double domain, unsigned int maxFrames)
+                                        double domain, unsigned int maxframes)
 {
 #if CONST_DEBUG >= 2
   printf("PiPoConst streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n",
-  hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
-
+  hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxframes);
 #endif
 
-  this->numCols = width + 1;
-  outValues.resize(maxFrames * height * this->numCols);
+  numconstcols_ = value_attr_.getSize();
+  numoutcols_   = width + numconstcols_;
+  outvalues_.resize(maxframes * height * numoutcols_);
 
   /* get labels */
-  std::vector<char *> outputLabels(this->numCols);
+  std::vector<char *> outputlabels(numoutcols_);
 
+  // copy existing labels, or fill with ""
   if (labels != NULL)
   {
     for (unsigned int l = 0; l < width; ++l)
-    {
-      const char *label = labels[l] != NULL ? labels[l] : "";
-      outputLabels[l] = new char[std::strlen(label) + 1];
-      std::strcpy(outputLabels[l], label);
-    }
+      outputlabels[l] = strdup(labels[l] != NULL ? labels[l] : "");
   }
   else
   {
     for (unsigned int l = 0; l < width; ++l)
-    {
-      const char *label = "";
-      outputLabels[l] = new char[1];
-      std::strcpy(outputLabels[l], label);
-    }
+      outputlabels[l] = strdup("");
   }
 
-  const char *newLabel = name.get();
-  outputLabels[this->numCols - 1] = new char[std::strlen(newLabel) + 1];
-  std::strcpy(outputLabels[this->numCols - 1], name.get());
+  // copy given column names, fill with "" up to number of cols
+  int l = 0;
+  int n = std::min<int>(name_attr_.getSize(), numconstcols_);
+  for (; l < n; l++)
+    outputlabels[width + l] = strdup(name_attr_.getStr(l));
+  for (; l < numconstcols_; l++)
+    outputlabels[width + l] = strdup("");
+  
+  int ret = propagateStreamAttributes(hasTimeTags, rate, offset, numoutcols_, height,
+				      const_cast<const char **>(&outputlabels[0]),
+				      false, domain, maxframes);
 
-  int ret = this->propagateStreamAttributes(hasTimeTags, rate, offset, this->numCols, height,
-                                            const_cast<const char **>(&outputLabels[0]),
-                                            false, domain, maxFrames);
-
-  for (unsigned int l = 0; l < this->numCols; ++l)
-  {
-      delete[] outputLabels[l];
-  }
+  for (unsigned int l = 0; l < numoutcols_; ++l)
+    free(outputlabels[l]);
 
   return ret;
 }
@@ -143,14 +138,14 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
 inline int PiPoConst::finalize (double inputEnd)
 {
   //post("PiPoConst finalize %f\n", inputEnd);
-  return this->propagateFinalize(inputEnd);
+  return propagateFinalize(inputEnd);
 };
 
 
 inline int PiPoConst::reset (void)
 {
   //post("PiPoConst reset\n");
-  return this->propagateReset();
+  return propagateReset();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,34 +153,35 @@ inline int PiPoConst::reset (void)
 // compute and output data
 //
 
-inline int PiPoConst::frames (double time, double weight, PiPoValue *inValues, unsigned int size, unsigned int num)
+inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, unsigned int size, unsigned int num)
 {
   int status = 0;
-  int nInCols  = this->numCols - 1; // num input columns
-  int nInRows  = size / nInCols;
-  //float *outvals = &this->outValues[0];
-  float constValue = value.get();
+  int inputcols  = numoutcols_ - numconstcols_; // num input columns
+  int inputrows  = size / inputcols;
 
 #if CONST_DEBUG >= 2
   printf("PiPoConst::frames time %f  values %p  size %d  num %d --> %f\n",
-         time, inValues, size, num, constValue);
+         time, invalues, size, num, constValue);
 #endif
 
-  std::vector<PiPoValue>::iterator it = this->outValues.begin();
+  std::vector<PiPoValue>::iterator it = outvalues_.begin();
 
   for (unsigned int i = 0; i < num; ++i)
   {
-    for (unsigned int j = 0; j < nInRows; ++j)
+    for (unsigned int j = 0; j < inputrows; ++j)
     {
-      std::copy(inValues, inValues + nInCols, it);
-      *(it + this->numCols - 1) = constValue;
+      std::copy(invalues, invalues + inputcols, it);
 
-      inValues += nInCols;
-      it += this->numCols;
+      // append const values
+      for (int i = 0; i < numconstcols_; i++)
+	*(it + inputcols + i) = value_attr_.getDbl(i);
+      
+      invalues += inputcols;
+      it += numoutcols_;
     }
   }
 
-  status = propagateFrames(time, weight, &this->outValues[0], nInRows * this->numCols, num);
+  status = propagateFrames(time, weight, &outvalues_[0], inputrows * numoutcols_, num);
   return status;
 }
 
