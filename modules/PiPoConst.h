@@ -48,6 +48,10 @@ extern "C" {
 #include <stdlib.h>
 }
 
+
+const float       default_value = 0.0;
+const const char *default_name  = "Constant";
+
 class PiPoConst : public PiPo
 {
 public:
@@ -73,8 +77,8 @@ private:
 
 inline PiPoConst::PiPoConst (Parent *parent, PiPo *receiver)
 : PiPo(parent, receiver),
-  value_attr_(this, "value", "list values to store for added columns", false, 1, 0.0f),
-  name_attr_(this, "name",  "names of added columns", true, 1, "Constant"),
+  value_attr_(this, "value", "list of values to store for added columns", false, 1, default_value),
+  name_attr_(this, "name",  "list of names of added columns", true, 1, default_name),
   numconstcols_(1), numoutcols_(1)
 {}
 
@@ -98,7 +102,8 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
   hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxframes);
 #endif
 
-  numconstcols_ = value_attr_.getSize();
+  // use longest of names or values list to determine number of added columns
+  numconstcols_ = std::max(value_attr_.getSize(), name_attr_.getSize());
   numoutcols_   = width + numconstcols_;
   outvalues_.resize(maxframes * height * numoutcols_);
 
@@ -107,23 +112,18 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
 
   // copy existing labels, or fill with ""
   if (labels != NULL)
-  {
     for (unsigned int l = 0; l < width; ++l)
       outputlabels[l] = strdup(labels[l] != NULL ? labels[l] : "");
-  }
   else
-  {
     for (unsigned int l = 0; l < width; ++l)
       outputlabels[l] = strdup("");
-  }
 
-  // copy given column names, fill with "" up to number of cols
+  // copy added column names, fill with default name up to number of cols
   int l = 0;
-  int n = std::min<int>(name_attr_.getSize(), numconstcols_);
-  for (; l < n; l++)
+  for (; l < name_attr_.getSize(); l++)
     outputlabels[width + l] = strdup(name_attr_.getStr(l));
   for (; l < numconstcols_; l++)
-    outputlabels[width + l] = strdup("");
+    outputlabels[width + l] = strdup(default_name);
   
   int ret = propagateStreamAttributes(hasTimeTags, rate, offset, numoutcols_, height,
 				      const_cast<const char **>(&outputlabels[0]),
@@ -172,12 +172,15 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
     {
       std::copy(invalues, invalues + inputcols, it);
 
-      // append const values
-      for (int i = 0; i < numconstcols_; i++)
+      // append const values (fill with default)
+      int i = 0;
+      for (; i < value_attr_.getSize(); i++)
 	*(it + inputcols + i) = value_attr_.getDbl(i);
+      for (; i < numconstcols_; i++)
+	*(it + inputcols + i) = default_value;
       
       invalues += inputcols;
-      it += numoutcols_;
+      it       += numoutcols_;
     }
   }
 
