@@ -78,42 +78,36 @@ class PiPoPeaks : public PiPo
 private:
   std::vector<float> buffer_;
   int domsr;
-  double peaksRate;
+  double peaks_sr;
   int allocatedPeaksSize;
   
 public:
   PiPoScalarAttr<int>	numPeaks;
   PiPoScalarAttr<PiPo::Enumerate> keepMode;
-  PiPoScalarAttr<PiPo::Enumerate> downSampling;
+  //PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double>	thresholdWidth;
   PiPoScalarAttr<double>	thresholdHeight;
   PiPoScalarAttr<double>	thresholdDev;
   PiPoScalarAttr<double>	rangeLow;
   PiPoScalarAttr<double>	rangeHigh;
-  PiPoScalarAttr<double>	domainScale;
+  //PiPoScalarAttr<double>	domainScale;
   
   // constructor
   PiPoPeaks (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer_(),
     numPeaks(this, "numpeaks", "Maximum number of peaks to be estimated", true, 16),
     keepMode(this, "keep", "keep first or strongest peaks", true, 0),
-    downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
+    //downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
     thresholdWidth(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
     thresholdHeight(this, "thheight", "minimum height for peaks", true, 0.),
     thresholdDev(this, "thdev", "maximum deviation from mean value", true, 0.),
     rangeLow(this, "rangelow", "minimun of band where to search for peaks", true, 0.),
-    rangeHigh(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX),
-    domainScale(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
+    rangeHigh(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
+    //domainScale(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
 
     this->keepMode.addEnumItem("strongest", "keep strongest peak");
     this->keepMode.addEnumItem("lowest", "keep first peak");
-    
-    this->downSampling.addEnumItem("none", "No down sampling");
-    this->downSampling.addEnumItem("2x", "Down sampling by 2");
-    this->downSampling.addEnumItem("4x", "Down sampling by 4");
-    this->downSampling.addEnumItem("8x", "Down sampling by 8");
-    
     this->domsr = 1;
     this->allocatedPeaksSize = 0;
   }
@@ -130,7 +124,7 @@ public:
 #endif
 
     int maxNumPeaks = std::max(1, this->numPeaks.get());
-    this->peaksRate = rate;
+    this->peaks_sr = domain * 2.;	// derive audio sampling rate from fft domain (= frequency range of bins)
     
     const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
 
@@ -158,16 +152,16 @@ public:
     double thresholdHeight = this->thresholdHeight.get();
     double thresholdWidth = this->thresholdWidth.get();
     int maxNumPeaks = this->numPeaks.get();
-    double domscale = this->domainScale.get();
+    double domscale = -0.5; // default factor to convert sr to nyquist  WAS: this->domainScale.get();
     
-    if(this->domsr != 0)
-      domscale *= this->peaksRate;
+    if(this->domsr != 0) // domsr is always 1
+      domscale *= this->peaks_sr; // domscale is max bin's domain value (frequency)
     
     if(domscale < 0.0)
       domscale = -domscale / static_cast<double>(size);
     
     start = std::floor(this->rangeLow.get() / domscale);
-    end = std::ceil(this->rangeHigh.get() / domscale);
+    end   = std::ceil(this->rangeHigh.get() / domscale);
       
     if(start < 1)
       start = 1;
