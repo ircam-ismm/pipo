@@ -2,8 +2,57 @@
  * @file PiPoScale.h
  * @author Norbert.Schnell@ircam.fr
  *
- * @brief PiPo scale data stream
- *
+ * @brief PiPo to scale and clip a data stream
+
+parameters:
+- in  min $l_i$
+- in  max $h_i$
+- out min $l_o$
+- out max $h_o$
+- base    $b$ (default: 1)
+
+
+linear scaling:
+
+\f[
+y = m_i x + a_i
+\f]
+
+with 
+
+- in scale  $m_i = (h_o - l_o) / (h_i - l_i)$
+- in offset $a_i = l_o - l_i * m_i$
+
+
+log scaling:
+
+\f[
+y = m_o log(m_i x + a_i) + a_o
+\f]
+
+with
+
+- in scale   $m_i = (b - 1) / (h_i - l_i)$
+- in offset  $a_i = 1 - l_i * m_i$
+- out scale  $m_o = (h_o - l_o) / log(b)$
+- out offset $a_o = l_o$
+
+
+exp scaling (base != 1):
+
+\f[
+y = m_o e ^ (m_i x + a_i) + a_o
+\f]
+
+with
+
+- in scale   $m_i = log(b) / (h_i - l_i)$
+- in offset  $a_i = - l_i * m_i$
+- out scale  $m_o = (h_o - l_o) / (b - 1)$
+- out offset $a_o = l_o - m_o$
+
+
+
  * @ingroup pipomodules
  *
  * @copyright
