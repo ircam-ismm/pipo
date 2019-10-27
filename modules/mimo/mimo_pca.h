@@ -267,6 +267,7 @@ public:
         _rank = rank.get();
         _threshold = threshold.get();
         _bufsizes.assign(tracksize, tracksize+numbuffers);
+        _m = 1; // we treat matrix data as an unrolled vector
         _n = streamattr[0]->dims[0] * streamattr[0]->dims[1];
         
         U.resize(_numbuffers);
@@ -303,6 +304,19 @@ public:
             else
                 outattr[i]->dims[0] = _rank > _minmn[i] ? _minmn[i] : _rank;
             outattr[i]->dims[1] = 1;
+
+	    // create labels
+	    int n = outattr[i]->dims[0];
+	    outattr[i]->labels = new const char*[n];
+	    outattr[i]->numLabels = n;
+	    outattr[i]->labels_alloc = n;
+
+	    for (int j = 0; j < n; j++)
+	    {
+		char *lab = (char *) malloc(8); //todo: memleak!
+		snprintf(lab, 8, "PCA%d", j);
+		outattr[i]->labels[j] = lab;
+	    }
         }
         
         return propagateSetup(numbuffers, numtracks, tracksize, const_cast<const PiPoStreamAttributes**>(outattr));
@@ -312,7 +326,8 @@ public:
     {
         std::vector<mimo_buffer> outbufs(numbuffers);
         outbufs.assign(buffers, buffers + numbuffers);
-        
+
+	// todo: collect data of all buffers, do global pca, not per buffer!!!!!!!!!!
         for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
             int numframes = buffers[bufferindex].numframes;
@@ -404,7 +419,8 @@ public:
                     else
                         mtxrank++;
                 }
-            } else
+            }
+	    else
             {
                 mtxrank = _rank;
             }
@@ -424,15 +440,16 @@ public:
                 S[bufferindex].resize(mtxrank);
                 V[bufferindex].resize(mtxrank*_n);
                 Vt[bufferindex].resize(mtxrank*_n);
-                
-//                decomposition.VT = Vt;
-//                decomposition.V = V;
-//                decomposition.S = S;
-//                decomposition.m = _m;
-//                decomposition.n = _n;
-//                decomposition.rank = _rank;
-//                decomposition.means = means;
-//
+
+		// copy to model TODO: at end, with whole data
+                decomposition.VT = Vt[bufferindex];
+                decomposition.V = V[bufferindex];
+                decomposition.S = S[bufferindex];
+                decomposition.m = _m;
+                decomposition.n = _n;
+                decomposition.rank = mtxrank;
+                decomposition.means = _means[bufferindex];
+
                 auto features = xMul(_traindata[bufferindex].data(), V[bufferindex].data(), numframes, _n, mtxrank);
                 
                 if(rank.get() == -1)//if autorank && rank < minmn, fill out cols with 0 in mubu
@@ -460,7 +477,7 @@ public:
                 }
                 return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
             }
-        }
+        } // end for buffers
         return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
     } // end train
     
@@ -471,23 +488,23 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-//        if(decomposition.from_json(model.getJson()) != -1)
-//        {
-//            _m = decomposition.m;
-//            _n = decomposition.n;
-//            _minmn = _m > _n ? _n : _m;
-//            _rank = decomposition.rank;
-//            means = decomposition.means;
-//        }
-//        else
-//        {
-//          _m = 1;
-//          _n = 1;
-//          _minmn = 1;
-//          _rank = 1;
-//          means.clear();
-//          signalWarning("PCA not configured yet.");
-//        }
+	if(decomposition.from_json(model.getJson()) != -1)
+	{
+	    _m = decomposition.m;
+	    _n = decomposition.n;
+	    //_minmn[0] = _m > _n ? _n : _m; ///needed???
+	    _rank = decomposition.rank;
+	    _means.push_back(decomposition.means); // append as only means vector
+	}
+	else
+	{
+	    _m = 1;
+	    _n = 1;
+	    //_minmn[0] = 1;
+	    _rank = 1;
+	    _means.clear();
+	    signalWarning("PCA not configured yet.");
+	}
         
         _fb = forwardbackward.get();
         
@@ -498,7 +515,7 @@ public:
             case Forward:
             {
                 outm = 1;
-                outn = static_cast<unsigned int>(_rank);
+                outn = _rank < 0  ?  1  :  static_cast<unsigned int>(_rank);
                 break;
             }
             case Backward:
@@ -533,8 +550,8 @@ public:
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
 
-//                for(int i = 0; i < _n; ++i)
-//                    values[i] -= means[i];
+                for(int i = 0; i < _n; ++i)
+                    values[i] -= _means[0][i];
 
                 auto features = xMul(values, decomposition.V.data(), 1, _n, _rank);
                 
@@ -550,8 +567,8 @@ public:
                 
                 auto resynthesized = xMul(values,decomposition.VT.data(),1,_rank,_n);
 
-//                for(int i = 0; i < _n; ++i)
-//                    resynthesized[i] += means[i];
+                for(int i = 0; i < _n; ++i)
+                    resynthesized[i] += _means[0][i];
 
                 return propagateFrames(time, weight, resynthesized.data(), _n, 1);
             }
