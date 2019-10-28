@@ -128,7 +128,7 @@ public:
     {
       buffer_ = (float *) realloc(buffer_, downsize * sizeof(float));
       corr_   = (float *) realloc(corr_,   ac_size_ * sizeof(float));
-      
+
       const char *yinColNames[4];
       yinColNames[0] = "Frequency";
       yinColNames[1] = "Energy";
@@ -181,6 +181,8 @@ public:
           break;
           
         default:
+          for (i = 0, j = 0; i < downVectorSize; i++)
+            out[i] = in[i];
           break;
       }
       
