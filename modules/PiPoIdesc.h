@@ -209,10 +209,10 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   numcols_ = 0;
 
 #if IDESC_DEBUG >= 1
-  post("PiPoIdesc streamAttributes timetags %d  rate %.0f  offset %f  width %d  size %d  labels %s  "
+  printf("PiPoIdesc streamAttributes timetags %d  rate %.0f  offset %f  width %d  size %d  labels %s  "
        "varsize %d  domain %f  maxframes %d --> win %d = %f s  hop %d = %f s  numdescr %d\n",
-       hasTimeTags, rate, offset, (int) width, (int) size, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames,
-       (int) WindowSize.getInt(), winlen, (int) HopSize.getInt(), hoplen, ndescr);
+       hasTimeTags, rate, offset, (int) width, (int) size, labels ? labels[0] : "n/a", (int) hasVarSize, (float) domain, (int) maxFrames,
+       (int) WindowSize.getInt(), (float) winlen, (int) HopSize.getInt(), (float) hoplen, ndescr);
 #endif
 
   if (initialised_  &&  ndescr > 0)
