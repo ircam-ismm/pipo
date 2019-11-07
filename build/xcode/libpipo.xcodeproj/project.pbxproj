@@ -986,7 +986,7 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
@@ -1047,7 +1047,7 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
