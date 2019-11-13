@@ -19,7 +19,7 @@ TEST_CASE("Test PiPoParallel")
   par.setReceiver(&rx);
 
   WHEN ("streamAttributes done") {
-    con.value.set(444);
+    con.value_attr_.set(0, 444);
     int ret = par.streamAttributes(false, 11, 22, 1, 1, NULL, false, 33, 44);
 
     THEN ("Output is configured") {

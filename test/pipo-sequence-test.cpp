@@ -19,7 +19,7 @@ TEST_CASE("Test PiPoSequence")
 
   SECTION("setup")
   {
-    con.value.set(99);
+    con.value_attr_.set(0, 99);
     int ret = seq.streamAttributes(false, 11, 22, 1, 1, NULL, false, 33, 44);
 
     CHECK(ret == 0);
@@ -61,7 +61,7 @@ TEST_CASE("Test PiPoSequence autoconnect")
 
   SECTION("setup autoconnected")
   {
-    con.value.set(99);
+    con.value_attr_.set(0, 99);
     int ret = seq.streamAttributes(false, 11, 22, 1, 1, NULL, false, 33, 44);
 
     CHECK(ret == 0);
@@ -101,7 +101,7 @@ TEST_CASE("Test PiPoSequence arg list")
 
   SECTION("setup with arg list")
   {
-    con.value.set(99);
+    con.value_attr_.set(0, 99);
     int ret = seq.streamAttributes(false, 11, 22, 1, 1, NULL, false, 33, 44);
 
     CHECK(ret == 0);
