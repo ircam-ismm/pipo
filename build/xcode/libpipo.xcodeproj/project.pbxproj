@@ -32,6 +32,7 @@
 
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
+		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
 		21F99D9A1FBC65CC003A78DB /* mimo-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
@@ -121,6 +122,7 @@
 
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
+		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
 		21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDescr.h; path = ../../modules/PiPoDescr.h; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
@@ -626,6 +628,7 @@
 		5A04AA9006D4DD3F0098230D = {
 			isa = PBXGroup;
 			children = (
+				1DFED20023A8DE6900BF943F /* PiPoYin2.h */,
 				31C2B3821FB0D3F1001A134E /* sdk */,
 				31C2B3811FB0D3E8001A134E /* modules */,
 				31D2EEA61ED72A86002E9F6A /* doc */,
@@ -665,6 +668,7 @@
 				31C2B3C61FB0D43F001A134E /* PiPoBranch.h in Headers */,
 				31C2B3C41FB0D43F001A134E /* PiPoBayesFilter.h in Headers */,
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
+				1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */,
 				31C2B3D51FB0D43F001A134E /* PiPoMedian.h in Headers */,
 				31C2B3D71FB0D43F001A134E /* PiPoMfcc.h in Headers */,
 				31C2B3D61FB0D43F001A134E /* PiPoMel.h in Headers */,
