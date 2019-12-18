@@ -59,7 +59,7 @@ extern "C" {
 #  define PIPO_YIN2_DEBUG 0
 #endif
 
-static const unsigned int yin_max_mins = 1024; // maximum number of minima searched by yin
+static const unsigned int yin_max_mins = 128; // maximum number of minima searched by yin
 
 class PiPoYin2 : public PiPo
 {
@@ -165,27 +165,27 @@ public:
       {
         case 3:
         {
-          for (i = downVectorSize - 1, j = 0; i > 0; i--, j += 8)
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 8)
             out[i] = 0.125 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3] + in[j + 4] + in[j + 5] + in[j + 6] + in[j + 7]);
         }
           break;
           
         case 2:
         {
-          for (i = downVectorSize - 1, j = 0; i > 0; i--, j += 4)
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 4)
             out[i] = 0.25 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3]);
         }
           break;
           
         case 1:
         {
-          for (i = downVectorSize - 1, j = 0; i > 0; i--, j += 2)
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 2)
             out[i] = 0.5 * (in[j] + in[j + 1]);
         }
           break;
           
         default:
-          for (i = downVectorSize - 1, j = 0; i > 0; i--, j++)
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j++)
             out[i] = in[j];
           break;
       }
