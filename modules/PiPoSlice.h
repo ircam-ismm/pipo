@@ -203,7 +203,7 @@ public:
         else
         {
           for(unsigned int i = 0, j = 0; i < numInput; i++, j += size)
-	    this->buffer[inputIndex + i] = values[j];	// copy first element of each input frame to buffer
+            this->buffer[inputIndex + i] = values[j];	// copy first element of each input frame to buffer
         }
         
         inputIndex += numInput;
