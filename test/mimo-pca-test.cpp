@@ -117,6 +117,8 @@ TEST_CASE("PCA")
             
             //reading from json
             pca.decomposition.from_json(json_output);
+
+          CHECK(json_output[0] != 0);
         }
     }
 }
