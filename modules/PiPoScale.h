@@ -23,6 +23,11 @@ with
 - in scale  $m_i = (h_o - l_o) / (h_i - l_i)$
 - in offset $a_i = l_o - l_i * m_i$
 
+or
+
+- in scale  $m_i = (outmax - outmin) / (inmax - inmin)$
+- in offset $a_i = outmin - inmin * m_i$
+
 
 log scaling:
 
@@ -37,6 +42,13 @@ with
 - out scale  $m_o = (h_o - l_o) / log(b)$
 - out offset $a_o = l_o$
 
+or
+
+- in scale   $m_i = (b - 1) / (inmax - inmin)$
+- in offset  $a_i = 1 - inmin * m_i$
+- out scale  $m_o = (outmax - outmin) / log(b)$
+- out offset $a_o = outmin$
+
 
 exp scaling (base != 1):
 
@@ -50,6 +62,13 @@ with
 - in offset  $a_i = - l_i * m_i$
 - out scale  $m_o = (h_o - l_o) / (b - 1)$
 - out offset $a_o = l_o - m_o$
+
+or
+
+- in scale   $m_i = log(b) / (inmax - inmin)$
+- in offset  $a_i = - inmin * m_i$
+- out scale  $m_o = (outmax - outmin) / (b - 1)$
+- out offset $a_o = outmin - m_o$
 
 
 
