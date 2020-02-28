@@ -190,17 +190,26 @@ public:
         return 0;
     }
 };
-        
+
+/* matrix multiplication:
+   @param  left(m, n)
+   @param  right(n, p)
+   @return out(m, p)
+ */
 std::vector<float> xMul(float* left, float* right, int m, int n, int p)
 {
     std::vector<float> out(m*p);
-    for(int i = 0; i < m; ++i)
-        for(int j = 0; j < p; ++j)
-        {
-            out[i*p+j] = 0;
-            for(int k = 0; k < n; ++k)
-                out[i*p+j] += left[i*n+k] * right[k*p+j];
-        }
+
+    for (int i = 0; i < m; ++i)
+    {
+      for(int j = 0; j < p; ++j)
+      {
+        out[i*p + j] = 0;
+
+        for (int k = 0; k < n; ++k)
+          out[i*p + j] += left[i*n + k] * right[k*p + j];
+      }
+    }
     return out;
 }
         
@@ -450,17 +459,18 @@ public:
                 decomposition.rank = mtxrank;
                 decomposition.means = _means[bufferindex];
 
+                // features is (numframes, mtxrank) matrix (in vector<float>)
                 auto features = xMul(_traindata[bufferindex].data(), V[bufferindex].data(), numframes, _n, mtxrank);
                 
                 if(rank.get() == -1)//if autorank && rank < minmn, fill out cols with 0 in mubu
                 {
-                    features.resize(numframes*minmn);
-                    for(int i = mtxrank; i < numframes*minmn ; i+= minmn)
-                        for(int j = 0; j < minmn-mtxrank; j++)
-                            features.insert(features.begin()+i+j,0.f);
+                  features.reserve(numframes * minmn);  // make space for matrix(numframes, minmn)
+                  for (int i = mtxrank; i < numframes * minmn ; i += minmn)
+                    for (int j = 0; j < minmn - mtxrank; j++)
+                      features.insert(features.begin() + i + j, 0.f);
                 }
 
-                outbufs[bufferindex].data = new float[numframes*minmn];
+                outbufs[bufferindex].data = new float[numframes * minmn];
                 std::copy(features.begin(), features.end(), outbufs[bufferindex].data);
                 outbufs[bufferindex].numframes = numframes;
                 std::fill(_means[bufferindex].begin(), _means[bufferindex].end(), 0);
