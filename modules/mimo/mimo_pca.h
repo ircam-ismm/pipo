@@ -395,14 +395,14 @@ public:
             PiPoValue* Vt_ptr = Vt[bufferindex].data();
             
             //First do the query for worksize
-            sgesvd_(jobu, jobvt, &_n, &numframes, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
+            sgesvd_(jobu, jobvt, &_n, &ldvt, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
             
             //Resize accordingly
             lwork = optimalWorkSize[0];
             work.resize(lwork);
             
             //Do the job
-            sgesvd_(jobu, jobvt, &_n, &numframes, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
+            sgesvd_(jobu, jobvt, &_n, &ldvt, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
             
             std::swap(U[bufferindex], Vt[bufferindex]);
             V[bufferindex] = xTranspose(Vt[bufferindex].data(), minmn, _n);
