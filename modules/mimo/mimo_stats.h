@@ -231,7 +231,7 @@ public:
 	// check if input track size has changed since setup
 	if (numframes != bufsize_[bufferindex])
 	{
-	  traindata_[bufferindex].resize(numframes);
+	  traindata_[bufferindex].resize(numframes * size_);
 	  bufsize_[bufferindex] = numframes;
 	}
 
@@ -264,9 +264,10 @@ public:
 	    // banal interpolation
 	    outdata[j] = (1 - factor) * data[j] + factor * norm;
 	  }
-
+#if DEBUG
 	  if (i == 0 && mtxsize > 0) printf("normalise %f .. %f -> %f\n", data[j - 1], norm, outdata[j - 1]);
-	
+#endif
+
 	  for (; j < size_; j++)
 	    outdata[j] = 0;
 
