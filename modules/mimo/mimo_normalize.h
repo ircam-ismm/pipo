@@ -42,38 +42,25 @@
 #include "mimo.h"
 #include "mimo_stats.h"
 
-class norm_model_data : public mimo_model_data
-{
-private:
-    Json::Value root;
-    Json::Reader reader;
-public:
-    int json_size() override
-    {
-        return 0;
-    }
-    char* to_json (char* out, int size) throw() override
-    {
-        return 0;
-    }
-    int from_json (const char* json_string) override
-    {
-        return 0;
-    }
-};
 
 class MiMoNormalize : public Mimo
 {
-public:
+private:
     mimo_stats stats;
-    stats_model_data* _model;
+    stats_model_data* _model;	 // _model points to stats_model_data in stats object, or is NULL when invalid
     const PiPoStreamAttributes* _streamattr;
+    //todo: PiPoenumattr normtype_; // minmax, meanstd
+    PiPoDictionaryAttr model_attr;
     std::vector<std::vector<PiPoValue>> _traindata;
     int _size = 0;
-    
+    std::vector<std::string>	labelstore_;
+
+public:
     MiMoNormalize(Parent *parent, Mimo *receiver = nullptr)
     :   Mimo(parent, receiver)
     ,   stats(parent, receiver)
+    ,   _model(NULL)
+    ,   model_attr(this, "model", "The model for processing", true, "")
     {
     }
     
@@ -96,12 +83,10 @@ public:
     {
         if(stats.train(0, trackindex, numbuffers, buffers) < 0)
             return -1;
-        
-        _model = stats.getmodel();
-        
+
+	_model = stats.getmodel();
         std::vector<mimo_buffer> outbufs(numbuffers);
         outbufs.assign(buffers, buffers + numbuffers);
-        
         
         for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
@@ -132,11 +117,59 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-        return propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
+      if (stats.getmodel()->from_json(model_attr.getJson()) == -1)
+      {
+	_model = NULL;	// mark as invalid (can't load)
+	return -1;
+      }
+      
+      _model = stats.getmodel(); // set only when parsing finished
+      if (_model->mean.size() < width * height)
+      { // if model has less elements than data, extend (additional columns will pass through)
+	_model->mean.resize(width * height);
+	_model->std.resize(width * height);
+      }
+	
+      // make labels
+      const char **newlabels = NULL;
+      if (labels)
+      {
+	const std::string suffix("Norm");
+	newlabels = (const char **) alloca(width * sizeof(char *));
+	labelstore_.resize(width);
+
+	for (unsigned int i = 0; i < width; i++)
+	{
+	  labelstore_[i] = std::string(labels[i]) + suffix;
+	  newlabels[i] = labelstore_[i].c_str();
+	}
+      }
+
+      return propagateStreamAttributes(hasTimeTags, rate,  offset,  width,  height,
+				       newlabels,  hasVarSize,  domain,  maxFrames);
     }
+    
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
-        return propagateFrames(time, weight, values, size, num);
+      bool ok = _model != NULL;
+    
+      for (unsigned int i = 0; ok  &&  i < num; i++)
+      {
+	PiPoValue norm[size];
+      
+	// normalise
+	for (unsigned int j = 0; j < size; j++)
+	  if (_model->std[j] != 0)
+	    norm[j] = (values[j] - _model->mean[j]) / _model->std[j];
+	  else
+	    norm[j] = (values[j] - _model->mean[j]);
+
+	ok &= propagateFrames(time, weight, norm, size, 1) == 0;
+
+	values += size;
+      }
+
+      return ok ? 0 : -1;
     }
     
     mimo_model_data *getmodel()
@@ -146,4 +179,11 @@ public:
     
 };
 
-#endif /* mimo_unispring_h */
+#endif /* mimo_norm_h_ */
+
+/** EMACS **
+ * Local variables:
+ * mode: c
+ * c-basic-offset:2
+ * End:
+ */
