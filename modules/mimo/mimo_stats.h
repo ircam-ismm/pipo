@@ -43,7 +43,8 @@
 #include <memory>
 
 #include "mimo.h"
-//#include <picojson.h>
+#include "jsoncpp/include/json.h"
+
 
 /*
   template <typename Iterable>
@@ -111,10 +112,50 @@ public:
     return out;
   }
 
-  int from_json (const char *json) override
+  template<typename T>
+  void array_from_json (const Json::Value& val, std::vector<T> &dst)
   {
-    // later
-    return 0;
+    dst.resize(val.size());
+    for (unsigned int i = 0; i < val.size(); ++i)
+      dst[i] = val[i].asFloat();
+  }
+  
+  int from_json (const char *json_string) override
+  {
+    Json::Value root;
+    Json::Reader reader;
+    
+    if (json_string == NULL  ||  json_string[0] == 0)
+      return -1; // empty string
+
+    bool succes = reader.parse(json_string, root);
+    if (!succes)
+    {
+      std::cout << "mimo.stats model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
+		<< "in\n" << json_string << std::endl;
+      return -1;
+    }
+
+    const Json::Value _num = root["num"];
+    int n = _num.size();
+    num.resize(n);
+    for (unsigned int i = 0; i < n; ++i)
+      num[i] = _num[i].asInt();
+
+    array_from_json(root["min"], min);
+    array_from_json(root["max"], max);
+    array_from_json(root["mean"], mean);
+    array_from_json(root["std"], std);
+
+    if (min.size() == n  &&  max.size() ==  n  &&  mean.size() ==  n  &&  std.size() == n)
+      return 0;
+    else
+    {
+      std::cout << "mimo.stats model dimension mismatch error in\n" << std::endl
+		<< json_string << std::endl;
+      printf("%d =? %d =? %d =? %d =? %d =? %d\n", num.size(), min.size(), max.size(), mean.size(), std.size());
+      return -1;
+    }    
   }
 };
 
@@ -143,8 +184,10 @@ public:
   */
   int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[]) override
   {
-    char astr[1000];
+#if DEBUG
+    char astr[1001];
     printf("%s b %d t %d attr:\n%s\n", __PRETTY_FUNCTION__, numbuffers, numtracks, streamattr[0]->to_string(astr, 1000));
+#endif
     
     if (numtracks != 1)
       return -1; // can only work on one input track per buffer
@@ -209,8 +252,15 @@ public:
       // finish statistics
       for (int j = 0; j < size_; j++)
       {
-	stats_.mean[j] = sum_[j] / stats_.num[j];
-	stats_.std[j] = sqrt(sum2_[j] / stats_.num[j] - stats_.mean[j] * stats_.mean[j]);
+	if (stats_.num[j] > 0)
+	{
+	  stats_.mean[j] = sum_[j] / stats_.num[j];
+	  stats_.std[j] = sqrt(sum2_[j] / stats_.num[j] - stats_.mean[j] * stats_.mean[j]);
+	}
+	else
+	{ // no data
+	  stats_.mean[j] = stats_.min[j] = stats_.max[j] = stats_.std[j] = 0;
+	}
       }
 
       // first iteration, output input data, to be worked on at next iterations
