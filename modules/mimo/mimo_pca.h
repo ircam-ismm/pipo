@@ -238,7 +238,7 @@ public:
     std::vector<std::string> _labelstore;
     
 #ifdef WIN32
-    int _m = 0, _n = 0 _rank = 0, _autorank = 0;
+    int _m = 0, _n = 0, _rank = 0, _autorank = 0;
     std::vector<int> _minmn;
 #else
     __CLPK_integer _m = 0, _n = 0, _rank = 0;

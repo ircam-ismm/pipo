@@ -221,8 +221,11 @@ public:
   */
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
+#ifndef WIN32
     printf("%s\n  itercount %d trackindex %d numbuf %d\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);
-
+#else
+      printf("%s\n  itercount %d trackindex %d numbuf %d\n", __FUNCSIG__, itercount, trackindex, numbuffers);   
+#endif
     if (itercount == 0)
     { // for the sake of the example: this mimo module can iterate, but stats are calculated only at first iteration
       for (int buf = 0; buf < numbuffers; buf++)
@@ -379,8 +382,9 @@ public:
     
     for (unsigned int i = 0; i < num; i++)
     {
-      PiPoValue norm[size];
-      
+      //PiPoValue norm[size];
+      PiPoValue* norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
+
       // normalise
       for (unsigned int j = 0; j < size; j++)
 	if (stats_.std[j] != 0)
@@ -391,6 +395,8 @@ public:
       ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
       values += size;
+
+      free(norm);
     }
 
     return ok ? 0 : -1;

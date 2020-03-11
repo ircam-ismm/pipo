@@ -155,8 +155,8 @@ public:
     
       for (unsigned int i = 0; ok  &&  i < num; i++)
       {
-	PiPoValue norm[size];
-      
+	//PiPoValue norm[size];
+          PiPoValue *norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
 	// normalise
 	for (unsigned int j = 0; j < size; j++)
 	  if (_model->std[j] != 0)
@@ -167,6 +167,8 @@ public:
 	ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
 	values += size;
+
+    free(norm);
       }
 
       return ok ? 0 : -1;
