@@ -105,7 +105,8 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
   // use longest of names or values list to determine number of added columns
   numconstcols_ = std::max(value_attr_.getSize(), name_attr_.getSize());
   numoutcols_   = width + numconstcols_;
-  outvalues_.resize(maxframes * height * numoutcols_);
+  int numrows   = height > 0  ?  height  :  1;	// with empty input data frames (markers only), generate 1 output row
+  outvalues_.resize(maxframes * numrows * numoutcols_);
 
   /* get labels */
   std::vector<char *> outputlabels(numoutcols_);
@@ -157,7 +158,7 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
 {
   int status = 0;
   int inputcols  = numoutcols_ - numconstcols_; // num input columns
-  int inputrows  = size / inputcols;
+  int inputrows  = inputcols > 0  ?  size / inputcols  :  1;	// if empty inpupt matrix, generate 1 row
 
 #if CONST_DEBUG >= 2
   printf("PiPoConst::frames time %f  values %p  size %d  num %d --> %f\n",
@@ -170,7 +171,7 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
   {
     for (unsigned int j = 0; j < inputrows; ++j)
     {
-      std::copy(invalues, invalues + inputcols, it);
+      std::copy(invalues, invalues + inputcols, it); // yes, invalues can be NULL, but then inputcols is 0
 
       // append const values (fill with default)
       int i = 0;
