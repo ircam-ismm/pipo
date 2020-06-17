@@ -4,13 +4,19 @@ PROJECT_BRIEF          = "Plug In Plug Out / Plugin Interface for Processing Obj
 # PROJECT_LOGO           = "some_pic.png"
 # PROJECT_VERSION        = "some version"
 
-INPUT                  = ../../src/modules \
-                         ../../src/collection \
-                         ../../src/include \
-                         ../../src/host \
-                         ../doxygen/pipogroups.doxygen
+INPUT                  = ../../modules \
+                         ../../sdk/src \
+                         ../../sdk/host \
+                         ../doxygen/pipogroups.doxygen \
+#                         ../../modules/collection \
 
 RECURSIVE              = YES
+
+EXCLUDE                = ../../modules/ofxMaxim \
+			 ../../modules/wavelet/dependencies \
+			 ../../modules/wavelet/python \
+			 ../../modules/bayesfilter/python/* \
+ 			 rta_unispring.h \
 
 EXCLUDE_PATTERNS       = */mimo/* \
                          mimo.h \
