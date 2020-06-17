@@ -4,15 +4,21 @@
  *
  * @brief PiPo to scale and clip a data stream
 
-parameters:
-- in  min $l_i$
-- in  max $h_i$
-- out min $l_o$
-- out max $h_o$
-- base    $b$ (default: 1)
+\section formulas Scaling Formulas
+
+PiPoScale scales the input \e x in range \e inmin to \e inmax to the output \e y in range \e outmin to \e outmax, using the following formulas, based on the input parameters.
+Clipping happens on the input range.
+
+\subsection params Parameters
+
+- in  min 
+- in  max 
+- out min 
+- out max 
+- base (default: 1)
 
 
-linear scaling:
+\subsection linear Linear Scaling Mode
 
 \f[
 y = m_i x + a_i
@@ -20,16 +26,11 @@ y = m_i x + a_i
 
 with 
 
-- in scale  $m_i = (h_o - l_o) / (h_i - l_i)$
-- in offset $a_i = l_o - l_i * m_i$
-
-or
-
-- in scale  $m_i = (outmax - outmin) / (inmax - inmin)$
-- in offset $a_i = outmin - inmin * m_i$
+- in scale   \f$ m_i = (outmax - outmin) / (inmax - inmin) \f$ 
+- in offset  \f$ a_i = outmin - inmin * m_i \f$ 
 
 
-log scaling:
+\subsection log Logarithmic Scaling Mode
 
 \f[
 y = m_o log(m_i x + a_i) + a_o
@@ -37,38 +38,26 @@ y = m_o log(m_i x + a_i) + a_o
 
 with
 
-- in scale   $m_i = (b - 1) / (h_i - l_i)$
-- in offset  $a_i = 1 - l_i * m_i$
-- out scale  $m_o = (h_o - l_o) / log(b)$
-- out offset $a_o = l_o$
-
-or
-
-- in scale   $m_i = (b - 1) / (inmax - inmin)$
-- in offset  $a_i = 1 - inmin * m_i$
-- out scale  $m_o = (outmax - outmin) / log(b)$
-- out offset $a_o = outmin$
+- in scale    \f$ m_i = (base - 1) / (inmax - inmin) \f$ 
+- in offset   \f$ a_i = 1 - inmin * m_i \f$ 
+- out scale   \f$ m_o = (outmax - outmin) / log(base) \f$ 
+- out offset  \f$ a_o = outmin \f$ 
 
 
-exp scaling (base != 1):
+\subsection exp Exponential Scaling Mode
+
+NB.: base != 1
 
 \f[
-y = m_o e ^ (m_i x + a_i) + a_o
+y = m_o exp(m_i x + a_i) + a_o
 \f]
 
 with
 
-- in scale   $m_i = log(b) / (h_i - l_i)$
-- in offset  $a_i = - l_i * m_i$
-- out scale  $m_o = (h_o - l_o) / (b - 1)$
-- out offset $a_o = l_o - m_o$
-
-or
-
-- in scale   $m_i = log(b) / (inmax - inmin)$
-- in offset  $a_i = - inmin * m_i$
-- out scale  $m_o = (outmax - outmin) / (b - 1)$
-- out offset $a_o = outmin - m_o$
+- in scale    \f$ m_i = log(base) / (inmax - inmin) \f$ 
+- in offset   \f$ a_i = - inmin * m_i \f$ 
+- out scale   \f$ m_o = (outmax - outmin) / (base - 1) \f$ 
+- out offset  \f$ a_o = outmin - m_o \f$ 
 
 
 
