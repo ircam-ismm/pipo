@@ -356,154 +356,176 @@ private:
 	return numdata;
     }
 
+    // calculate PCA on all buffers, update numframestotal_, bufsizes_, S_, U_, Vt_, Vt_
+    // @return actual rank of matrix
+    int calc_pca (int numbuffers, const mimo_buffer buffers[])
+    {
+      // calculate means over all buffers, returns current total number of frames
+      numframestotal_ = calc_means(numbuffers, buffers);
+
+      // collect data of all buffers, do global pca, not per buffer!
+      std::vector<PiPoValue> traindata(numframestotal_ * n_, 0.f);
+      PiPoValue *dataptr = traindata.data();
+
+      for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
+      {
+	int numframes = buffers[bufferindex].numframes;
+	bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
+	PiPoValue* bufferptr = buffers[bufferindex].data;
+        
+	// center buffers around mean and append to traindata
+	for (int i = 0; i < numframes; i++)
+	{
+	  for (int j = 0; j < n_; j++)
+	    dataptr[j] = bufferptr[j] - means_[j];
+	  
+	  dataptr   += n_;
+	  bufferptr += n_;
+	}
+      }
+	
+      // reads traindata, fills S, U, V, Vt
+      // do_pca(bufferindex, numframes);
+	    
+#ifndef WIN32
+      __CLPK_integer info = 0;
+      __CLPK_integer lwork = -1; //query for optimal size
+      float optimalWorkSize[1];
+      __CLPK_integer ldu = n_;
+      __CLPK_integer ldvt = numframestotal_;
+      __CLPK_integer lda = n_;
+      char* jobu = (char*)"A";
+      char* jobvt = (char*)"A";
+            
+      //LAPACK svd calculates in-place
+      std::vector<PiPoValue> work;
+            
+      PiPoValue* S_ptr = S_.data();
+      PiPoValue* U_ptr = U_.data();
+      PiPoValue* Vt_ptr = Vt_.data();
+            
+      //First do the query for worksize
+      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
+            
+      //Resize accordingly
+      lwork = optimalWorkSize[0];
+      work.resize(lwork);
+	
+      //Do the job
+      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
+            
+      std::swap(U_, Vt_);
+      V_ = xTranspose(Vt_.data(), minmn_, n_);
+#else
+      PiPoValue* S_ptr = S_.data();
+      PiPoValue* U_ptr = U_.data();
+      PiPoValue* V_ptr = V_.data();
+	  
+      rta_svd_setup_t * svd_setup = nullptr;
+      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframes, n_);
+      rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
+#endif
+	
+      int mtxrank = 0;
+            
+      if (rank_ == -1) //calculate rank
+      {
+	int ssize = static_cast<int>(S_.size());
+	for (int i = 0; i < ssize; i++)
+	{
+	  float x = S_[i];
+	  if (x < threshold_)
+	    S_[i] = 0;
+	  else
+	    mtxrank++;
+	}
+      }
+      else
+      {
+	mtxrank = rank_;
+      }
+
+      if (mtxrank > minmn_)
+	mtxrank = minmn_;
+
+      return mtxrank;
+    } // end calc_pca
+       
 public:	
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-	// calculate means over all buffers, returns current total number of frames
-	numframestotal_ = calc_means(numbuffers, buffers);
-	
-	// collect data of all buffers, do global pca, not per buffer!
-	std::vector<PiPoValue> traindata(numframestotal_ * n_, 0.f);
-	PiPoValue *dataptr = traindata.data();
+      int mtxrank = calc_pca(numbuffers, buffers);
+      
+      if (mtxrank > 0)
+      {
+        if (mtxrank != minmn_)
+          // remove superfluous cols according to rank
+          for (int i = 0; i < n_; i++)
+            for (int j = 0; j < mtxrank; j++)
+              V_[i * mtxrank + j] = V_[i * minmn_ + j];
+	  
+	Vt_ = xTranspose(V_.data(), n_, mtxrank);
+	S_.resize(mtxrank);
+	V_.resize(mtxrank * n_);
+	Vt_.resize(mtxrank * n_);
+	  
+	// copy to model with whole data
+	decomposition_.VT = Vt_;
+	decomposition_.V = V_;
+	decomposition_.S = S_;
+	decomposition_.m = m_;
+	decomposition_.n = n_;
+	decomposition_.rank = mtxrank;
+	decomposition_.means = means_;
 
-        for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
-        {
-            int numframes = buffers[bufferindex].numframes;
-	    bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
-            PiPoValue* bufferptr = buffers[bufferindex].data;
-            
-	    // center buffers around mean and append to traindata
-            for (int i = 0; i < numframes; i++)
-            {
-                for (int j = 0; j < n_; j++)
-                    dataptr[j] = bufferptr[j] - means_[j];
+	// apply forward transformation to input data
+	std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
+	std::vector<mimo_buffer> outbufs(numbuffers);
+	outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
 
-                dataptr   += n_;
-                bufferptr += n_;
-            }
-	}
-	
-	// reads traindata, fills S, U, Vt
-	// do_pca(bufferindex, numframes);
+	for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
+	{
+	  // copy and center input frames
+	  int numframes = buffers[bufferindex].numframes;
+	  std::vector<PiPoValue> centered(n_ * numframes);
+	  PiPoValue *dataptr = buffers[bufferindex].data;
+	  PiPoValue *cenptr  = centered.data();
+
+	  for (int k = 0; k < numframes; k++)
+	  {
+	    for (int i = 0; i < n_; ++i)
+	      cenptr[i] = dataptr[i] - means_[i];
 	    
-    #ifndef WIN32
-	__CLPK_integer info = 0;
-	__CLPK_integer lwork = -1; //query for optimal size
-	float optimalWorkSize[1];
-	__CLPK_integer ldu = n_;
-	__CLPK_integer ldvt = numframestotal_;
-	__CLPK_integer lda = n_;
-	char* jobu = (char*)"A";
-	char* jobvt = (char*)"A";
-            
-	//LAPACK svd calculates in-place
-	std::vector<PiPoValue> work;
-            
-	PiPoValue* S_ptr = S_.data();
-	PiPoValue* U_ptr = U_.data();
-	PiPoValue* Vt_ptr = Vt_.data();
-            
-	//First do the query for worksize
-	sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
-            
-	//Resize accordingly
-	lwork = optimalWorkSize[0];
-	work.resize(lwork);
-            
-	//Do the job
-	sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
-            
-	std::swap(U_, Vt_);
-	V_ = xTranspose(Vt_.data(), minmn_, n_);
-    #else
-	PiPoValue* S_ptr = S_.data();
-	PiPoValue* U_ptr = U_.data();
-	PiPoValue* V_ptr = V_.data();
-            
-	rta_svd_setup_t * svd_setup = nullptr;
-	rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframes, n_);
-	rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
-    #endif
-	int mtxrank = 0;
-            
-	if (rank_ == -1) //calculate rank
-	{
-	    int ssize = static_cast<int>(S_.size());
-	    for (int i = 0; i < ssize; i++)
-	    {
-		float x = S_[i];
-		if (x < threshold_)
-		    S_[i] = 0;
-		else
-		    mtxrank++;
-	    }
+	    cenptr  += n_;
+	    dataptr += n_;
+	  }
+	  
+	  // transform all frames at once (todo: could be in place)
+	  // produces (numframes, mtxrank) matrix (in vector<float>)
+	  outdata[bufferindex] = xMul(centered.data(), V_.data(), numframes, n_, mtxrank);
+
+	  if (mtxrank != minmn_) // rank < minmn, fill out cols with 0 in mubu
+	  {
+	    outdata[bufferindex].reserve(numframes * minmn_);  // make space for matrix(numframestotal_, minmn_)
+	    for (int i = mtxrank; i < numframes * minmn_; i += minmn_)
+	      for (int j = 0; j < minmn_ - mtxrank; j++)
+		outdata[bufferindex].insert(outdata[bufferindex].begin() + i + j, 0.f);
+	  }
+
+	  // copy transformed data pointer to output buffers
+	  outbufs[bufferindex].numframes = numframes;
+	  outbufs[bufferindex].data = outdata[bufferindex].data();
 	}
-	else
-	{
-	    mtxrank = rank_;
-	}
-            
-	if (mtxrank > 0)
-	{
-	    if (mtxrank > minmn_)
-		mtxrank = minmn_;
-                
-	    // remove superfluous cols according to rank
-	    for (int i = 0; i < n_; i++)
-		for (int j = 0; j < mtxrank; j++)
-		    V_[i * mtxrank + j] = V_[i * minmn_ + j];
-                
-	    Vt_ = xTranspose(V_.data(), n_, mtxrank);
-	    S_.resize(mtxrank);
-	    V_.resize(mtxrank * n_);
-	    Vt_.resize(mtxrank * n_);
-
-	    // copy to model with whole data
-	    decomposition_.VT = Vt_;
-	    decomposition_.V = V_;
-	    decomposition_.S = S_;
-	    decomposition_.m = m_;
-	    decomposition_.n = n_;
-	    decomposition_.rank = mtxrank;
-	    decomposition_.means = means_;
-
-	    // features is (numframestotal_, mtxrank) matrix (in vector<float>)
-	    auto features = xMul(traindata.data(), V_.data(), numframestotal_, n_, mtxrank);
-
-	    if (rank_attr_.get() == -1)//if autorank && rank < minmn, fill out cols with 0 in mubu
-	    {
-		features.reserve(numframestotal_ * minmn_);  // make space for matrix(numframestotal_, minmn_)
-		for (int i = mtxrank; i < numframestotal_ * minmn_; i += minmn_)
-                    for (int j = 0; j < minmn_ - mtxrank; j++)
-			features.insert(features.begin() + i + j, 0.f);
-	    }
-
-	    // split transformed data to output buffers
-	    std::vector<mimo_buffer> outbufs(numbuffers);
-	    outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
-	    std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output training data, will be deallocated at end of function
-	    PiPoValue *readptr = features.data();
-	    
-	    for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
-	    {
-		int numframes = buffers[bufferindex].numframes;
-		int numelem   = numframes * minmn_;
-		outdata[bufferindex].reserve(numelem);
-		outbufs[bufferindex].numframes = numframes;
-		outbufs[bufferindex].data = outdata[bufferindex].data();
-		std::copy(readptr, readptr + numelem, outbufs[bufferindex].data);
-		readptr += numelem;
-	    }
-
-	    return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
-	}
-	else
-	{
-	    signalWarning("PCA Error.. rank < 1, propagating empty matrix");
-	    std::vector<mimo_buffer> invalidbuf(numbuffers);
-	    return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
-	}
-    } // end train
+	
+	return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      }
+      else
+      {
+	signalWarning("PCA Error.. rank < 1, propagating empty matrix");
+	std::vector<mimo_buffer> invalidbuf(numbuffers);
+	return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
+      }
+    }// end train
     
     mimo_model_data *getmodel ()
     {
@@ -517,7 +539,7 @@ public:
 	    m_ = decomposition_.m;
 	    n_ = decomposition_.n;
             minmn_ = std::min<int>(m_, n_); ///needed???
-	    rank_ = decomposition_.rank;
+	    rank_ = decomposition_.rank; // actual matrix rank from training
 	    means_ = decomposition_.means;
 	}
 	else
@@ -532,7 +554,7 @@ public:
         
         fb_ = forwardbackward_attr_.get();
         
-        unsigned int outn = 0, outm = 0;
+        unsigned int outn = 0, outm = 0;	// todo: check rank_attr_ if different outn requested
         
         switch(fb_)
         {
@@ -555,7 +577,7 @@ public:
             }
         }
         return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, maxFrames);
-    }
+    } // end streamAttributes
     
     int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
     {
@@ -618,7 +640,14 @@ public:
                 return propagateFrames(time, weight, nullptr, 0, 0);
             }
         }
-    }
+    } // end frames
 };
     
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */
+
 #endif /* MIMO_PCA_H */
