@@ -510,7 +510,7 @@ public:
         return &decomposition_;
     }
     
-    int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+    int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
 	if(decomposition_.from_json(model_attr_.getJson()) != -1)
 	{
@@ -557,51 +557,65 @@ public:
         return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, maxFrames);
     }
     
-    int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+    int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
     {
       if (means_.size() == 0)
       { //model not configured, propagate zero matrix
         return propagateFrames(time, weight, new float[1](), 1, 1);
       }
       else
-        switch(fb_)
+        switch (fb_)
         {
 	    case Forward:
             {
-                if(size<n_)
+                if (size < n_)
                 {
                     signalWarning("Vector too short, input should be a vector with length n");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
 
-                for(int i = 0; i < n_; ++i)
-                    values[i] -= means_[i];
+		// copy and center input frames
+		std::vector<float> centered(n_ * num);
+		float *cenptr = centered.data();
 
-                auto features = xMul(values, decomposition_.V.data(), 1, n_, rank_);
+		for (int k = 0; k < num; k++)
+		{
+		    for (int i = 0; i < n_; ++i)
+			cenptr[i] = values[i] - means_[i];
+
+		    cenptr += n_;
+		    values += size;
+		}
+		
+		// transform all frames at once (todo: can be in place)
+                auto features = xMul(centered.data(), decomposition_.V.data(), num, n_, rank_);
                 
-                return propagateFrames(time, weight, features.data(), rank_, 1);
+                return propagateFrames(time, weight, features.data(), rank_, num);
             }
+
 	    case Backward:
             {
-                if(size<rank_)
+                if (size < rank_)
                 {
                     signalWarning("Vector too short, input should be a vector with length rank");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
                 
-                auto resynthesized = xMul(values,decomposition_.VT.data(),1,rank_,n_);
+                auto resynthesized = xMul(values, decomposition_.VT.data(), num, rank_, n_);
 
-                for(int i = 0; i < n_; ++i)
-                    resynthesized[i] += means_[i];
-
-                return propagateFrames(time, weight, resynthesized.data(), n_, 1);
+		for (int k = 0; k < num; k++)
+		{
+		    for (int i = 0; i < n_; ++i)
+			resynthesized[k * n_ + i] += means_[i];
+		}
+		
+                return propagateFrames(time, weight, resynthesized.data(), n_, num);
             }
                 
             default:
             {
                 signalWarning("Error... invalid decoding mode selected");
                 return propagateFrames(time, weight, nullptr, 0, 0);
-                break;
             }
         }
     }
