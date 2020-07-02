@@ -122,7 +122,7 @@ public:
         << "}";
         
         std::string ret = ss.str();    
-        if (ret.size() > size)
+        if (ret.size() > (size_t) size)
             throw std::runtime_error("json string too long");
         else
             strcpy(out, ret.c_str());
@@ -226,42 +226,42 @@ std::vector<float> xTranspose(float* in, int m, int n)
 class MiMoPca: public Mimo
 {
 public:
-    const PiPoStreamAttributes* _attr;
+    const PiPoStreamAttributes* attr_;
     enum Direction { Forward = 0, Backward = 1 };
-    int _numbuffers, _numtracks;
-    std::vector<int> _bufsizes; // num frames for each buffer
-    int _fb = Forward;
-    float _threshold = 1e-6;
+    int numbuffers_, numtracks_, numframestotal_;
+    std::vector<int> bufsizes_; // num frames for each buffer
+    int fb_ = Forward;
+    float threshold_ = 1e-6;
     
-    std::vector<std::vector<PiPoValue>> U, S, V, Vt, _means;
-    std::vector<std::vector<PiPoValue>> _traindata;
-    std::vector<std::string> _labelstore;
+    std::vector<PiPoValue> U_, S_, V_, Vt_;
+    std::vector<PiPoValue> means_;	// means of n_ input columns
+    std::vector<std::string> labelstore_;
     
 #ifdef WIN32
-    int _m = 0, _n = 0, _rank = 0, _autorank = 0;
-    std::vector<int> _minmn;
+    int m_ = 0, n_ = 0, rank_ = 0;
+    int minmn_;
 #else
-    __CLPK_integer _m = 0, _n = 0, _rank = 0;
-    std::vector<__CLPK_integer> _minmn;
+    __CLPK_integer m_ = 0, n_ = 0, rank_ = 0;
+    __CLPK_integer minmn_;
 #endif
     
 public:
-    PiPoScalarAttr<PiPo::Enumerate> forwardbackward;
-    PiPoScalarAttr<int> rank;
-    PiPoScalarAttr<float> threshold;
-    PiPoDictionaryAttr model;
+    PiPoScalarAttr<PiPo::Enumerate> forwardbackward_attr_;
+    PiPoScalarAttr<int> rank_attr_;
+    PiPoScalarAttr<float> threshold_attr_;
+    PiPoDictionaryAttr model_attr_;
 
-    svd_model_data decomposition;
+    svd_model_data decomposition_;
     
     MiMoPca(Parent *parent, Mimo *receiver = nullptr)
     :   Mimo(parent, receiver)
-    ,   forwardbackward(this, "direction", "Mode for decoding: forward or backward", true, Forward)
-    ,   rank(this, "rank", "Matrix rank, -1 for automatic", true, -1)
-    ,   threshold(this, "threshold", "cutoff value for autorank", true, 1e-6)
-    ,   model(this, "model", "The model for processing", true, "")
+    ,   forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, Forward)
+    ,   rank_attr_(this, "rank", "Matrix rank, -1 for automatic", true, -1)
+    ,   threshold_attr_(this, "threshold", "cutoff value for autorank", true, 1e-6)
+    ,   model_attr_(this, "model", "The model for processing", true, "")
     {
-        forwardbackward.addEnumItem("forward",  "Forward transformation from input space to principal component space");
-        forwardbackward.addEnumItem("backward", "Backward transformation from principal component space to input space");
+        forwardbackward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
+        forwardbackward_attr_.addEnumItem("backward", "Backward transformation from principal component space to input space");
     }
     
     ~MiMoPca(void)
@@ -269,49 +269,44 @@ public:
     
     int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[])
     {
-        _attr = *streamattr;
-        _numbuffers = numbuffers;
-        _numtracks = numtracks;
-        
-        _rank = rank.get();
-        _threshold = threshold.get();
-        _bufsizes.assign(tracksize, tracksize+numbuffers);
-        _m = 1; // we treat matrix data as an unrolled vector
-        _n = streamattr[0]->dims[0] * streamattr[0]->dims[1];
-        
-        U.resize(_numbuffers);
-        S.resize(_numbuffers);
-        Vt.resize(_numbuffers);
-        V.resize(_numbuffers);
-        _means.resize(_numbuffers);
-        _minmn.resize(_numbuffers);
-        _traindata.resize(_numbuffers);
-    
-        PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[_numbuffers];
-
-        for(int i = 0; i < numbuffers; ++i)
-        {
-            int m = _bufsizes[i];
+        attr_       = *streamattr;
+        numbuffers_ = numbuffers;
+        numtracks_  = numtracks;
+	rank_       = rank_attr_.get();
+        threshold_  = threshold_attr_.get();
+	
+        bufsizes_.assign(tracksize, tracksize + numbuffers);
+        m_ = 1; // we treat matrix data as an unrolled vector
+        n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+	means_.resize(n_);
+	numframestotal_ = 0;	// total number of frames over all buffers
+	for (int i = 0; i < numbuffers_; i++)
+	    numframestotal_ += bufsizes_[i];
             
-            _minmn[i] = m > _n ? _n : m;
-            S[i].resize(_minmn[i],0.f);
-            _traindata[i].resize(m * _n, 0.f);
-            _means[i].resize(_n);
+	minmn_ = std::min<int>(numframestotal_, n_);
+	S_.resize(minmn_, 0.f);
+
 #ifdef WIN32
-            Vt[i].resize(_n*_n,0.f);
-            U[i].resize(m*m,0.f);
-            V[i].resize(_n*_n ,0.f);
+	Vt_.resize(n_ * n_, 0.f);
+	U_.resize(numframestotal_ * numframestotal_, 0.f); /// can be big?????
+	V_.resize(n_ * n_, 0.f);
 #else
-            //Fortran uses col-major order so we swap U and VT, spoofing
-            //a transposed input matrix
-            U[i].resize(_n*_n);
-            Vt[i].resize(m*m);
+	//Fortran uses col-major order so we swap U and VT, spoofing
+	//a transposed input matrix
+	U_.resize(n_ * n_);
+	Vt_.resize(numframestotal_ * numframestotal_);
 #endif
-            outattr[i] = new PiPoStreamAttributes(**streamattr);
-            if(_rank == -1) //we don't know colsize beforehand if automatic ranking
-                outattr[i]->dims[0] = _minmn[i];
+
+	// set output stream attributes
+        PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[numbuffers_];
+
+	for (int i = 0; i < numbuffers_; ++i)
+        {
+	    outattr[i] = new PiPoStreamAttributes(**streamattr);
+            if(rank_ == -1) //we don't know colsize beforehand if automatic ranking
+                outattr[i]->dims[0] = minmn_;
             else
-                outattr[i]->dims[0] = _rank > _minmn[i] ? _minmn[i] : _rank;
+                outattr[i]->dims[0] = std::min<int>(minmn_, rank_);
             outattr[i]->dims[1] = 1;
 
 	    // create labels
@@ -330,208 +325,227 @@ public:
         
         return propagateSetup(numbuffers, numtracks, tracksize, const_cast<const PiPoStreamAttributes**>(outattr));
     }
-    
+
+private:
+    // get total means per column of a list of input buffers, write into means_
+    // @return total number of frames
+    int calc_means (int numbuffers, const mimo_buffer buffers[])
+    {
+	int numdata = 0;
+	std::fill(means_.begin(), means_.end(), 0.);
+	
+        for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
+        {
+            int numframes   = buffers[bufferindex].numframes;
+            PiPoValue* data = buffers[bufferindex].data;
+
+            for (int i = 0; i < numframes; i++)
+            {
+                for (int j = 0; j < n_; j++)
+                    means_[j] += data[j];
+
+                data += n_;
+            }
+
+	    numdata += numframes;
+	}
+
+	for (int j = 0; j < n_; j++)
+	    means_[j] /= numdata;
+
+	return numdata;
+    }
+
+public:	
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        std::vector<mimo_buffer> outbufs(numbuffers);
-        outbufs.assign(buffers, buffers + numbuffers);
+	// calculate means over all buffers, returns current total number of frames
+	numframestotal_ = calc_means(numbuffers, buffers);
+	
+	// collect data of all buffers, do global pca, not per buffer!
+	std::vector<PiPoValue> traindata(numframestotal_ * n_, 0.f);
+	PiPoValue *dataptr = traindata.data();
 
-	// todo: collect data of all buffers, do global pca, not per buffer!!!!!!!!!!
-        for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
+        for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
             int numframes = buffers[bufferindex].numframes;
-            int minmn = _minmn[bufferindex];
+	    bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
+            PiPoValue* bufferptr = buffers[bufferindex].data;
             
-            // check if input track size has changed since setup
-            if (numframes != _bufsizes[bufferindex])
-            {
-                _traindata[bufferindex].resize(numframes, 0.f);
-                _bufsizes[bufferindex] = numframes;
-            }
-            
-            PiPoValue* data = buffers[bufferindex].data;
-            PiPoValue* indata = _traindata[bufferindex].data();
-            PiPoValue* mtxmeans = _means[bufferindex].data();
-            
+	    // center buffers around mean and append to traindata
             for (int i = 0; i < numframes; i++)
             {
-                for (int j = 0; j < _n; j++)
-                {
-                    indata[j] = data[j];
-                    mtxmeans[j] += data[j];
-                }
-                data += _n;
-                indata += _n;
-            }
-            
-            indata = _traindata[bufferindex].data();
+                for (int j = 0; j < n_; j++)
+                    dataptr[j] = bufferptr[j] - means_[j];
 
-            for (int j = 0; j < _n; j++)
-                mtxmeans[j] /= (float)numframes;
-            
-            for (int i = 0; i < numframes; i++)
-            {
-                for (int j = 0; j < _n; j++)
-                    indata[j] -= mtxmeans[j];
-                indata += _n;
+                dataptr   += n_;
+                bufferptr += n_;
             }
-        
+	}
+	
+	// reads traindata, fills S, U, Vt
+	// do_pca(bufferindex, numframes);
+	    
     #ifndef WIN32
-            __CLPK_integer info = 0;
-            __CLPK_integer lwork = -1; //query for optimal size
-            float optimalWorkSize[1];
-            __CLPK_integer ldu = _n;
-            __CLPK_integer ldvt = numframes;
-            __CLPK_integer lda = _n;
-            char* jobu = (char*)"A";
-            char* jobvt = (char*)"A";
+	__CLPK_integer info = 0;
+	__CLPK_integer lwork = -1; //query for optimal size
+	float optimalWorkSize[1];
+	__CLPK_integer ldu = n_;
+	__CLPK_integer ldvt = numframestotal_;
+	__CLPK_integer lda = n_;
+	char* jobu = (char*)"A";
+	char* jobvt = (char*)"A";
             
-            //LAPACK svd calculates in-place, copy
-            std::vector<PiPoValue> A = _traindata[bufferindex];
-            std::vector<PiPoValue> work;
+	//LAPACK svd calculates in-place
+	std::vector<PiPoValue> work;
             
-            PiPoValue* S_ptr = S[bufferindex].data();
-            PiPoValue* U_ptr = U[bufferindex].data();
-            PiPoValue* Vt_ptr = Vt[bufferindex].data();
+	PiPoValue* S_ptr = S_.data();
+	PiPoValue* U_ptr = U_.data();
+	PiPoValue* Vt_ptr = Vt_.data();
             
-            //First do the query for worksize
-            sgesvd_(jobu, jobvt, &_n, &ldvt, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
+	//First do the query for worksize
+	sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
             
-            //Resize accordingly
-            lwork = optimalWorkSize[0];
-            work.resize(lwork);
+	//Resize accordingly
+	lwork = optimalWorkSize[0];
+	work.resize(lwork);
             
-            //Do the job
-            sgesvd_(jobu, jobvt, &_n, &ldvt, A.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
+	//Do the job
+	sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
             
-            std::swap(U[bufferindex], Vt[bufferindex]);
-            V[bufferindex] = xTranspose(Vt[bufferindex].data(), minmn, _n);
+	std::swap(U_, Vt_);
+	V_ = xTranspose(Vt_.data(), minmn_, n_);
     #else
-            PiPoValue* S_ptr = S[bufferindex].data();
-            PiPoValue* U_ptr = U[bufferindex].data();
-            PiPoValue* V_ptr = V[bufferindex].data();
+	PiPoValue* S_ptr = S_.data();
+	PiPoValue* U_ptr = U_.data();
+	PiPoValue* V_ptr = V_.data();
             
-            rta_svd_setup_t * svd_setup = nullptr;
-            rta_svd_setup_new(&svd_setup, rta_svd_out_of_place, U_ptr, S_ptr, V_ptr, _traindata[bufferindex].data(), numframes, _n);
-            rta_svd(U_ptr, S_ptr, V_ptr, _traindata[bufferindex].data(), svd_setup);
+	rta_svd_setup_t * svd_setup = nullptr;
+	rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframes, n_);
+	rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
     #endif
-            int mtxrank = 0;
+	int mtxrank = 0;
             
-            if(_rank == -1) //calculate rank
-            {
-                int ssize = static_cast<int>(S[bufferindex].size());
-                for(int i = 0; i < ssize; i++)
-                {
-                    float x = S[bufferindex][i];
-                    if(x < _threshold)
-                        S[bufferindex][i] = 0;
-                    else
-                        mtxrank++;
-                }
-            }
-	    else
-            {
-                mtxrank = _rank;
-            }
+	if (rank_ == -1) //calculate rank
+	{
+	    int ssize = static_cast<int>(S_.size());
+	    for (int i = 0; i < ssize; i++)
+	    {
+		float x = S_[i];
+		if (x < threshold_)
+		    S_[i] = 0;
+		else
+		    mtxrank++;
+	    }
+	}
+	else
+	{
+	    mtxrank = rank_;
+	}
             
-            if(mtxrank > 0)
-            {
-                if(mtxrank > minmn)
-                    mtxrank = minmn;
+	if (mtxrank > 0)
+	{
+	    if (mtxrank > minmn_)
+		mtxrank = minmn_;
                 
-               // remove superfluous cols according to rank
-                for(int i = 0; i < _n; i++)
-                    for(int j = 0; j < mtxrank; j++)
-                        V[bufferindex][i*mtxrank+j] = V[bufferindex][i*minmn+j];
+	    // remove superfluous cols according to rank
+	    for (int i = 0; i < n_; i++)
+		for (int j = 0; j < mtxrank; j++)
+		    V_[i * mtxrank + j] = V_[i * minmn_ + j];
                 
-                Vt[bufferindex] = xTranspose(V[bufferindex].data(), _n, mtxrank);
-                
-                S[bufferindex].resize(mtxrank);
-                V[bufferindex].resize(mtxrank*_n);
-                Vt[bufferindex].resize(mtxrank*_n);
+	    Vt_ = xTranspose(V_.data(), n_, mtxrank);
+	    S_.resize(mtxrank);
+	    V_.resize(mtxrank * n_);
+	    Vt_.resize(mtxrank * n_);
 
-		// copy to model TODO: at end, with whole data
-                decomposition.VT = Vt[bufferindex];
-                decomposition.V = V[bufferindex];
-                decomposition.S = S[bufferindex];
-                decomposition.m = _m;
-                decomposition.n = _n;
-                decomposition.rank = mtxrank;
-                decomposition.means = _means[bufferindex];
+	    // copy to model with whole data
+	    decomposition_.VT = Vt_;
+	    decomposition_.V = V_;
+	    decomposition_.S = S_;
+	    decomposition_.m = m_;
+	    decomposition_.n = n_;
+	    decomposition_.rank = mtxrank;
+	    decomposition_.means = means_;
 
-                // features is (numframes, mtxrank) matrix (in vector<float>)
-                auto features = xMul(_traindata[bufferindex].data(), V[bufferindex].data(), numframes, _n, mtxrank);
-                
-                if(rank.get() == -1)//if autorank && rank < minmn, fill out cols with 0 in mubu
-                {
-                  features.reserve(numframes * minmn);  // make space for matrix(numframes, minmn)
-                  for (int i = mtxrank; i < numframes * minmn ; i += minmn)
-                    for (int j = 0; j < minmn - mtxrank; j++)
-                      features.insert(features.begin() + i + j, 0.f);
-                }
+	    // features is (numframestotal_, mtxrank) matrix (in vector<float>)
+	    auto features = xMul(traindata.data(), V_.data(), numframestotal_, n_, mtxrank);
 
-                outbufs[bufferindex].data = new float[numframes * minmn];
-                std::copy(features.begin(), features.end(), outbufs[bufferindex].data);
-                outbufs[bufferindex].numframes = numframes;
-                std::fill(_means[bufferindex].begin(), _means[bufferindex].end(), 0);
-            }
-            else
-            {
-                signalWarning("Error.. rank < 1, propagating empty matrix");
-                std::vector<mimo_buffer> invalidbuf(numbuffers);
-                invalidbuf.assign(buffers, buffers + numbuffers);
-                for(int i = 0; i < numbuffers; ++i)
-                {
-                    invalidbuf[i].data = new float[_bufsizes[i]]();
-                    invalidbuf[i].numframes = _bufsizes[i];
-                }
-                return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
-            }
-        } // end for buffers
-        return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+	    if (rank_attr_.get() == -1)//if autorank && rank < minmn, fill out cols with 0 in mubu
+	    {
+		features.reserve(numframestotal_ * minmn_);  // make space for matrix(numframestotal_, minmn_)
+		for (int i = mtxrank; i < numframestotal_ * minmn_; i += minmn_)
+                    for (int j = 0; j < minmn_ - mtxrank; j++)
+			features.insert(features.begin() + i + j, 0.f);
+	    }
+
+	    // split transformed data to output buffers
+	    std::vector<mimo_buffer> outbufs(numbuffers);
+	    outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
+	    std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output training data, will be deallocated at end of function
+	    PiPoValue *readptr = features.data();
+	    
+	    for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
+	    {
+		int numframes = buffers[bufferindex].numframes;
+		int numelem   = numframes * minmn_;
+		outdata[bufferindex].reserve(numelem);
+		outbufs[bufferindex].numframes = numframes;
+		outbufs[bufferindex].data = outdata[bufferindex].data();
+		std::copy(readptr, readptr + numelem, outbufs[bufferindex].data);
+		readptr += numelem;
+	    }
+
+	    return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+	}
+	else
+	{
+	    signalWarning("PCA Error.. rank < 1, propagating empty matrix");
+	    std::vector<mimo_buffer> invalidbuf(numbuffers);
+	    return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
+	}
     } // end train
     
     mimo_model_data *getmodel ()
     {
-        return &decomposition;
+        return &decomposition_;
     }
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-	if(decomposition.from_json(model.getJson()) != -1)
+	if(decomposition_.from_json(model_attr_.getJson()) != -1)
 	{
-	    _m = decomposition.m;
-	    _n = decomposition.n;
-	    //_minmn[0] = _m > _n ? _n : _m; ///needed???
-	    _rank = decomposition.rank;
-	    _means.push_back(decomposition.means); // append as only means vector
+	    m_ = decomposition_.m;
+	    n_ = decomposition_.n;
+            minmn_ = std::min<int>(m_, n_); ///needed???
+	    rank_ = decomposition_.rank;
+	    means_ = decomposition_.means;
 	}
 	else
 	{
-	    _m = 1;
-	    _n = 1;
-	    //_minmn[0] = 1;
-	    _rank = 1;
-	    _means.clear();
+	    m_ = 1;
+	    n_ = 1;
+	    //minmn_[0] = 1;
+	    rank_ = 1;
+	    means_.clear();
 	    signalWarning("PCA not configured yet.");
 	}
         
-        _fb = forwardbackward.get();
+        fb_ = forwardbackward_attr_.get();
         
         unsigned int outn = 0, outm = 0;
         
-        switch(_fb)
+        switch(fb_)
         {
             case Forward:
             {
                 outm = 1;
-                outn = _rank < 0  ?  1  :  static_cast<unsigned int>(_rank);
+                outn = rank_ < 0  ?  1  :  static_cast<unsigned int>(rank_);
                 break;
             }
             case Backward:
             {
                 outm = 1;
-                outn = static_cast<unsigned int>(_n);
+                outn = static_cast<unsigned int>(n_);
                 break;
             }
             default:
@@ -545,42 +559,42 @@ public:
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
-      if (_means.size() == 0)
+      if (means_.size() == 0)
       { //model not configured, propagate zero matrix
         return propagateFrames(time, weight, new float[1](), 1, 1);
       }
       else
-        switch(_fb)
+        switch(fb_)
         {
 	    case Forward:
             {
-                if(size<_n)
+                if(size<n_)
                 {
                     signalWarning("Vector too short, input should be a vector with length n");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
 
-                for(int i = 0; i < _n; ++i)
-                    values[i] -= _means[0][i];
+                for(int i = 0; i < n_; ++i)
+                    values[i] -= means_[i];
 
-                auto features = xMul(values, decomposition.V.data(), 1, _n, _rank);
+                auto features = xMul(values, decomposition_.V.data(), 1, n_, rank_);
                 
-                return propagateFrames(time, weight, features.data(), _rank, 1);
+                return propagateFrames(time, weight, features.data(), rank_, 1);
             }
 	    case Backward:
             {
-                if(size<_rank)
+                if(size<rank_)
                 {
                     signalWarning("Vector too short, input should be a vector with length rank");
                     return propagateFrames(time, weight, nullptr, 0, 0);
                 }
                 
-                auto resynthesized = xMul(values,decomposition.VT.data(),1,_rank,_n);
+                auto resynthesized = xMul(values,decomposition_.VT.data(),1,rank_,n_);
 
-                for(int i = 0; i < _n; ++i)
-                    resynthesized[i] += _means[0][i];
+                for(int i = 0; i < n_; ++i)
+                    resynthesized[i] += means_[i];
 
-                return propagateFrames(time, weight, resynthesized.data(), _n, 1);
+                return propagateFrames(time, weight, resynthesized.data(), n_, 1);
             }
                 
             default:
