@@ -422,7 +422,7 @@ private:
       PiPoValue* V_ptr = V_.data();
 	  
       rta_svd_setup_t * svd_setup = nullptr;
-      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframes, n_);
+      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframestotal_, n_);
       rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
 #endif
 	
