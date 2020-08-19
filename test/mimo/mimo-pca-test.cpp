@@ -31,6 +31,33 @@
 #include <algorithm>
 
 
+// overload function in mimo_pca.h to work for std::vector
+std::vector<float> xTranspose (std::vector<float> &in, int m, int n)
+{
+    return MiMoPca::xTranspose(in.data(), m, n);
+}
+
+std::vector<float> xMul(float *left, std::vector<float> &right, int m, int n, int p)
+{
+    return MiMoPca::xMul(left, right.data(), m, n, p);
+}
+
+
+std::vector<float> xCrop (const std::vector<float>& in, unsigned int oldrow, unsigned int oldcol, unsigned int newrow, unsigned int newcol)
+{
+    if (oldrow == newrow && oldcol == newcol)
+        return in;
+    std::vector<float> out(newrow*newcol);
+    for (unsigned int row = 0; row < newrow; ++row)
+        for (unsigned int col = 0; col < newcol; ++col)
+        {
+            unsigned int oldindex = col + (row * oldcol);
+            unsigned int newindex = col + (row * newcol);
+            out[newindex] = in[oldindex];
+        }
+    return out;
+}
+
 std::tuple<std::vector<float>,int,int> parseMatrix(std::string path)
 {
     std::string file_path = __FILE__;
@@ -207,27 +234,26 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m1);
         unsigned int n = std::get<2>(m1);
         
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m1));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm1), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u1), m,m ,m ,rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s1), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm1), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u1), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s1), pca.S_)); // check s
 
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest1).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw1).data(), std::get<0>(fw1).size()));
            
             //because our feature space is slightly different we reassign VT from matlab
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm1), n, rank);
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm1), n, rank);
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest1).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw1).data(), std::get<0>(bw1).size()));
@@ -237,26 +263,25 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m2);
         unsigned int n = std::get<2>(m2);
         
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m2));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm2), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u2), m, m, m, rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s2), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm2), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u2), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s2), pca.S_)); // check s
             
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest2).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw2).data(), std::get<0>(fw2).size()));
             
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm2), n, rank); //reassign VT
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm2), n, rank); //reassign VT
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest2).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw2).data(), std::get<0>(bw2).size()));
@@ -274,26 +299,25 @@ TEST_CASE("MiMo-PCA")
         
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m3);
         unsigned int n = std::get<2>(m3);
         
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m3));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm3), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u3), m, m, m, rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s3), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm3), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u3), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s3), pca.S_)); // check s
             
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest3).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw3).data(), std::get<0>(fw3).size()));
             
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm3), n, rank); //reassign VT
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm3), n, rank); //reassign VT
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest3).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw3).data(), std::get<0>(bw3).size()));
@@ -303,26 +327,25 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m4);
         unsigned int n = std::get<2>(m4);
         
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m4));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm4), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u4), m, m, m, rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s4), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm4), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u4), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s4), pca.S_)); // check s
             
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest4).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw4).data(), std::get<0>(fw4).size()));
             
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm4), n, rank); //reassign VT
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm4), n, rank); //reassign VT
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest4).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw4).data(), std::get<0>(bw4).size()));
@@ -332,26 +355,25 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m5);
         unsigned int n = std::get<2>(m5);
         
         THEN("decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m5));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm5), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u5), m, m, m, rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s5), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm5), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u5), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s5), pca.S_)); // check s
             
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest5).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw5).data(), std::get<0>(fw5).size()));
             
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm5), n, rank); //reassign VT
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm5), n, rank); //reassign VT
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest5).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw5).data(), std::get<0>(bw5).size()));
@@ -369,26 +391,25 @@ TEST_CASE("MiMo-PCA")
         
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m6);
         unsigned int n = std::get<2>(m6);
         
         THEN("decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m6));
-            REQUIRE(vecIsAbsAprox(std::get<0>(vlm6), pca.decomposition.V)); //check v
-            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u6), m, m, m, rank), pca.U)); // check u
-            CHECK(vecIsAbsAprox(std::get<0>(s6), pca.S)); // check s
+            REQUIRE(vecIsAbsAprox(std::get<0>(vlm6), pca.decomposition_.V)); //check v
+            CHECK(vecIsAbsAprox(xCrop(std::get<0>(u6), m, m, m, rank), pca.U_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(s6), pca.S_)); // check s
             
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(fwtest6).data(), n, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(fw6).data(), std::get<0>(fw6).size()));
             
-            pca.decomposition.VT = xTranspose(std::get<0>(vlm6), n, rank); //reassign VT
-            pca.forwardbackward.set(1); // backward transformation
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm6), n, rank); //reassign VT
+            pca.forwardbackward_attr_.set(1); // backward transformation
             pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
             pca.frames(0, 0, std::get<0>(bwtest6).data(), rank, 1);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw6).data(), std::get<0>(bw6).size()));
@@ -399,17 +420,16 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 1;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m7);
         unsigned int n = std::get<2>(m7);
         
         THEN("decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m7));
-            CHECK(vecIsAbsAprox(std::get<0>(s7), pca.S)); // check s
+            CHECK(vecIsAbsAprox(std::get<0>(s7), pca.S_)); // check s
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             //crop V because we didn't crop to rank 1 in matlab
             std::get<0>(vlm7) = xCrop(std::get<0>(vlm7), n, n, n, rank);
             //recalculate the forward transform
@@ -423,17 +443,16 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 1;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m8);
         unsigned int n = std::get<2>(m8);
         
         THEN("decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m8));
-            CHECK(vecIsAbsAprox(std::get<0>(s8), pca.S)); // check s
+            CHECK(vecIsAbsAprox(std::get<0>(s8), pca.S_)); // check s
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             std::get<0>(vlm8) = xCrop(std::get<0>(vlm8), n, n, n, rank);
             std::vector<float> fw8rank1 = xMul( std::get<0>(fwtest8).data(), std::get<0>(vlm8), 1, n, rank);
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
@@ -445,17 +464,16 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 1;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m9);
         unsigned int n = std::get<2>(m9);
         
         THEN("decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m9));
-            CHECK(vecIsAbsAprox(std::get<0>(s9), pca.S)); // check s
+            CHECK(vecIsAbsAprox(std::get<0>(s9), pca.S_)); // check s
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             std::get<0>(vlm9) = xCrop(std::get<0>(vlm9), n, n, n, rank);
             std::vector<float> fw9rank1 = xMul( std::get<0>(fwtest9).data(), std::get<0>(vlm9), 1, n, rank);
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
@@ -467,17 +485,16 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 1;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = std::get<1>(m10);
         unsigned int n = std::get<2>(m10);
         
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, m10));
-            CHECK(vecIsAbsAprox(std::get<0>(s10), pca.S)); // check s
+            CHECK(vecIsAbsAprox(std::get<0>(s10), pca.S_)); // check s
             pca.setReceiver(&parent);
-            pca.forwardbackward.set(0); //forward transformation
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
             std::get<0>(vlm10) = xCrop(std::get<0>(vlm10), n, n, n, rank);
             std::vector<float> fw10rank1 = xMul( std::get<0>(fwtest10).data(), std::get<0>(vlm10), 1, n, rank);
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
@@ -490,15 +507,14 @@ TEST_CASE("MiMo-PCA")
     {
         MiMoPca pca(&parent);
         unsigned int rank = 10;
-        pca.autorank.set(0);
-        pca.rank.set(rank);
+        pca.rank_attr_.set(rank);
         unsigned int m = 10;
         unsigned int n = 10;
         std::tuple<std::vector<float>,int,int> zeroes = std::make_tuple(std::vector<float>(100, 0),10,10);
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, zeroes));
-            CHECK(vecIsAbsAprox(pca.S, std::get<0>(zeroes))); // check s
+            CHECK(vecIsAbsAprox(pca.S_, std::get<0>(zeroes))); // check s
         }
     }
 }

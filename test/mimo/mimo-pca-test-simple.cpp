@@ -1,4 +1,4 @@
-    #include "catch.hpp"
+#include "../catch.hpp"
 #include "mimo_pca.h"
 #include <iostream>
 
@@ -7,15 +7,6 @@ MiMoPca pca(NULL);
 
 //svd equivalent WolframAlpha =
 //SVD[{{ 4, 4, 5},{ 4, 5, 5},{ 3, 3, 2},{ 4, 5, 4}, {4, 4, 4}, {3, 5, 4}, {4, 4, 3}, {2, 4, 4}, {5, 5, 5 }}];
-
-std::vector<float> xTranspose(float* in, int m, int n)
-{
-    std::vector<float> out(m*n);
-    for(int i = 0; i < m; ++i)
-        for(int j = 0; j < n; ++j)
-            out[j*m+i] = in[i*n+j];
-    return out;
-}
 
 float testarray[]={ 4, 4, 5,
                     4, 5, 5,
@@ -29,9 +20,9 @@ float testarray[]={ 4, 4, 5,
 
 float testvector[] = {4, 3, 4};
 float testvector2[] = {-6.29271841, 0.554258585, 1.04617906};
-unsigned int m = 9;
-unsigned int n = 3;
-unsigned int sizes[] = {m};
+int m = 9;
+int n = 3;
+int sizes[] = {m};
 mimo_buffer testbuffer;
 const PiPoStreamAttributes** testattr = new const PiPoStreamAttributes*[1];
 int hasTimeTags = 0;
@@ -53,22 +44,22 @@ TEST_CASE("PCA")
         
         //setup mimo_buffer
         testbuffer.numframes = m;
-        testbuffer.data = (float*)&testarray;
+        testbuffer.data = testarray;
         testbuffer.varsize = NULL;
         testbuffer.has_timetags = false;
         testbuffer.time.starttime = 0;
         
         //setup and train!
-        pca.setup(1, 1, (int*)&sizes, testattr);
-        pca.train(1, 0, m, &testbuffer);
+        pca.setup(1, 1, sizes, testattr);
+        pca.train(1, 0, 1, &testbuffer);
         
         
         THEN("Decomposition should result in:")
         {
-            const std::vector<float>& V = pca.decomposition.V;
-            const std::vector<float>& VT = pca.decomposition.VT;
-            const std::vector<float>& U = pca.U;
-            const std::vector<float>& S = pca.S;
+            const std::vector<float>& V = pca.decomposition_.V;
+            const std::vector<float>& VT = pca.decomposition_.VT;
+            const std::vector<float>& U = pca.U_;
+            const std::vector<float>& S = pca.S_;
 //            
 //            m = 3;
 //            n = 9;
@@ -101,8 +92,8 @@ TEST_CASE("PCA")
             THEN("Backward decoding should result in:")
             {
                 //backward decoding
-                pca.forwardbackward.set(1.f);
-                pca.streamAttributes(hasTimeTags, rate, offset, pca._rank, 1, labels, hasVarSize, domain, maxFrames);
+                pca.forwardbackward_attr_.set(1.f);
+                pca.streamAttributes(hasTimeTags, rate, offset, pca.rank_, 1, labels, hasVarSize, domain, maxFrames);
                 pca.frames(0, 0, testvector2, 3, 1);
             }
         }
@@ -113,10 +104,10 @@ TEST_CASE("PCA")
             json_output = new char[10000];
             
             //writing to json
-            pca.decomposition.to_json(json_output, 10000);
+            pca.decomposition_.to_json(json_output, 10000);
             
             //reading from json
-            pca.decomposition.from_json(json_output);
+            pca.decomposition_.from_json(json_output);
 
           CHECK(json_output[0] != 0);
         }

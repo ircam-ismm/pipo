@@ -2,7 +2,7 @@
 ../../maxpipo//build//osx-macho//build/Debug/pipo-test mimo-stats
 */
 
-#include "catch.hpp"
+#include "../catch.hpp"
 #include <stdlib.h>
 #include "mimo.h"
 #include "mimo_stats.h"

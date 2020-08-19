@@ -2,7 +2,7 @@
 ../../../maxpipo/build/osx-macho/DerivedData/Build/Products/Debug/pipo-test mimo
 */
 
-#include "catch.hpp"
+#include "../catch.hpp"
 #include <stdlib.h>
 #include "mimo.h"
 #include "mimo_stats.h"
@@ -127,7 +127,7 @@ TEST_CASE("mimo")
 	  THEN("model as json is")
 	  {
 	    mimo_model_data *model = stats.getmodel();
-	    int size = model->json_size();
+	    size_t size = model->json_size();
 	    char json[size];
 	    model->to_json(json, size);
 	    
