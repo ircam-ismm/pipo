@@ -76,37 +76,16 @@ extern "C" {
 
 class svd_model_data : public mimo_model_data
 {
-private:
-    Json::Value root;
-    Json::Reader reader;
-    
-    template<typename T>
-    std::string vector2json (std::vector<T> v)
-    {
-        std::stringstream ss;
-        
-        ss << "[";
-        for (size_t i = 0; i < v.size(); ++i)
-        {
-            if (i != 0)
-                ss << ",";
-            ss << v[i];
-        }
-        ss << "]";
-        
-        return ss.str();
-    }
-    
 public:
     std::vector<float> V, VT, S, means;
     int m, n, rank;
     
-    int json_size() override
+    size_t json_size() override
     {
         return (V.size() + VT.size() + S.size() + means.size())*20;
     }
     
-    char* to_json (char* out, int size) throw() override
+    char* to_json (char* out, size_t size) throw() override
     {
         if(size < 1)
             return nullptr;
@@ -189,40 +168,31 @@ public:
         
         return 0;
     }
+
+private:
+    Json::Value root;
+    Json::Reader reader;
+    
+    template<typename T>
+    std::string vector2json (std::vector<T> v)
+    {
+        std::stringstream ss;
+        
+        ss << "[";
+        for (size_t i = 0; i < v.size(); ++i)
+        {
+            if (i != 0)
+                ss << ",";
+            ss << v[i];
+        }
+        ss << "]";
+        
+        return ss.str();
+    }
 };
 
-/* matrix multiplication:
-   @param  left(m, n)
-   @param  right(n, p)
-   @return out(m, p)
- */
-std::vector<float> xMul(float* left, float* right, int m, int n, int p)
-{
-    std::vector<float> out(m*p);
 
-    for (int i = 0; i < m; ++i)
-    {
-      for(int j = 0; j < p; ++j)
-      {
-        out[i*p + j] = 0;
 
-        for (int k = 0; k < n; ++k)
-          out[i*p + j] += left[i*n + k] * right[k*p + j];
-      }
-    }
-    return out;
-}
-        
-
-std::vector<float> xTranspose(float* in, int m, int n)
-{
-    std::vector<float> out(m*n);
-    for(int i = 0; i < m; ++i)
-        for(int j = 0; j < n; ++j)
-            out[j*m+i] = in[i*n+j];
-    return out;
-}
-        
 class MiMoPca: public Mimo
 {
 public:
@@ -326,6 +296,38 @@ public:
         return propagateSetup(numbuffers, numtracks, tracksize, const_cast<const PiPoStreamAttributes**>(outattr));
     }
 
+    /* helper function: matrix multiplication:
+       @param  left(m, n)
+       @param  right(n, p)
+       @return out(m, p)
+    */
+    static std::vector<float> xMul (float* left, float* right, int m, int n, int p)
+    {
+      std::vector<float> out(m * p);
+
+      for (int i = 0; i < m; ++i)
+      {
+	for(int j = 0; j < p; ++j)
+	{
+	  out[i*p + j] = 0;
+	  
+	  for (int k = 0; k < n; ++k)
+	    out[i*p + j] += left[i*n + k] * right[k*p + j];
+	}
+      }
+      return out;
+    }
+        
+    static std::vector<float> xTranspose (float* in, int m, int n)
+    {
+      std::vector<float> out(m * n);
+      
+      for(int i = 0; i < m; ++i)
+        for(int j = 0; j < n; ++j)
+	  out[j*m+i] = in[i*n+j];
+      return out;
+    }
+ 
 private:
     // get total means per column of a list of input buffers, write into means_
     // @return total number of frames

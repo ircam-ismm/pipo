@@ -91,14 +91,14 @@ public:
        << "}";
   }
 
-  int json_size () override
+  size_t json_size () override
   {
     std::stringstream ss;
     model2json(ss);
     return ss.str().size() + 1;
   }
   
-  char *to_json (char *out, int n) throw() override
+  char *to_json (char *out, size_t n) throw() override
   {
     std::stringstream ss;
     model2json(ss);
