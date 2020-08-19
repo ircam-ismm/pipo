@@ -7,7 +7,8 @@ const double sr = 44100;
 const int fftsize = 512;
 const int winsize = 1764;
 const int hopsize = 441;
-const int numsamp = hopsize * 8;
+const int numframes = 8;
+const int numsamp = hopsize * (numframes - 1) + winsize;
 
 TEST_CASE ("Test pipo fft")
 {
@@ -51,7 +52,7 @@ TEST_CASE ("Test pipo fft")
         {
           CHECK(ret2 == 0);
           REQUIRE(rx.values != NULL);
-          CHECK(rx.count_frames == 8);
+          CHECK(rx.count_frames == numframes);
           rx.zero();
         }
       }

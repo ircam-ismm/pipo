@@ -30,7 +30,7 @@ TEST_CASE("Test PiPoSequence")
     CHECK(rx.sa.dims[1] == 1);
     CHECK(rx.sa.labels != NULL);
     CHECK(rx.sa.domain  == 33);
-    CHECK(rx.sa.maxFrames == 1);
+    CHECK(rx.sa.maxFrames == 44);
 /*}
 
   SECTION("data")
@@ -72,7 +72,7 @@ TEST_CASE("Test PiPoSequence autoconnect")
     CHECK(rx.sa.dims[1] == 1);
     CHECK(rx.sa.labels != NULL);
     CHECK(rx.sa.domain  == 33);
-    CHECK(rx.sa.maxFrames == 1);
+    CHECK(rx.sa.maxFrames == 44);
 /*}
 
   SECTION("data")
@@ -112,7 +112,7 @@ TEST_CASE("Test PiPoSequence arg list")
     CHECK(rx.sa.dims[1] == 1);
     CHECK(rx.sa.labels != NULL);
     CHECK(rx.sa.domain  == 33);
-    CHECK(rx.sa.maxFrames == 1);
+    CHECK(rx.sa.maxFrames == 44);
 /*}
 
   SECTION("data")

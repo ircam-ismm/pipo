@@ -52,8 +52,8 @@ TEST_CASE("Test pipo version")
   PiPoTestReceiver rx(NULL);	// is also parent
   PiPo *p = PiPoCollection::create("version_test");
 
-  //  if (p != NULL)
-//    CHECK(p->getVersion() == PIPO_WRONG_VERSION);
+  if (p != NULL)
+    CHECK(p->getVersion() == PIPO_WRONG_VERSION);
 
   // creation should fail, since we forced pipo to report too small a version
   REQUIRE(p == NULL);

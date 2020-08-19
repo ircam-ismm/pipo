@@ -32,7 +32,7 @@ TEST_CASE("Test PiPoParallel")
       CHECK(rx.sa.dims[1] == 1);
       CHECK(rx.sa.labels != NULL);
       CHECK(rx.sa.domain  == 33);
-      CHECK(rx.sa.maxFrames == 1);
+      CHECK(rx.sa.maxFrames == 44);
     }
 
     WHEN ("Streaming data") {
