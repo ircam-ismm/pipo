@@ -50,7 +50,7 @@ extern "C" {
 
 
 static const float       default_value = 0.0;
-static const const char *default_name  = "Constant";
+static const char *default_name  = "Constant";
 
 class PiPoConst : public PiPo
 {
