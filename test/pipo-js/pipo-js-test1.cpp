@@ -1,6 +1,6 @@
 /* https://github.com/jerryscript-project/jerryscript/blob/master/docs/03.API-EXAMPLE.md#example-3-split-javascript-parsing-and-script-execution
    compile with:
-   clang pipo-js-test1.cpp -I ../../modules/javascript-engine/lib/include/ -L ../../modules/javascript-engine/lib/lib/ -ljerry-core -ljerry-ext -ljerry-port-default 
+   clang pipo-js-test1.cpp -I ../../modules/javascript-engine/include/ -L ../../modules/javascript-engine/lib/ -ljerry-core -ljerry-ext -ljerry-port-default; ./a.out
 */
 
 #include "jerryscript.h"
@@ -11,7 +11,7 @@ main (void)
 {
   bool run_ok = false;
 
-  const jerry_char_t script[] = "print ('Hello from JS with ext!'); print(my_var);";
+  const jerry_char_t script[] = "print ('Hello from JS with ext!'); print(frm); print('frm.a', frm.a)";
 
   /* Initialize engine */
   jerry_init (JERRY_INIT_EMPTY);
@@ -39,6 +39,47 @@ main (void)
   /* Releasing string values, as it is no longer necessary outside of engine */
   jerry_release_value (prop_name);
   jerry_release_value (prop_value);
+
+
+  // create object frm, add array frm.a[3]
+  jerry_value_t frm_name = jerry_create_string((const jerry_char_t *) "frm");
+  jerry_value_t frm_obj  = jerry_create_object();
+  jerry_value_t a_name   = jerry_create_string((const jerry_char_t *) "a");
+  jerry_value_t a_arr    = jerry_create_typedarray (JERRY_TYPEDARRAY_FLOAT32, 3);
+  jerry_value_t a_val[3];
+
+  a_val[0] = jerry_create_number(1.1);
+  a_val[1] = jerry_create_number(2.2);
+  a_val[2] = jerry_create_number(3.3);
+
+  for (int i = 0; i < 3; i++)
+  {
+      set_result = jerry_set_property_by_index(a_arr, i, a_val[i]);
+      if (jerry_value_is_error (set_result)) {
+	  printf ("Failed to set %d\n", i);
+      }
+      jerry_release_value(a_val[i]);
+  }
+
+  // check using arraybuffer
+  jerry_length_t byteLength = 0;
+  jerry_length_t byteOffset = 0;
+  jerry_value_t buffer = jerry_get_typedarray_buffer(a_arr, &byteOffset, &byteLength);
+  float a[3];
+  int bytes_read = jerry_arraybuffer_read(buffer, byteOffset, (uint8_t *) a, byteLength);
+  printf("arraybuffer len %d offs %d --> %f, %f, %f\n", byteLength, byteOffset, a[0], a[1], a[2]);
+  jerry_release_value (buffer);
+    
+  set_result = jerry_set_property (frm_obj, a_name, a_arr);
+  if (jerry_value_is_error (set_result)) {
+    printf ("Failed to add 'a'\n");
+  }
+ 
+  set_result = jerry_set_property (global_object, frm_name, frm_obj);
+  if (jerry_value_is_error (set_result)) {
+    printf ("Failed to add 'frm'\n");
+  }
+  jerry_release_value (set_result);
   
   /* Releasing the Global object */
   jerry_release_value (global_object);
