@@ -12,7 +12,7 @@
 
 #include "PiPoJs.h"
 
-const int framesize = 3;
+const int inframesize = 1;
 const char *labels_scalar[1] = { "scalar" };
 
 TEST_CASE ("pipo.js")
@@ -26,63 +26,88 @@ TEST_CASE ("pipo.js")
   {
     js.expr_attr_.set("a[0] invalid js (*&^%*!");
 
-    int ret = js.streamAttributes(false, 1000, 0, 1, 1, labels_scalar, 0, 0, 100);
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
 
     REQUIRE(ret == -1);	// expect failure and error message
   }
   
   SECTION ("Setup Scalar")
   {
+    const int outframesize = 1;
     js.expr_attr_.set("a[0] * 2");
     
-    int ret = js.streamAttributes(false, 1000, 0, 1, 1, labels_scalar, 0, 0, 100);
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
 
     REQUIRE(ret == 0);
     CHECK(rx.count_streamAttributes == 1);
     CHECK(rx.sa.rate == 1000);
-    CHECK(rx.sa.dims[0] == 1);
+    CHECK(rx.sa.dims[0] == outframesize);
     CHECK(rx.sa.dims[1] == 1);
     CHECK(rx.sa.labels == labels_scalar);
     CHECK(rx.sa.domain  == 0);
     CHECK(rx.sa.maxFrames == 100);
-  }
 
-  
-  SECTION ("Setup Scalar->Vector")
-  {
-    js.expr_attr_.set("[ a[0] * 2, a[0] * 3, a[0] * 4 ]");
-    
-    int ret = js.streamAttributes(false, 1000, 0, 1, 1, labels_scalar, 0, 0, 100);
-
-    REQUIRE(ret == 0);
-    CHECK(rx.count_streamAttributes == 1);
-    CHECK(rx.sa.rate == 1000);
-    CHECK(rx.sa.dims[0] == 3);
-    CHECK(rx.sa.dims[1] == 1);
-    CHECK(rx.sa.labels == labels_scalar);
-    CHECK(rx.sa.domain  == 0);
-    CHECK(rx.sa.maxFrames == 100);
-  
-/*
-    SECTION ("Data")
+    SECTION ("Scalar Data")
     {
-      WHEN ("input is noise")
+      WHEN ("input is scalar")
       {
-        for (int i = 0; i < numsamp; i++)
-          vals[i] = random() / (1 << 30) - 1.0; // returns successive pseudo-random numbers in the range from 0 to (2**31)-1.
+        const int numframes = 1;
+        float vals[numframes] = {42.42};
 
-        int ret2 = slice.frames(0, 1, vals, 1, numsamp);
+        int ret2 = js.frames(0, 1, vals, inframesize, numframes);
 
         THEN ("output is ...")
         {
           CHECK(ret2 == 0);
           REQUIRE(rx.values != NULL);
           CHECK(rx.count_frames == numframes);
+          CHECK(rx.values[0] == vals[numframes - 1] * 2);
           rx.zero();
         }
       }
     }
-*/
+
+  }
+
+  
+  SECTION ("Setup Scalar->Vector")
+  {
+    const int outframesize = 3;
+    js.expr_attr_.set("[ a[0] * 2, a[0] * 3, a[0] * 4 ]");
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+
+    REQUIRE(ret == 0);
+    CHECK(rx.count_streamAttributes == 1);
+    CHECK(rx.sa.rate == 1000);
+    CHECK(rx.sa.dims[0] == outframesize);
+    CHECK(rx.sa.dims[1] == 1);
+    CHECK(rx.sa.labels == labels_scalar);
+    CHECK(rx.sa.domain  == 0);
+    CHECK(rx.sa.maxFrames == 100);
+  
+    SECTION ("Vector Data")
+    {
+      WHEN ("input is scalar->vector")
+      {
+        const int numframes = 1;
+	float vals[numframes] = {2.22};
+	
+        int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+
+        THEN ("output is ...")
+        {
+          CHECK(ret2 == 0);
+          REQUIRE(rx.values != NULL);
+          CHECK(rx.count_frames == numframes);
+          CHECK(rx.size == outframesize);
+	  CHECK(rx.values[0] == vals[numframes - 1] * 2);
+	  CHECK(rx.values[1] == vals[numframes - 1] * 3);
+	  CHECK(rx.values[2] == vals[numframes - 1] * 4);
+          rx.zero();
+        }
+      }
+    }
   }
 }
 

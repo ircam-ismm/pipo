@@ -204,7 +204,7 @@ public:
 	if (!jerry_value_is_error(parsed_expr_))
 	{ // evaluate single expression
 	  // set arr "a"
-	  set_array(input_array_, framesize_, values);
+	  set_array(input_array_, size, values);
 	  
 	  // run expr
 	  jerry_value_t ret_value = jerry_run(parsed_expr_);
@@ -213,21 +213,27 @@ public:
 	  {
 	    jerry_length_t bytelength = 0;
 	    jerry_length_t byteoffset = 0;
-	    jerry_value_t buffer = jerry_get_array_buffer(ret_value, &byteoffset, &bytelength);
-	    if (jerry_value_is_error(buffer))
-	      throw std::runtime_error("can't get typedarray_buffer");
-	    
-	    int bytes_read = jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
 
-	    if (bytelength != outframesize_ * sizeof(PiPoValue))
+	    // paranoid check:
+	    if (jerry_get_array_length(ret_value) != outframesize_)
 	    {
 	      char msg[1024];
-	      snprintf(msg, 1023, "read %d: unexpected array size %f instead of %lu", bytes_read, (float) bytelength / sizeof(PiPoValue), outframesize_);
+	      snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
       
 	      throw std::runtime_error(msg);
 	    }
 
-	    jerry_release_value (buffer);
+	    for (int j = 0; j < outframesize_; j++)
+	    {
+	      jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
+
+	      if (jerry_value_is_number(elem))
+		outptr[j] = jerry_get_number_value(elem);
+	      else
+		outptr[j] = 0;
+
+	      jerry_release_value(elem);
+	    }
 	  }
 	  else if (jerry_value_is_number(ret_value))
 	  {
@@ -235,10 +241,12 @@ public:
 	  }
 	  else // error
 	    throw std::runtime_error("wrong expr return type");
+
+	  jerry_release_value(ret_value);
 	}
-	
+
 	outptr += outframesize_;
-	values += framesize_;
+	values += size;
       }
     }
     catch (std::exception &e)
@@ -248,7 +256,7 @@ public:
       return -1;
     }
           
-    return propagateFrames(time, weight, &buffer_[0], size, num);
+    return propagateFrames(time, weight, &buffer_[0], outframesize_, num);
   }
 };
 
