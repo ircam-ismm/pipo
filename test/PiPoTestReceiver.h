@@ -2,6 +2,54 @@
 #include <cmath>
 #include "PiPo.h"
 
+// macro for catch checks of all stream attributes propagated by propagateStreamAttributes
+# define CHECK_STREAMATTRIBUTES(ret, rx, _hasTimeTags, _rate, _offset, _width, _height, _labels, _hasVarSize, _domain, _maxFrames) \
+{									\
+    REQUIRE(ret == 0);							\
+    REQUIRE(rx.count_streamAttributes == 1);				\
+    CHECK(rx.sa.hasTimeTags == _hasTimeTags);				\
+    CHECK(rx.sa.rate        == _rate);					\
+    CHECK(rx.sa.offset      == _offset);				\
+    CHECK(rx.sa.dims[0]     == _width);					\
+    CHECK(rx.sa.dims[1]     == _height);				\
+    CHECK(flatten_labels(rx.sa.numLabels, rx.sa.labels) == flatten_labels(_width, _labels)); \
+    CHECK(rx.sa.hasVarSize  == _hasVarSize);				\
+    CHECK(rx.sa.domain      == _domain);				\
+    CHECK(rx.sa.maxFrames   == _maxFrames);				\
+}
+
+// macro for standard catch checks of propagated frames
+#define CHECK_FRAMES(ret, rx, _time, _outframesize, _numframes)	\
+  {								\
+    REQUIRE(ret == 0);						\
+    REQUIRE(rx.values != NULL);					\
+    CHECK(rx.time	  == _time);				\
+    CHECK(rx.size	  == _outframesize);			\
+    CHECK(rx.count_frames == _numframes);			\
+  }
+
+// convert labels array to comparable string representation
+static std::string flatten_labels(int _width, const char **_labels)
+{
+  if (_width == 0  ||  _labels == NULL)
+    return "[]";	// semantically the same
+  else
+  {
+    std::string ret;
+    
+    for (int i = 0; i < _width; i++)
+    {
+      if (i > 0)
+	ret += "|";
+      if (_labels[i] == NULL)
+	ret += "(nullstring)";
+      else
+	ret += _labels[i];
+    }
+    return ret;
+  }
+}
+
 /** test instrument pipo that records the last calls to be checked against expected values
  */
 class PiPoTestReceiver : public PiPo, public PiPo::Parent
