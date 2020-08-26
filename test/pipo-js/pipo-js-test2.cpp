@@ -12,7 +12,10 @@
 
 #include "PiPoJs.h"
 
+// defaults, can be overridden by some tests
 const int inframesize = 1;
+const int outframesize = 1;
+const int numframes = 1;
 const char *labels_scalar[1] = { "scalar" };
 
 TEST_CASE ("pipo.js")
@@ -41,7 +44,6 @@ TEST_CASE ("pipo.js")
 
     SECTION ("Scalar Data")
     {
-      const int numframes = 1;
       float vals[numframes] = {42.42};
 
       int ret2 = js.frames(0, 1, vals, inframesize, numframes);
@@ -61,7 +63,6 @@ TEST_CASE ("pipo.js")
 
     SECTION ("Scalar->Vector Data")
     {
-      const int numframes = 1;
       float vals[numframes] = {2.22};
 	
       int ret2 = js.frames(0, 1, vals, inframesize, numframes);
@@ -83,7 +84,6 @@ TEST_CASE ("pipo.js")
 
     SECTION ("Scalar->Float32 Array Data")
     {
-      const int numframes = 1;
       float vals[numframes] = {2.22};
 	
       int ret2 = js.frames(0, 1, vals, inframesize, numframes);
@@ -99,21 +99,79 @@ TEST_CASE ("pipo.js")
   {
     const int inframesize = 2;
     const int outframesize = 3;
-    js.expr_attr_.set("[ a[0] * 2, a[0] * 3, a[0] + a[1] ]");
+    js.expr_attr_.set("[ a[0] * 2, a[1] * 3, a[0] + a[1] ]");
     
     int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
     CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
   
     SECTION ("Vector->Vector Data")
     {
-      const int numframes = 1;
       float vals[numframes * inframesize] = {1.11, 2.22};
       
       int ret2 = js.frames(0, 1, vals, inframesize, numframes);
       CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
       CHECK(rx.values[0] == vals[0] * 2);
-      CHECK(rx.values[1] == vals[0] * 3);
+      CHECK(rx.values[1] == vals[1] * 3);
       CHECK(rx.values[2] == vals[0] + vals[1]);
+      rx.zero();
+    }
+  }
+  
+  SECTION ("Setup Vector map")
+  {
+    const int inframesize = 2;
+    const int outframesize = 2;
+    js.expr_attr_.set("a.map(function(x) { return x * 2; })");
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
+  
+    SECTION ("Vector map Data")
+    {
+      float vals[numframes * inframesize] = {1.11, 2.22};
+      
+      int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+      CHECK(rx.values[0] == vals[0] * 2);
+      CHECK(rx.values[1] == vals[1] * 2);
+      rx.zero();
+    }
+  }
+  
+  SECTION ("Setup Vector map ES6")
+  {
+    const int inframesize = 2;
+    const int outframesize = 2;
+    js.expr_attr_.set("a.map(x => x * 2)");
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
+  
+    SECTION ("Vector map Data ES6")
+    {
+      float vals[numframes * inframesize] = {1.11, 2.22};
+      
+      int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+      CHECK(rx.values[0] == vals[0] * 2);
+      CHECK(rx.values[1] == vals[1] * 2);
+      rx.zero();
+    }
+  }
+
+  SECTION ("Setup Math expr")
+  {
+    js.expr_attr_.set("Math.sin(a[0] * 2 * Math.PI)");
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, labels_scalar, 0, 0, 100);
+  
+    SECTION ("Vector map Data ES6")
+    {
+      float vals[numframes * inframesize] = {0.75};
+            int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+      CHECK(rx.values[0] == Approx(-1.0)); // sin(3/4 * 2 Pi) = -1
       rx.zero();
     }
   }
