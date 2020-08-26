@@ -30,6 +30,9 @@ private:
   static bool		 jerry_initialized;
   jerry_value_t		 global_object_;
   jerry_value_t		 parsed_expr_;
+  typedef enum { scalar, array, typedarray, other } output_type_t;
+  output_type_t		 output_type_;	// return type of parsed_expr_
+
   //jerry_value_t	 input_frame_;	// data frame object to be input to script
   jerry_value_t		 input_array_;   // array object "a" for input data frame when using expr
 
@@ -151,7 +154,14 @@ public:
 	// run expr once to determine output size
 	jerry_value_t ret_value = jerry_run(parsed_expr_);
 
-	if (jerry_value_is_array(ret_value))
+	// determine return type: scalar, untyped array, typed array
+	if (jerry_value_is_number(ret_value))
+	{
+	  width = 1;
+	  height = 1;
+	  output_type_ = scalar;
+	}
+	else if (jerry_value_is_array(ret_value))
 	{
 	  uint32_t len = jerry_get_array_length(ret_value);
 	  if (len != framesize_)
@@ -159,17 +169,30 @@ public:
 	    width = len;
 	    height = 1;
 	    labels = NULL; // no labels, TODO: use attr
-	  }
-	  // else: same size, pass width, height, labels
+	  } // else: same size, pass width, height, labels unchanged
+	  output_type_ = array;
 	}
-	else if (jerry_value_is_number(ret_value))
+	else if (jerry_value_is_typedarray(ret_value))
 	{
-	  width = 1;
-	  height = 1;
+	  uint32_t len = jerry_get_typedarray_length(ret_value);
+	  if (len != framesize_)
+	  { // different output size: interpret as row
+	    width = len;
+	    height = 1;
+	    labels = NULL; // no labels, TODO: use attr
+	  } // else: same size, pass width, height, labels unchanged
+	  output_type_ = typedarray;
+	}
+	else if (jerry_value_is_error(ret_value))
+	{ // error
+	  output_type_ = other;
+	  throw std::logic_error("error evaluating expr to determine output frame size");
 	}
 	else
-	  // error
-	  throw std::logic_error("can't evaluate expr to determine output frame size");
+	{ // wrong type
+	  output_type_ = other;
+	  throw std::logic_error("wrong expr return type");
+	}
       }
       else
       { // no expression given
@@ -209,42 +232,65 @@ public:
 	  // run expr
 	  jerry_value_t ret_value = jerry_run(parsed_expr_);
 	  
-	  if (jerry_value_is_array(ret_value))
+	  switch (output_type_)
 	  {
-	    jerry_length_t bytelength = 0;
-	    jerry_length_t byteoffset = 0;
-
-	    // paranoid check:
-	    if (jerry_get_array_length(ret_value) != outframesize_)
+	    case array:
 	    {
-	      char msg[1024];
-	      snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
-      
-	      throw std::runtime_error(msg);
-	    }
+#if DEBUG
+	      // paranoid check:
+	      if (jerry_get_array_length(ret_value) != outframesize_)
+	      {
+		char msg[1024];
+		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
+		throw std::runtime_error(msg);
+	      }
+#endif     
+	      for (int j = 0; j < outframesize_; j++)
+	      {
+		jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
+		
+		if (jerry_value_is_number(elem))
+		  outptr[j] = jerry_get_number_value(elem);
+		else
+		  outptr[j] = 0;
 
-	    for (int j = 0; j < outframesize_; j++)
+		jerry_release_value(elem);
+	      }
+	    }
+	    break;
+	  
+	    case typedarray:
 	    {
-	      jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
-
-	      if (jerry_value_is_number(elem))
-		outptr[j] = jerry_get_number_value(elem);
-	      else
-		outptr[j] = 0;
-
-	      jerry_release_value(elem);
+	      jerry_length_t bytelength = 0;
+	      jerry_length_t byteoffset = 0;
+#if DEBUG
+	      // paranoid check:
+	      if (jerry_get_typedarray_length(ret_value) != outframesize_)
+	      {
+		char msg[1024];
+		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_typedarray_length(ret_value), outframesize_);
+		throw std::runtime_error(msg);
+	      }
+#endif     
+	      jerry_value_t buffer = jerry_get_typedarray_buffer(ret_value, &byteoffset, &bytelength);
+	      int bytes_read = jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
+	      jerry_release_value(buffer);
 	    }
+	    break;
+	  
+	    case scalar:
+	    {
+	      outptr[0] = jerry_get_number_value(ret_value);
+	    }
+	    break;
+	  
+	    default: // error
+	      throw std::runtime_error("wrong expr return type");
+	      break;
 	  }
-	  else if (jerry_value_is_number(ret_value))
-	  {
-	    outptr[0] = jerry_get_number_value(ret_value);
-	  }
-	  else // error
-	    throw std::runtime_error("wrong expr return type");
-
 	  jerry_release_value(ret_value);
 	}
-
+	
 	outptr += outframesize_;
 	values += size;
       }
@@ -255,9 +301,9 @@ public:
       signalError(e.what());
       return -1;
     }
-          
+    
     return propagateFrames(time, weight, &buffer_[0], outframesize_, num);
-  }
+  } // frames
 };
 
 bool PiPoJs::jerry_initialized = false;

@@ -55,7 +55,6 @@ TEST_CASE ("pipo.js")
   {
     const int outframesize = 3;
     js.expr_attr_.set("[ a[0] * 2, a[0] * 3, a[0] * 4 ]");
-    //js.expr_attr_.set("new Float32Array(a[0] * 2, a[0] * 3, a[0] * 4 )");
 	
     int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
     CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
@@ -74,15 +73,15 @@ TEST_CASE ("pipo.js")
     }
   }
     
-  SECTION ("Setup Scalar->Float Array")
+  SECTION ("Setup Scalar->Float32 Array")
   {
     const int outframesize = 3;
-    js.expr_attr_.set("new Float32Array(a[0] * 2, a[0] * 3, a[0] * 4 )");
+    js.expr_attr_.set("new Float32Array([a[0] * 2, a[0] * 3, a[0] * 4])");
 	
     int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
     CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
 
-    SECTION ("Scalar->Float Array Data")
+    SECTION ("Scalar->Float32 Array Data")
     {
       const int numframes = 1;
       float vals[numframes] = {2.22};
