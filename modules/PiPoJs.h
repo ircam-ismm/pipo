@@ -59,6 +59,38 @@ public:
     // init js objects to undefined
     parsed_expr_ = jerry_create_error(JERRY_ERROR_TYPE, (const jerry_char_t *) "no expression");
     input_array_ = jerry_create_undefined();
+
+    struct {
+      const char *name;
+      jerry_value_t (*handler) (const jerry_value_t function_object, const jerry_value_t function_this,
+				const jerry_value_t arguments[], const jerry_length_t argument_count);
+    } external_functions[] =
+    {
+      { "mtof",  mtof_handler },
+      { "ftom",  ftom_handler },
+      { "atodb", atodb_handler },
+      { "dbtoa", dbtoa_handler }
+    };
+
+    for (int i = 0; i < sizeof(external_functions) / sizeof(external_functions[0]); i++)
+    {
+      // Create a name JS string
+      jerry_value_t property_name  = jerry_create_string((const jerry_char_t *) external_functions[i].name);
+      // Create function from native C method (this function will be called from JS)
+      jerry_value_t property_value = jerry_create_external_function(external_functions[i].handler);
+      // Add the property with the function value to the "global" object
+      jerry_value_t set_result = jerry_set_property(global_object_, property_name, property_value);
+
+      // Check if there was no error when adding the property (in this case it should never happen)
+      if (jerry_value_is_error(set_result)) {
+	throw std::logic_error("Failed to add the function property");
+      }
+
+      // Release all jerry_values
+      jerry_release_value (set_result);
+      jerry_release_value (property_value);
+      jerry_release_value (property_name);
+    }
   }
 
   ~PiPoJs (void)
@@ -72,8 +104,14 @@ public:
     // must do this only once, TODO: if refcount == 0 jerry_cleanup ();
   }
 
+  
+/****************************************
+ *
+ * helper functions
+ *
+ */
+
 private:
-  // helper functions
   void set_property (jerry_value_t obj, const char *name, jerry_value_t prop) throw()
   {
     jerry_value_t prop_name  = jerry_create_string((const jerry_char_t *) name);
@@ -120,7 +158,45 @@ private:
     set_property (global_object_, "frm", frm_obj);
     return frm_obj;
   }
-  
+
+    
+/****************************************
+ *
+ * useful functions made available in js
+ *
+ */
+
+public:
+  static double mtof(double x) { double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
+  static double ftom(double x) { double ref = 440; return 69.0 + 17.3123404906676 * log(x / ref); }
+  static double atodb(double x) { return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
+  static double dbtoa(double x) { return exp(0.11512925465 * x); }
+
+#define CREATE_HANDLER(func)						\
+  static jerry_value_t func ## _handler (const jerry_value_t function_object, \
+					 const jerry_value_t function_this, \
+					 const jerry_value_t arguments[], \
+					 const jerry_length_t argument_count) \
+  {									\
+    if (argument_count > 0  &&  jerry_value_is_number(arguments[0]))	\
+    {									\
+      double ret = func(jerry_get_number_value(arguments[0]));		\
+      return jerry_create_number(ret);					\
+    }									\
+    else								\
+      return jerry_create_undefined ();					\
+  }
+  CREATE_HANDLER(mtof)
+  CREATE_HANDLER(ftom)
+  CREATE_HANDLER(atodb)
+  CREATE_HANDLER(dbtoa)
+    
+/****************************************
+ *
+ * pipo API methods
+ *
+ */
+
 public:
   /* Configure PiPo module according to the input stream attributes and propagate output stream attributes.
    * Note: For audio input, one PiPo frame corresponds to one sample frame, i.e. width is the number of channels, height is 1, maxFrames is the maximum number of (sample) frames passed to the module, rate is the sample rate, and domain is 1 / sample rate.
