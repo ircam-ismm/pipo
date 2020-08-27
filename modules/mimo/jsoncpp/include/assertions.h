@@ -10,7 +10,7 @@
 #include <sstream>
 
 #if !defined(JSON_IS_AMALGAMATION)
-#include "config.h"
+#include "jsoncpp_config.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
 /** It should not be possible for a maliciously designed file to
