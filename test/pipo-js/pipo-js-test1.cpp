@@ -4,7 +4,8 @@
 */
 
 #include "jerryscript.h"
-#include "jerryscript-ext/handler.h"
+//#include "jerryscript-ext/handler.h"
+#include "handler.h"
 
 int
 main (void)
