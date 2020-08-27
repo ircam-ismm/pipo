@@ -7,7 +7,7 @@
   clang pipo-js-test2.cpp -I .. -I ../../sdk/src -I ../../modules -I ../../modules/javascript-engine/include/ -L ../../modules/javascript-engine/lib/ -ljerry-core -ljerry-ext -ljerry-port-default  &&  ./a.out
 */
 
-#include "catch.hpp"
+#include "../catch.hpp"
 #include "PiPoTestReceiver.h"
 
 #include "PiPoJs.h"
