@@ -10,14 +10,26 @@ cd jerryscript/build/
 make -j4
 make install
 
-** build jerryscript as all-in-one big source files
+** build jerryscript as all-in-one big source files in src
+
+# not necessary:
+# python jerryscript/tools/srcgenerator.py --output-dir ../src --jerry-core --jerry-port-default --jerry-libm
 
 cd mubu-and-co/common/pipo/modules/javascript-engine
-jerryscript/tools/build.py --all-in-one=ON --builddir=./build --cmake-param="-DCMAKE_INSTALL_PREFIX=./" --cmake-param="-DJERRY_CMDLINE=NO"
-cd jerryscript/build/
-make -j4
-make install
+jerryscript/tools/build.py --all-in-one ON   --jerry-ext ON --builddir=.. --cmake-param="-DCMAKE_INSTALL_PREFIX=./" --cmake-param="-DENABLE_ALL_IN_ONE_SOURCE=ON" --cmake-param="-DJERRY_CMDLINE=0" --cmake-param="-DJERRY_ERROR_MESSAGES=1" --cmake-param="-DJERRY_EXTERNAL_CONTEXT=1" --cmake-param="-DJERRY_LOGGING=1" --cmake-param="-DJERRY_MEM_STATS=1"
 
+--> generates javascript-engine/src and some other not necessary dirs
+
+
+** build jerryscript
+
+cd mubu-and-co/common/pipo/modules/javascript-engine
+
+jerryscript/tools/build.py --all-in-one=ON --builddir=./build --cmake-param="-DCMAKE_INSTALL_PREFIX=../../" --cmake-param="-DJERRY_CMDLINE=0"  --cmake-param="-DJERRY_ERROR_MESSAGES=1" --cmake-param="-DJERRY_EXTERNAL_CONTEXT=1" --cmake-param="-DJERRY_LOGGING=1" --cmake-param="-DJERRY_MEM_STATS=1"
+cd jerryscript/build/
+make
+make install
+cd ../..
 
 * use cases
 
