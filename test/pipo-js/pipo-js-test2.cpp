@@ -25,6 +25,18 @@ TEST_CASE ("pipo.js")
 
   js.setReceiver(&rx);
 
+  SECTION ("Alloc/Dealloc")
+  {
+    REQUIRE(&js != NULL);
+  }
+
+  SECTION ("Just parse")
+  {
+    js.expr_attr_.set("1;");
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+    REQUIRE(ret == 0);
+  }
+  
   SECTION ("Catch Syntax Error")
   {
     js.expr_attr_.set("a[0] invalid js (*&^%*!");
