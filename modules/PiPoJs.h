@@ -18,9 +18,35 @@
 
 #include "PiPo.h"
 #include "jerryscript.h"
-#include "jerryscript-port.h"
-//#include "jerryscript-ext/handler.h"
-#include "handler.h"
+#include "jerryscript-ext/handler.h"
+
+
+
+/**
+ * Pointer to the current context.
+ * Note that it is a global variable, and is not a thread safe implementation.
+ */
+__thread jerry_context_t *current_context_p = NULL;
+
+/**
+ * Set the current_context_p as the passed pointer.
+ */
+void
+jerry_port_set_current_context (jerry_context_t *context_p) /**< points to the created context */
+{
+  current_context_p = context_p;
+} /* jerry_port_default_set_current_context */
+
+/**
+ * Get the current context.
+ *
+ * @return the pointer to the current context
+ */
+jerry_context_t *
+jerry_port_get_current_context (void)
+{
+  return current_context_p;
+} /* jerry_port_get_current_context */
 
   
 class PiPoJs : public PiPo
@@ -68,6 +94,7 @@ public:
     try {
       // Initialize engine in context
       jscontext_ = jerry_create_context (512 * 1024, jscontext_alloc_fn, NULL);
+      jerry_port_set_current_context(jscontext_);
       jerry_init(JERRY_INIT_EMPTY);
 
       /* Register 'print' function from the extensions to the global object */
@@ -121,6 +148,7 @@ public:
   ~PiPoJs (void)
   {
     printf("PiPoJs %p dtor\n", this);
+    jerry_port_set_current_context(jscontext_);
 
     /* Releasing the Global object */
     jerry_release_value(global_object_);    
@@ -247,6 +275,7 @@ public:
 
       if (expr_len > 0)
       {
+	jerry_port_set_current_context(jscontext_);
 	jerry_release_value(parsed_expr_); // have to release previous value
         parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
 
@@ -352,6 +381,8 @@ public:
     try {
       for (unsigned int i = 0; i < num; i++)
       {
+	jerry_port_set_current_context(jscontext_);
+
 	if (!jerry_value_is_error(parsed_expr_))
 	{ // evaluate single expression
 	  // set arr "a"
