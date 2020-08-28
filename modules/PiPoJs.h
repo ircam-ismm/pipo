@@ -18,9 +18,11 @@
 
 #include "PiPo.h"
 #include "jerryscript.h"
+#include "jerryscript-port.h"
 //#include "jerryscript-ext/handler.h"
 #include "handler.h"
 
+  
 class PiPoJs : public PiPo
 {
 private:
@@ -28,6 +30,7 @@ private:
   unsigned int           framesize_ = 0;    // cache max frame size
   unsigned int           outframesize_ = 0;    // cache max frame size
   static bool		 jerry_initialized;
+  jerry_context_t	*jscontext_;
   jerry_value_t		 global_object_;
   jerry_value_t		 parsed_expr_;
   typedef enum { scalar, array, typedarray, other } output_type_t;
@@ -43,8 +46,16 @@ private:
     {JERRY_ERROR_SYNTAX,    "syntax error"}, 
     {JERRY_ERROR_TYPE,      "type error"}, 
     {JERRY_ERROR_URI,       "URI error"} 
-};
-  
+  };
+
+  /* Allocate JerryScript heap for each thread. */
+  static void *jscontext_alloc_fn (size_t size, void *cb_data)
+  {
+    printf("jscontext_alloc_fn size %d\n", size);
+    (void) cb_data;
+    return malloc(size);
+  }
+
 public:
   PiPoScalarAttr<const char *> expr_attr_;
 
@@ -55,12 +66,9 @@ public:
     printf("PiPoJs %p ctor\n", this);
 
     try {
-      if (!jerry_initialized)
-      {
-	/* Initialize engine */
-	jerry_init(JERRY_INIT_EMPTY);
-	jerry_initialized = true;
-      }
+      // Initialize engine in context
+      jscontext_ = jerry_create_context (512 * 1024, jscontext_alloc_fn, NULL);
+      jerry_init(JERRY_INIT_EMPTY);
 
       /* Register 'print' function from the extensions to the global object */
       jerryx_handler_register_global ((const jerry_char_t *) "print", jerryx_handler_print);
@@ -72,17 +80,18 @@ public:
       parsed_expr_ = jerry_create_error(JERRY_ERROR_TYPE, (const jerry_char_t *) "no expression");
       input_array_ = jerry_create_undefined();
 
+      // quick map of external functions (name -> handler)
       struct {
 	const char *name;
 	jerry_value_t (*handler) (const jerry_value_t function_object, const jerry_value_t function_this,
 				  const jerry_value_t arguments[], const jerry_length_t argument_count);
       } external_functions[] =
-	  {
-	    { "mtof",  mtof_handler },
-	    { "ftom",  ftom_handler },
-	    { "atodb", atodb_handler },
-	    { "dbtoa", dbtoa_handler }
-	  };
+      {
+	{ "mtof",  mtof_handler },
+	{ "ftom",  ftom_handler },
+	{ "atodb", atodb_handler },
+	{ "dbtoa", dbtoa_handler }
+      };
 
       for (int i = 0; i < sizeof(external_functions) / sizeof(external_functions[0]); i++)
       {
@@ -94,9 +103,8 @@ public:
 	jerry_value_t set_result = jerry_set_property(global_object_, property_name, property_value);
 
 	// Check if there was no error when adding the property (in this case it should never happen)
-	if (jerry_value_is_error(set_result)) {
+	if (jerry_value_is_error(set_result))
 	  throw std::logic_error("Failed to add the function property");
-	}
 
 	// Release all jerry_values
 	jerry_release_value (set_result);
@@ -115,12 +123,13 @@ public:
     printf("PiPoJs %p dtor\n", this);
 
     /* Releasing the Global object */
-    jerry_release_value (global_object_);    
+    jerry_release_value(global_object_);    
     jerry_release_value(parsed_expr_);
     jerry_release_value(input_array_);
 
-    /* Cleanup engine */
-    // must do this only once, TODO: if refcount == 0 jerry_cleanup ();
+    // Cleanup engine in context (must do this only once)
+    jerry_cleanup();
+    free(jscontext_);
   }
 
   
@@ -146,7 +155,7 @@ private:
   // create array and set as obj.name
   jerry_value_t create_array (jerry_value_t obj, const char *name, int size) throw()
   {
-    jerry_value_t a_arr  = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, size);
+    jerry_value_t a_arr = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, size);
     set_property(obj, name, a_arr);
     return a_arr;
   }
@@ -225,7 +234,9 @@ public:
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-    printf("PiPoJs %p streamAttributes\n", this, );
+    printf("PiPoJs %p streamAttributes:\n", this); /* %s\n", this,
+	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
+	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
     try {
       // we need to store the max frame size in case hasVarSize is true
@@ -236,6 +247,7 @@ public:
 
       if (expr_len > 0)
       {
+	jerry_release_value(parsed_expr_); // have to release previous value
         parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
 
 	if (jerry_value_is_error(parsed_expr_))
@@ -256,6 +268,7 @@ public:
 	}
 	
 	// create js array for pipo input
+	jerry_release_value(input_array_); // have to release previous value
 	input_array_ = create_array(global_object_, "a", framesize_);
 
 	// set arr to 0
@@ -297,13 +310,17 @@ public:
 	else if (jerry_value_is_error(ret_value))
 	{ // error
 	  output_type_ = other;
+	  jerry_release_value(ret_value);
 	  throw std::logic_error("error evaluating expr to determine output frame size");
 	}
 	else
 	{ // wrong type
 	  output_type_ = other;
+	  jerry_release_value(ret_value);
 	  throw std::logic_error("wrong expr return type");
 	}
+
+	jerry_release_value(ret_value);
       }
       else
       { // no expression given
