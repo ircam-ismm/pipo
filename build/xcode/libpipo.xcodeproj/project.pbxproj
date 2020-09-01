@@ -33,8 +33,40 @@
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
+		2123C98D24EFFB0D005044F8 /* mimo-pca-test-simple.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */; };
+		2123C98E24EFFB0D005044F8 /* mimo-pca-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */; };
+		2123C98F24EFFB0D005044F8 /* mimo-stats-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */; };
+		2123C99024EFFB0D005044F8 /* mimo-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92324EFFB0C005044F8 /* mimo-test.cpp */; };
+		2123C99624EFFB26005044F8 /* pipo-js-test2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C99424EFFB26005044F8 /* pipo-js-test2.cpp */; };
+		2123C99A24EFFD5A005044F8 /* mimo_distribute.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C99724EFFD5A005044F8 /* mimo_distribute.h */; };
+		2123C99B24EFFD5A005044F8 /* mimo_normalize.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C99824EFFD5A005044F8 /* mimo_normalize.h */; };
+		2123C99C24EFFD5A005044F8 /* mimo_pca.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C99924EFFD5A005044F8 /* mimo_pca.h */; };
+		2123C9B024EFFD68005044F8 /* assertions.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C99F24EFFD68005044F8 /* assertions.h */; };
+		2123C9B124EFFD68005044F8 /* autolink.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A024EFFD68005044F8 /* autolink.h */; };
+		2123C9B224EFFD68005044F8 /* jsoncpp_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A124EFFD68005044F8 /* jsoncpp_config.h */; };
+		2123C9B324EFFD68005044F8 /* forwards.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A224EFFD68005044F8 /* forwards.h */; };
+		2123C9B424EFFD68005044F8 /* json-features.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A324EFFD68005044F8 /* json-features.h */; };
+		2123C9B524EFFD68005044F8 /* json.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A424EFFD68005044F8 /* json.h */; };
+		2123C9B624EFFD68005044F8 /* reader.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A524EFFD68005044F8 /* reader.h */; };
+		2123C9B724EFFD68005044F8 /* value.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A624EFFD68005044F8 /* value.h */; };
+		2123C9B824EFFD68005044F8 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A724EFFD68005044F8 /* version.h */; };
+		2123C9B924EFFD68005044F8 /* writer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9A824EFFD68005044F8 /* writer.h */; };
+		2123C9BA24EFFD68005044F8 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AB24EFFD68005044F8 /* json_reader.cpp */; };
+		2123C9BB24EFFD68005044F8 /* json_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AB24EFFD68005044F8 /* json_reader.cpp */; };
+		2123C9BC24EFFD68005044F8 /* json_tool.h in Headers */ = {isa = PBXBuildFile; fileRef = 2123C9AC24EFFD68005044F8 /* json_tool.h */; };
+		2123C9BD24EFFD68005044F8 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AD24EFFD68005044F8 /* json_value.cpp */; };
+		2123C9BE24EFFD68005044F8 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AD24EFFD68005044F8 /* json_value.cpp */; };
+		2123C9BF24EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
+		2123C9C024EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
+		216C9F6324EFF4E00069A8EE /* PiPoJs.h in Headers */ = {isa = PBXBuildFile; fileRef = 216C9F6224EFF4E00069A8EE /* PiPoJs.h */; };
+		216E1EC324FE95B80033FAD2 /* jerryscript-config.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */; };
+		216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */ = {isa = PBXBuildFile; fileRef = 216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */; };
+		216E1EC524FE95B90033FAD2 /* jerryscript-port-default.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EC024FE95B80033FAD2 /* jerryscript-port-default.h */; };
+		216E1EC624FE95B90033FAD2 /* jerryscript.c in Sources */ = {isa = PBXBuildFile; fileRef = 216E1EC124FE95B80033FAD2 /* jerryscript.c */; };
+		216E1EC724FE95B90033FAD2 /* jerryscript.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EC224FE95B80033FAD2 /* jerryscript.h */; };
+		216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9ED24F002F7005044F8 /* handler-print.c */; };
+		216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9EE24F002F7005044F8 /* handler-register.c */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
-		21F99D9A1FBC65CC003A78DB /* mimo-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
@@ -97,7 +129,6 @@
 		31C2B3F91FB0D4A7001A134E /* finitedifferences.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B3F71FB0D4A7001A134E /* finitedifferences.h */; };
 		31C2B3FB1FB0D4AF001A134E /* PiPoCollection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C2B3FA1FB0D4AF001A134E /* PiPoCollection.cpp */; };
 		31C2B4031FB0D4D8001A134E /* BayesianFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C2B3FF1FB0D4D8001A134E /* BayesianFilter.cpp */; };
-		31C2B4041FB0D4D8001A134E /* BayesianFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B4001FB0D4D8001A134E /* BayesianFilter.h */; };
 		31C2B4051FB0D4D8001A134E /* filter_utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C2B4011FB0D4D8001A134E /* filter_utilities.cpp */; };
 		31C2B4061FB0D4D8001A134E /* filter_utilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B4021FB0D4D8001A134E /* filter_utilities.h */; };
 		31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31D2EE761ED72150002E9F6A /* pipo-collection-test.cpp */; };
@@ -123,6 +154,52 @@
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
+		2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test-simple.cpp"; sourceTree = "<group>"; };
+		2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test.cpp"; sourceTree = "<group>"; };
+		2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-stats-test.cpp"; sourceTree = "<group>"; };
+		2123C92324EFFB0C005044F8 /* mimo-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-test.cpp"; sourceTree = "<group>"; };
+		2123C99324EFFB26005044F8 /* pipo-js-test1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "pipo-js-test1.cpp"; sourceTree = "<group>"; };
+		2123C99424EFFB26005044F8 /* pipo-js-test2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "pipo-js-test2.cpp"; sourceTree = "<group>"; };
+		2123C99724EFFD5A005044F8 /* mimo_distribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo_distribute.h; path = ../../modules/mimo/mimo_distribute.h; sourceTree = "<group>"; };
+		2123C99824EFFD5A005044F8 /* mimo_normalize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo_normalize.h; path = ../../modules/mimo/mimo_normalize.h; sourceTree = "<group>"; };
+		2123C99924EFFD5A005044F8 /* mimo_pca.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo_pca.h; path = ../../modules/mimo/mimo_pca.h; sourceTree = "<group>"; };
+		2123C99F24EFFD68005044F8 /* assertions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = assertions.h; sourceTree = "<group>"; };
+		2123C9A024EFFD68005044F8 /* autolink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = autolink.h; sourceTree = "<group>"; };
+		2123C9A124EFFD68005044F8 /* jsoncpp_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsoncpp_config.h; sourceTree = "<group>"; };
+		2123C9A224EFFD68005044F8 /* forwards.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = forwards.h; sourceTree = "<group>"; };
+		2123C9A324EFFD68005044F8 /* json-features.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "json-features.h"; sourceTree = "<group>"; };
+		2123C9A424EFFD68005044F8 /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json.h; sourceTree = "<group>"; };
+		2123C9A524EFFD68005044F8 /* reader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = reader.h; sourceTree = "<group>"; };
+		2123C9A624EFFD68005044F8 /* value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = value.h; sourceTree = "<group>"; };
+		2123C9A724EFFD68005044F8 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
+		2123C9A824EFFD68005044F8 /* writer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = writer.h; sourceTree = "<group>"; };
+		2123C9A924EFFD68005044F8 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		2123C9AB24EFFD68005044F8 /* json_reader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_reader.cpp; sourceTree = "<group>"; };
+		2123C9AC24EFFD68005044F8 /* json_tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_tool.h; sourceTree = "<group>"; };
+		2123C9AD24EFFD68005044F8 /* json_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_value.cpp; sourceTree = "<group>"; };
+		2123C9AE24EFFD68005044F8 /* json_valueiterator.inl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = json_valueiterator.inl; sourceTree = "<group>"; };
+		2123C9AF24EFFD68005044F8 /* json_writer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
+		2123C9EB24F002F7005044F8 /* handler-assert.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "handler-assert.c"; sourceTree = "<group>"; };
+		2123C9EC24F002F7005044F8 /* handler-gc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "handler-gc.c"; sourceTree = "<group>"; };
+		2123C9ED24F002F7005044F8 /* handler-print.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "handler-print.c"; sourceTree = "<group>"; };
+		2123C9EE24F002F7005044F8 /* handler-register.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "handler-register.c"; sourceTree = "<group>"; };
+		2123C9EF24F002F7005044F8 /* handler-resource-name.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "handler-resource-name.c"; sourceTree = "<group>"; };
+		2123C9F224F002F7005044F8 /* arg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = arg.h; sourceTree = "<group>"; };
+		2123C9F324F002F7005044F8 /* arg.impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = arg.impl.h; sourceTree = "<group>"; };
+		2123C9F424F002F7005044F8 /* autorelease.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = autorelease.h; sourceTree = "<group>"; };
+		2123C9F524F002F7005044F8 /* autorelease.impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = autorelease.impl.h; sourceTree = "<group>"; };
+		2123C9F624F002F7005044F8 /* debugger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = debugger.h; sourceTree = "<group>"; };
+		2123C9F724F002F7005044F8 /* handle-scope.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "handle-scope.h"; sourceTree = "<group>"; };
+		2123C9F824F002F7005044F8 /* handler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = handler.h; sourceTree = "<group>"; };
+		2123C9F924F002F7005044F8 /* module.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = module.h; sourceTree = "<group>"; };
+		2123C9FA24F002F7005044F8 /* libjerry-ext.pc.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "libjerry-ext.pc.in"; sourceTree = "<group>"; };
+		2123C9FC24F002F7005044F8 /* module.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = module.c; sourceTree = "<group>"; };
+		216C9F6224EFF4E00069A8EE /* PiPoJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoJs.h; path = ../../modules/PiPoJs.h; sourceTree = "<group>"; };
+		216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "jerryscript-config.h"; sourceTree = "<group>"; };
+		216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "jerryscript-port-default.c"; sourceTree = "<group>"; };
+		216E1EC024FE95B80033FAD2 /* jerryscript-port-default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "jerryscript-port-default.h"; sourceTree = "<group>"; };
+		216E1EC124FE95B80033FAD2 /* jerryscript.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jerryscript.c; sourceTree = "<group>"; };
+		216E1EC224FE95B80033FAD2 /* jerryscript.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jerryscript.h; sourceTree = "<group>"; };
 		21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDescr.h; path = ../../modules/PiPoDescr.h; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
@@ -265,7 +342,6 @@
 		31C2B4021FB0D4D8001A134E /* filter_utilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = filter_utilities.h; path = ../../modules/bayesfilter/src/filter_utilities.h; sourceTree = "<group>"; };
 		31C2B4101FB0D4ED001A134E /* Doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Doxyfile; path = ../../modules/bayesfilter/doc/Doxyfile; sourceTree = "<group>"; };
 		31D2EE6D1ED71FCC002E9F6A /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = ../../test/catch.hpp; sourceTree = "<group>"; };
-		31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "mimo-test.cpp"; path = "../../test/mimo-test.cpp"; sourceTree = "<group>"; };
 		31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-benchmark.cpp"; path = "../../test/pipo-benchmark.cpp"; sourceTree = "<group>"; };
 		31D2EE701ED71FCC002E9F6A /* pipo-fft-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-fft-test.cpp"; path = "../../test/pipo-fft-test.cpp"; sourceTree = "<group>"; };
 		31D2EE711ED71FCC002E9F6A /* pipo-parallel-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-parallel-test.cpp"; path = "../../test/pipo-parallel-test.cpp"; sourceTree = "<group>"; };
@@ -303,6 +379,145 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2123C91F24EFFB0C005044F8 /* mimo */ = {
+			isa = PBXGroup;
+			children = (
+				2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */,
+				2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */,
+				2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */,
+				2123C92324EFFB0C005044F8 /* mimo-test.cpp */,
+			);
+			name = mimo;
+			path = ../../test/mimo;
+			sourceTree = "<group>";
+		};
+		2123C99224EFFB26005044F8 /* pipo-js */ = {
+			isa = PBXGroup;
+			children = (
+				2123C99324EFFB26005044F8 /* pipo-js-test1.cpp */,
+				2123C99424EFFB26005044F8 /* pipo-js-test2.cpp */,
+			);
+			name = "pipo-js";
+			path = "../../test/pipo-js";
+			sourceTree = "<group>";
+		};
+		2123C99D24EFFD68005044F8 /* jsoncpp */ = {
+			isa = PBXGroup;
+			children = (
+				2123C99E24EFFD68005044F8 /* include */,
+				2123C9A924EFFD68005044F8 /* LICENSE */,
+				2123C9AA24EFFD68005044F8 /* src */,
+			);
+			name = jsoncpp;
+			path = ../../modules/mimo/jsoncpp;
+			sourceTree = "<group>";
+		};
+		2123C99E24EFFD68005044F8 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				2123C99F24EFFD68005044F8 /* assertions.h */,
+				2123C9A024EFFD68005044F8 /* autolink.h */,
+				2123C9A124EFFD68005044F8 /* jsoncpp_config.h */,
+				2123C9A224EFFD68005044F8 /* forwards.h */,
+				2123C9A324EFFD68005044F8 /* json-features.h */,
+				2123C9A424EFFD68005044F8 /* json.h */,
+				2123C9A524EFFD68005044F8 /* reader.h */,
+				2123C9A624EFFD68005044F8 /* value.h */,
+				2123C9A724EFFD68005044F8 /* version.h */,
+				2123C9A824EFFD68005044F8 /* writer.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		2123C9AA24EFFD68005044F8 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9AB24EFFD68005044F8 /* json_reader.cpp */,
+				2123C9AC24EFFD68005044F8 /* json_tool.h */,
+				2123C9AD24EFFD68005044F8 /* json_value.cpp */,
+				2123C9AE24EFFD68005044F8 /* json_valueiterator.inl */,
+				2123C9AF24EFFD68005044F8 /* json_writer.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		2123C9D524F002F7005044F8 /* jerry-ext */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9EA24F002F7005044F8 /* handler */,
+				2123C9F024F002F7005044F8 /* include */,
+				2123C9FA24F002F7005044F8 /* libjerry-ext.pc.in */,
+				2123C9FB24F002F7005044F8 /* module */,
+			);
+			name = "jerry-ext";
+			path = "../../modules/javascript-engine/jerryscript/jerry-ext";
+			sourceTree = "<group>";
+		};
+		2123C9EA24F002F7005044F8 /* handler */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9EB24F002F7005044F8 /* handler-assert.c */,
+				2123C9EC24F002F7005044F8 /* handler-gc.c */,
+				2123C9ED24F002F7005044F8 /* handler-print.c */,
+				2123C9EE24F002F7005044F8 /* handler-register.c */,
+				2123C9EF24F002F7005044F8 /* handler-resource-name.c */,
+			);
+			path = handler;
+			sourceTree = "<group>";
+		};
+		2123C9F024F002F7005044F8 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9F124F002F7005044F8 /* jerryscript-ext */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		2123C9F124F002F7005044F8 /* jerryscript-ext */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9F224F002F7005044F8 /* arg.h */,
+				2123C9F324F002F7005044F8 /* arg.impl.h */,
+				2123C9F424F002F7005044F8 /* autorelease.h */,
+				2123C9F524F002F7005044F8 /* autorelease.impl.h */,
+				2123C9F624F002F7005044F8 /* debugger.h */,
+				2123C9F724F002F7005044F8 /* handle-scope.h */,
+				2123C9F824F002F7005044F8 /* handler.h */,
+				2123C9F924F002F7005044F8 /* module.h */,
+			);
+			path = "jerryscript-ext";
+			sourceTree = "<group>";
+		};
+		2123C9FB24F002F7005044F8 /* module */ = {
+			isa = PBXGroup;
+			children = (
+				2123C9FC24F002F7005044F8 /* module.c */,
+			);
+			path = module;
+			sourceTree = "<group>";
+		};
+		216C9F2B24EFF48A0069A8EE /* javascript-engine */ = {
+			isa = PBXGroup;
+			children = (
+				216E1EBD24FE95B80033FAD2 /* src */,
+				2123C9D524F002F7005044F8 /* jerry-ext */,
+			);
+			name = "javascript-engine";
+			sourceTree = "<group>";
+		};
+		216E1EBD24FE95B80033FAD2 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */,
+				216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */,
+				216E1EC024FE95B80033FAD2 /* jerryscript-port-default.h */,
+				216E1EC124FE95B80033FAD2 /* jerryscript.c */,
+				216E1EC224FE95B80033FAD2 /* jerryscript.h */,
+			);
+			name = src;
+			path = "../../modules/javascript-engine/src";
+			sourceTree = "<group>";
+		};
 		315B90481FB4B9880005150B /* src */ = {
 			isa = PBXGroup;
 			children = (
@@ -335,13 +550,14 @@
 		31C2B3811FB0D3E8001A134E /* modules */ = {
 			isa = PBXGroup;
 			children = (
-				31C2B4121FB0D59E001A134E /* wavelet */,
-				31C2B4111FB0D594001A134E /* rta */,
-				31C2B3EB1FB0D485001A134E /* mimo */,
-				31C2B3EA1FB0D47B001A134E /* lpcformants */,
-				31C2B3E91FB0D46D001A134E /* finitedifferences */,
-				31C2B3E81FB0D463001A134E /* collection */,
 				31C2B3E71FB0D45C001A134E /* bayesfilter */,
+				31C2B3E81FB0D463001A134E /* collection */,
+				31C2B3E91FB0D46D001A134E /* finitedifferences */,
+				216C9F2B24EFF48A0069A8EE /* javascript-engine */,
+				31C2B3EA1FB0D47B001A134E /* lpcformants */,
+				31C2B3EB1FB0D485001A134E /* mimo */,
+				31C2B4111FB0D594001A134E /* rta */,
+				31C2B4121FB0D59E001A134E /* wavelet */,
 				31C2B39D1FB0D43F001A134E /* PiPoBands.h */,
 				31C2B39E1FB0D43F001A134E /* PiPoBasic.h */,
 				31C2B39F1FB0D43F001A134E /* PiPoBayesFilter.h */,
@@ -356,6 +572,7 @@
 				31C2B3A71FB0D43F001A134E /* PiPoFiniteDif.h */,
 				31C2B3A81FB0D43F001A134E /* PiPoGate.h */,
 				31C2B3A91FB0D43F001A134E /* PiPoIdentity.h */,
+				216C9F6224EFF4E00069A8EE /* PiPoJs.h */,
 				31C2B3AC1FB0D43F001A134E /* PiPoLpc.h */,
 				31C2B3AE1FB0D43F001A134E /* PiPoMaximChroma.h */,
 				31C2B3AF1FB0D43F001A134E /* PiPoMeanStddev.h */,
@@ -376,6 +593,7 @@
 				31C2B3BD1FB0D43F001A134E /* PiPoSum.h */,
 				31C2B3BF1FB0D43F001A134E /* PiPoWavelet.h */,
 				31C2B3C01FB0D43F001A134E /* PiPoYin.h */,
+				1DFED20023A8DE6900BF943F /* PiPoYin2.h */,
 				31C2B3C11FB0D43F001A134E /* TempMod.h */,
 			);
 			name = modules;
@@ -429,7 +647,11 @@
 		31C2B3EB1FB0D485001A134E /* mimo */ = {
 			isa = PBXGroup;
 			children = (
+				2123C99D24EFFD68005044F8 /* jsoncpp */,
 				31C2B3EC1FB0D494001A134E /* mimo_stats.h */,
+				2123C99724EFFD5A005044F8 /* mimo_distribute.h */,
+				2123C99824EFFD5A005044F8 /* mimo_normalize.h */,
+				2123C99924EFFD5A005044F8 /* mimo_pca.h */,
 			);
 			name = mimo;
 			sourceTree = "<group>";
@@ -605,8 +827,9 @@
 				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
 				316488471FC31D600086FEDF /* pipo-select-test.cpp */,
 				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
-				31D2EE6E1ED71FCC002E9F6A /* mimo-test.cpp */,
 				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
+				2123C99224EFFB26005044F8 /* pipo-js */,
+				2123C91F24EFFB0C005044F8 /* mimo */,
 			);
 			name = test;
 			sourceTree = "<group>";
@@ -628,7 +851,6 @@
 		5A04AA9006D4DD3F0098230D = {
 			isa = PBXGroup;
 			children = (
-				1DFED20023A8DE6900BF943F /* PiPoYin2.h */,
 				31C2B3821FB0D3F1001A134E /* sdk */,
 				31C2B3811FB0D3E8001A134E /* modules */,
 				31D2EEA61ED72A86002E9F6A /* doc */,
@@ -653,7 +875,21 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2123C9B124EFFD68005044F8 /* autolink.h in Headers */,
+				2123C9BC24EFFD68005044F8 /* json_tool.h in Headers */,
+				2123C99C24EFFD5A005044F8 /* mimo_pca.h in Headers */,
+				2123C9B224EFFD68005044F8 /* jsoncpp_config.h in Headers */,
+				2123C99A24EFFD5A005044F8 /* mimo_distribute.h in Headers */,
+				2123C99B24EFFD5A005044F8 /* mimo_normalize.h in Headers */,
+				2123C9B624EFFD68005044F8 /* reader.h in Headers */,
+				216E1EC524FE95B90033FAD2 /* jerryscript-port-default.h in Headers */,
+				2123C9B424EFFD68005044F8 /* json-features.h in Headers */,
+				2123C9B824EFFD68005044F8 /* version.h in Headers */,
+				216E1EC724FE95B90033FAD2 /* jerryscript.h in Headers */,
+				2123C9B324EFFD68005044F8 /* forwards.h in Headers */,
+				2123C9B724EFFD68005044F8 /* value.h in Headers */,
 				31C2B3E11FB0D43F001A134E /* PiPoSlice.h in Headers */,
+				216E1EC324FE95B80033FAD2 /* jerryscript-config.h in Headers */,
 				31C2B3DF1FB0D43F001A134E /* PiPoScale.h in Headers */,
 				31C2B3C21FB0D43F001A134E /* PiPoBands.h in Headers */,
 				31C2B3DC1FB0D43F001A134E /* PiPoPeaks.h in Headers */,
@@ -665,6 +901,7 @@
 				31C2B3E41FB0D43F001A134E /* PiPoWavelet.h in Headers */,
 				31C2B3E01FB0D43F001A134E /* PiPoSelect.h in Headers */,
 				3B0D90C72056A8FB00FD0CFC /* PiPoResample.h in Headers */,
+				216C9F6324EFF4E00069A8EE /* PiPoJs.h in Headers */,
 				31C2B3C61FB0D43F001A134E /* PiPoBranch.h in Headers */,
 				31C2B3C41FB0D43F001A134E /* PiPoBayesFilter.h in Headers */,
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
@@ -678,7 +915,6 @@
 				31C2B3CC1FB0D43F001A134E /* PiPoFiniteDif.h in Headers */,
 				31C2B3DD1FB0D43F001A134E /* PiPoPsy.h in Headers */,
 				31C2B3DE1FB0D43F001A134E /* PiPoRms.h in Headers */,
-				31C2B4041FB0D4D8001A134E /* BayesianFilter.h in Headers */,
 				21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */,
 				31C2B3F91FB0D4A7001A134E /* finitedifferences.h in Headers */,
 				31C2B3C91FB0D43F001A134E /* PiPoDct.h in Headers */,
@@ -692,6 +928,9 @@
 				31C2B3ED1FB0D494001A134E /* mimo_stats.h in Headers */,
 				31C2B3D31FB0D43F001A134E /* PiPoMaximChroma.h in Headers */,
 				31C2B3E21FB0D43F001A134E /* PiPoSum.h in Headers */,
+				2123C9B924EFFD68005044F8 /* writer.h in Headers */,
+				2123C9B524EFFD68005044F8 /* json.h in Headers */,
+				2123C9B024EFFD68005044F8 /* assertions.h in Headers */,
 				31C2B3D41FB0D43F001A134E /* PiPoMeanStddev.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -810,29 +1049,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3164883A1FC226760086FEDF /* rta_selection.c in Sources */,
-				316488381FC226690086FEDF /* rta_mean_variance.c in Sources */,
-				316488391FC226690086FEDF /* rta_moments.c in Sources */,
-				316488361FC226440086FEDF /* rta_int.c in Sources */,
-				316488371FC226440086FEDF /* rta_util.c in Sources */,
+				316488291FC225E60086FEDF /* rta_biquad.c in Sources */,
 				3164882D1FC226210086FEDF /* rta_bands.c in Sources */,
 				3164882E1FC226210086FEDF /* rta_correlation.c in Sources */,
 				3164882F1FC226210086FEDF /* rta_cubic.c in Sources */,
+				3164882A1FC225E60086FEDF /* rta_dct.c in Sources */,
+				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
+				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
+				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
+				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
+				316488361FC226440086FEDF /* rta_int.c in Sources */,
 				316488301FC226210086FEDF /* rta_lifter.c in Sources */,
 				316488311FC226210086FEDF /* rta_lpc.c in Sources */,
+				316488381FC226690086FEDF /* rta_mean_variance.c in Sources */,
 				316488321FC226210086FEDF /* rta_mel.c in Sources */,
+				316488391FC226690086FEDF /* rta_moments.c in Sources */,
 				316488331FC226210086FEDF /* rta_onepole.c in Sources */,
 				316488341FC226210086FEDF /* rta_psy.c in Sources */,
+				3164883A1FC226760086FEDF /* rta_selection.c in Sources */,
+				316488371FC226440086FEDF /* rta_util.c in Sources */,
 				316488351FC226210086FEDF /* rta_yin.c in Sources */,
-				316488291FC225E60086FEDF /* rta_biquad.c in Sources */,
-				3164882A1FC225E60086FEDF /* rta_dct.c in Sources */,
-				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
-				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
 				319486BB1FB9EE9C0031D0E1 /* PiPoHost.cpp in Sources */,
 				31C2B3FB1FB0D4AF001A134E /* PiPoCollection.cpp in Sources */,
 				31C2B3F81FB0D4A7001A134E /* finitedifferences.c in Sources */,
 				31C2B4051FB0D4D8001A134E /* filter_utilities.cpp in Sources */,
 				31C2B4031FB0D4D8001A134E /* BayesianFilter.cpp in Sources */,
+				2123C9BD24EFFD68005044F8 /* json_value.cpp in Sources */,
+				2123C9BF24EFFD68005044F8 /* json_writer.cpp in Sources */,
+				2123C9BA24EFFD68005044F8 /* json_reader.cpp in Sources */,
+				216E1EC624FE95B90033FAD2 /* jerryscript.c in Sources */,
+				216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -840,17 +1086,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				319486BC1FB9EEA30031D0E1 /* PiPoHost.cpp in Sources */,
 				31D2EE841ED7255F002E9F6A /* test-main.cpp in Sources */,
+				2123C9C024EFFD68005044F8 /* json_writer.cpp in Sources */,
+				2123C99624EFFB26005044F8 /* pipo-js-test2.cpp in Sources */,
+				2123C98E24EFFB0D005044F8 /* mimo-pca-test.cpp in Sources */,
+				319486BC1FB9EEA30031D0E1 /* PiPoHost.cpp in Sources */,
 				31D2EE831ED72544002E9F6A /* pipo-collection-test.cpp in Sources */,
 				3164885B1FC474E00086FEDF /* pipo-const-test.cpp in Sources */,
 				31D2EEA21ED72938002E9F6A /* pipo-fft-test.cpp in Sources */,
+				2123C98F24EFFB0D005044F8 /* mimo-stats-test.cpp in Sources */,
+				2123C9BB24EFFD68005044F8 /* json_reader.cpp in Sources */,
 				319486BE1FBB5B990031D0E1 /* pipo-host-test.cpp in Sources */,
 				31D2EEA31ED72938002E9F6A /* pipo-parallel-test.cpp in Sources */,
+				2123C98D24EFFB0D005044F8 /* mimo-pca-test-simple.cpp in Sources */,
+				2123C9BE24EFFD68005044F8 /* json_value.cpp in Sources */,
 				1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */,
 				316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
-				21F99D9A1FBC65CC003A78DB /* mimo-test.cpp in Sources */,
+				2123C99024EFFB0D005044F8 /* mimo-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -865,6 +1118,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
 				INSTALL_PATH = /;
 				PRODUCT_NAME = pipo;
@@ -879,6 +1134,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
 				INSTALL_PATH = /;
 				PRODUCT_NAME = pipo;
@@ -907,6 +1164,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -932,6 +1191,8 @@
 				HEADER_SEARCH_PATHS = (
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
+					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
