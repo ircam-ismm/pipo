@@ -72,7 +72,6 @@ private:
   /* Allocate JerryScript heap for each thread. */
   static void *jscontext_alloc_fn (size_t size, void *cb_data)
   {
-    printf("jscontext_alloc_fn size %lu\n", size);
     (void) cb_data;
     return malloc(size);
   }
@@ -83,7 +82,7 @@ public:
     expr_attr_ (this, "expr", "JS expression producing output frame from input in array a", false, ""),
     param_attr_(this, "p",    "Parameter array p for JS expression", false)
   {
-    printf("PiPoJs %p ctor\n", this);
+    //printf("PiPoJs %p ctor\n", this);
 
     try {
       // Initialize engine in context
@@ -142,7 +141,7 @@ public:
 
   ~PiPoJs (void)
   {
-    printf("PiPoJs %p dtor\n", this);
+    //printf("PiPoJs %p dtor\n", this);
     jerry_port_set_current_context(jscontext_);
 
     /* Releasing the Global object */
@@ -394,6 +393,12 @@ public:
 	  // set p to current values of param_attr_ only when changed
 	  if (param_attr_.hasChanged())
 	  {
+	    if (param_attr_.size() != jerry_get_array_length(param_array_))
+	    { // user wants to change size, need to free and recreate array
+	      jerry_release_value(param_array_); // have to release previous value
+	      param_array_ = create_array(global_object_, "p", param_attr_.size());
+	    }
+	    
 	    set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
 	    param_attr_.resetChanged();
 	  }

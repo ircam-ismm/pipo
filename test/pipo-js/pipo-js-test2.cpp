@@ -223,7 +223,7 @@ TEST_CASE ("pipo.js")
     }
   }
 
-  SECTION ("Setup external expr")
+  SECTION ("Setup external func")
   {
     const int outframesize = 4;
     const double testval = 2.0;
@@ -232,7 +232,7 @@ TEST_CASE ("pipo.js")
     int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
     CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, NULL, 0, 0, 100);
   
-    SECTION ("Vector map Data ES6")
+    SECTION ("Vector external func")
     {
       float vals[numframes * inframesize] = { (float) testval };
       int ret2 = js.frames(0, 1, vals, inframesize, numframes);
@@ -243,6 +243,50 @@ TEST_CASE ("pipo.js")
       CHECK(rx.values[3] == Approx(69));
       rx.zero();
     }
+  }
+
+  SECTION ("Setup with param")
+  {
+    js.expr_attr_.set("a[0] * p[0]");
+    js.param_attr_.set(0, 2);
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, labels_scalar, 0, 0, 100);
+
+    SECTION ("Data with param ")
+    {
+      float vals[numframes] = {42.42};
+
+      int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+      CHECK(rx.values[0] == vals[numframes - 1] * 2);
+      rx.zero();
+
+      SECTION ("Param size change")
+      {
+	js.param_attr_.set(0, 3);
+	js.param_attr_.set(1, 4); // param size changes
+	
+	int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+	CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+	CHECK(rx.values[0] == vals[numframes - 1] * 3);
+	rx.zero();
+      }
+
+      SECTION ("Setup with param overshoot")
+      {
+	js.expr_attr_.set("1 * p[99]"); // using uninitialized value
+	
+	int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+	CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, labels_scalar, 0, 0, 100);
+	
+	int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+	CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+	//CHECK(rx.values[0] == 0);
+	WARN("uninitialized value is: " << rx.values[0]); // uninitialized, not zero...
+	rx.zero();
+      }
+    }    
   }
 }
 
