@@ -21,35 +21,29 @@
 #include "jerryscript-ext/handler.h"
 
 
-/**
- * Pointer to the current context.
- * Note that it is a global variable, and is not a thread safe implementation.
- */
+// Pointer to the current context.
+// Note that it is a thread-local variable, and is hopefully thread safe.
 __thread jerry_context_t *current_context_p = NULL;
 
-/**
- * Set the current_context_p as the passed pointer.
- */
-static void
-jerry_port_set_current_context (jerry_context_t *context_p) /**< points to the created context */
+// Set the current_context_p as the passed pointer.
+static void jerry_port_set_current_context (jerry_context_t *context_p) /**< points to the created context */
 {
   current_context_p = context_p;
-} /* jerry_port_default_set_current_context */
+}
 
-/**
- * Get the current context.
- *
- * @return the pointer to the current context
- */
-jerry_context_t *
-jerry_port_get_current_context (void)
+// Get the current context.
+jerry_context_t *jerry_port_get_current_context (void)
 {
   return current_context_p;
-} /* jerry_port_get_current_context */
+}
 
   
 class PiPoJs : public PiPo
 {
+public:
+  PiPoScalarAttr<const char *>  expr_attr_;
+  PiPoVarSizeAttr<float>	param_attr_;
+
 private:
   std::vector<PiPoValue> buffer_;
   unsigned int           framesize_ = 0;    // cache max frame size
@@ -63,6 +57,8 @@ private:
 
   //jerry_value_t	 input_frame_;	// data frame object to be input to script
   jerry_value_t		 input_array_;   // array object "a" for input data frame when using expr
+  jerry_value_t		 param_array_;   // array object "p" for external params when using expr
+
   std::map<jerry_error_t, const char *> error_name_ = {
     {JERRY_ERROR_COMMON,    "common error"}, 
     {JERRY_ERROR_EVAL,	    "eval error"}, 
@@ -82,11 +78,10 @@ private:
   }
 
 public:
-  PiPoScalarAttr<const char *> expr_attr_;
-
   PiPoJs (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    expr_attr_(this, "expr", "JS expression producing output frame from input in array a", false, "")
+    expr_attr_ (this, "expr", "JS expression producing output frame from input in array a", false, ""),
+    param_attr_(this, "p",    "Parameter array p for JS expression", false)
   {
     printf("PiPoJs %p ctor\n", this);
 
@@ -105,6 +100,7 @@ public:
       // init js objects to undefined
       parsed_expr_ = jerry_create_error(JERRY_ERROR_TYPE, (const jerry_char_t *) "no expression");
       input_array_ = jerry_create_undefined();
+      param_array_ = jerry_create_undefined();
 
       // quick map of external functions (name -> handler)
       struct {
@@ -153,6 +149,7 @@ public:
     jerry_release_value(global_object_);    
     jerry_release_value(parsed_expr_);
     jerry_release_value(input_array_);
+    jerry_release_value(param_array_);
 
     // Cleanup engine in context (must do this only once)
     jerry_cleanup();
@@ -187,7 +184,8 @@ private:
     return a_arr;
   }
 
-  void set_array (jerry_value_t arr, size_t size, PiPoValue *data)
+  // set values of float array object from pointer
+  void set_array (jerry_value_t arr, size_t size, PiPoValue *data) throw()
   {
     // set using arraybuffer
     jerry_length_t bytelength = 0;
@@ -197,13 +195,14 @@ private:
     if (bytelength != size * sizeof(PiPoValue))
     {
       char msg[1024];
-      snprintf(msg, 1023, "set_array: unexpected array size %f instead of %lu", (float) bytelength / sizeof(PiPoValue), size);
+      snprintf(msg, 1023, "set_array: unexpected array size %g instead of %lu", (float) bytelength / sizeof(PiPoValue), size);
+      jerry_release_value(buffer);
       
       throw std::logic_error(msg);
     }
 
-    /*int bytes_written = */ jerry_arraybuffer_write(buffer, byteoffset, (uint8_t *) data, bytelength);
-    jerry_release_value (buffer);
+    jerry_arraybuffer_write(buffer, byteoffset, (uint8_t *) data, bytelength);
+    jerry_release_value(buffer);
   }
   
   jerry_value_t create_frame (int size) throw ()
@@ -295,13 +294,19 @@ public:
 	  throw std::logic_error(std::string("can't parse js expression '") + expr_str +"': "+ error_name_[errtype] +" '"+ errmsg +"'");
 	}
 	
-	// create js array for pipo input
+	// create js arrays for pipo input and params
 	jerry_release_value(input_array_); // have to release previous value
 	input_array_ = create_array(global_object_, "a", framesize_);
 
-	// set arr to 0
+	jerry_release_value(param_array_); // have to release previous value
+	param_array_ = create_array(global_object_, "p", param_attr_.size());
+
+	// set a to 0
 	std::vector<PiPoValue> zeros(framesize_);
 	set_array(input_array_, framesize_, zeros.data());
+
+	// set p to current values of param_attr_
+	set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
 
 	// run expr once to determine output size
 	jerry_value_t ret_value = jerry_run(parsed_expr_);
@@ -372,21 +377,27 @@ public:
   } // streamAttributes
 
   
-  int frames (double time, double weight, PiPoValue *values,
-              unsigned int size, unsigned int num)
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     PiPoValue *outptr = &buffer_[0];
 
     try {
+      jerry_port_set_current_context(jscontext_);
+      
       for (unsigned int i = 0; i < num; i++)
       {
-	jerry_port_set_current_context(jscontext_);
-
 	if (!jerry_value_is_error(parsed_expr_))
 	{ // evaluate single expression
-	  // set arr "a"
+	  // set arr "a" from frame input
 	  set_array(input_array_, size, values);
-	  
+
+	  // set p to current values of param_attr_ only when changed
+	  if (param_attr_.hasChanged())
+	  {
+	    set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
+	    param_attr_.resetChanged();
+	  }
+
 	  // run expr
 	  jerry_value_t ret_value = jerry_run(parsed_expr_);
 	  
@@ -400,6 +411,7 @@ public:
 	      {
 		char msg[1024];
 		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
+		jerry_release_value(ret_value);
 		throw std::runtime_error(msg);
 	      }
 #endif     
@@ -427,11 +439,12 @@ public:
 	      {
 		char msg[1024];
 		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_typedarray_length(ret_value), outframesize_);
+		jerry_release_value(ret_value);
 		throw std::runtime_error(msg);
 	      }
 #endif     
 	      jerry_value_t buffer = jerry_get_typedarray_buffer(ret_value, &byteoffset, &bytelength);
-	      /*int bytes_read =*/ jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
+	      jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
 	      jerry_release_value(buffer);
 	    }
 	    break;
@@ -443,6 +456,7 @@ public:
 	    break;
 	  
 	    default: // error
+	      jerry_release_value(ret_value);
 	      throw std::runtime_error("wrong expr return type");
 	      break;
 	  }
@@ -451,12 +465,18 @@ public:
 	
 	outptr += outframesize_;
 	values += size;
-      }
+      } // end for 
     }
     catch (std::exception &e)
     {
       printf("frames method caught: %s\n", e.what());
       signalError(e.what());
+      return -1;
+    }
+    catch (...)
+    {
+      printf("frames method caught unknown exception\n");
+      signalError("unknown exception");
       return -1;
     }
     
