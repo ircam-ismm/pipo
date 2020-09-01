@@ -21,7 +21,6 @@
 #include "jerryscript-ext/handler.h"
 
 
-
 /**
  * Pointer to the current context.
  * Note that it is a global variable, and is not a thread safe implementation.
@@ -31,7 +30,7 @@ __thread jerry_context_t *current_context_p = NULL;
 /**
  * Set the current_context_p as the passed pointer.
  */
-void
+static void
 jerry_port_set_current_context (jerry_context_t *context_p) /**< points to the created context */
 {
   current_context_p = context_p;
@@ -77,7 +76,7 @@ private:
   /* Allocate JerryScript heap for each thread. */
   static void *jscontext_alloc_fn (size_t size, void *cb_data)
   {
-    printf("jscontext_alloc_fn size %d\n", size);
+    printf("jscontext_alloc_fn size %lu\n", size);
     (void) cb_data;
     return malloc(size);
   }
@@ -120,7 +119,7 @@ public:
 	{ "dbtoa", dbtoa_handler }
       };
 
-      for (int i = 0; i < sizeof(external_functions) / sizeof(external_functions[0]); i++)
+      for (size_t i = 0; i < sizeof(external_functions) / sizeof(external_functions[0]); i++)
       {
 	// Create a name JS string
 	jerry_value_t property_name  = jerry_create_string((const jerry_char_t *) external_functions[i].name);
@@ -203,7 +202,7 @@ private:
       throw std::logic_error(msg);
     }
 
-    int bytes_written = jerry_arraybuffer_write(buffer, byteoffset, (uint8_t *) data, bytelength);
+    /*int bytes_written = */ jerry_arraybuffer_write(buffer, byteoffset, (uint8_t *) data, bytelength);
     jerry_release_value (buffer);
   }
   
@@ -404,7 +403,7 @@ public:
 		throw std::runtime_error(msg);
 	      }
 #endif     
-	      for (int j = 0; j < outframesize_; j++)
+	      for (unsigned int j = 0; j < outframesize_; j++)
 	      {
 		jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
 		
@@ -432,7 +431,7 @@ public:
 	      }
 #endif     
 	      jerry_value_t buffer = jerry_get_typedarray_buffer(ret_value, &byteoffset, &bytelength);
-	      int bytes_read = jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
+	      /*int bytes_read =*/ jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
 	      jerry_release_value(buffer);
 	    }
 	    break;
