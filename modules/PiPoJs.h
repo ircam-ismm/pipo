@@ -48,7 +48,6 @@ private:
   std::vector<PiPoValue> buffer_;
   unsigned int           framesize_ = 0;    // cache max frame size
   unsigned int           outframesize_ = 0;    // cache max frame size
-  static bool		 jerry_initialized;
   jerry_context_t	*jscontext_;
   jerry_value_t		 global_object_;
   jerry_value_t		 parsed_expr_;
@@ -79,7 +78,7 @@ private:
 public:
   PiPoJs (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    expr_attr_ (this, "expr", "JS expression producing output frame from input in array a", false, ""),
+    expr_attr_ (this, "expr", "JS expression producing output frame from input in array a", true, ""),
     param_attr_(this, "p",    "Parameter array p for JS expression", false)
   {
     //printf("PiPoJs %p ctor\n", this);
@@ -488,7 +487,5 @@ public:
     return propagateFrames(time, weight, &buffer_[0], outframesize_, num);
   } // frames
 };
-
-bool PiPoJs::jerry_initialized = false;
 
 #endif // _PIPO_JS_
