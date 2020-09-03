@@ -288,6 +288,24 @@ TEST_CASE ("pipo.js")
       }
     }    
   }
+
+  SECTION ("Setup using labels")
+  {
+    js.expr_attr_.set("print('c is ' + c); a[c.scalar] * c.scalar");
+
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, labels_scalar, 0, 0, 100);
+
+    SECTION ("Data with labels ")
+    {
+      float vals[numframes] = {0};
+
+      int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
+      CHECK(rx.values[0] == vals[numframes - 1]);
+      rx.zero();
+    }
+  }
 }
 
 /** EMACS **

@@ -55,8 +55,9 @@ private:
   output_type_t		 output_type_;	// return type of parsed_expr_
 
   //jerry_value_t	 input_frame_;	// data frame object to be input to script
-  jerry_value_t		 input_array_;   // array object "a" for input data frame when using expr
-  jerry_value_t		 param_array_;   // array object "p" for external params when using expr
+  jerry_value_t		 input_array_;  // array object "a" for input data frame when using expr
+  jerry_value_t		 param_array_;  // array object "p" for external params when using expr
+  jerry_value_t		 labels_obj_;   // object "c" for input data column labels
 
   std::map<jerry_error_t, const char *> error_name_ = {
     {JERRY_ERROR_COMMON,    "common error"}, 
@@ -99,6 +100,7 @@ public:
       parsed_expr_ = jerry_create_error(JERRY_ERROR_TYPE, (const jerry_char_t *) "no expression");
       input_array_ = jerry_create_undefined();
       param_array_ = jerry_create_undefined();
+      labels_obj_  = jerry_create_undefined();
 
       // quick map of external functions (name -> handler)
       struct {
@@ -148,6 +150,7 @@ public:
     jerry_release_value(parsed_expr_);
     jerry_release_value(input_array_);
     jerry_release_value(param_array_);
+    jerry_release_value(labels_obj_);
 
     // Cleanup engine in context (must do this only once)
     jerry_cleanup();
@@ -292,19 +295,31 @@ public:
 	  throw std::logic_error(std::string("can't parse js expression '") + expr_str +"': "+ error_name_[errtype] +" '"+ errmsg +"'");
 	}
 	
-	// create js arrays for pipo input and params
+	// create js array "a" for pipo input, set to 0
 	jerry_release_value(input_array_); // have to release previous value
 	input_array_ = create_array(global_object_, "a", framesize_);
-
-	jerry_release_value(param_array_); // have to release previous value
-	param_array_ = create_array(global_object_, "p", param_attr_.size());
-
-	// set a to 0
 	std::vector<PiPoValue> zeros(framesize_);
 	set_array(input_array_, framesize_, zeros.data());
 
-	// set p to current values of param_attr_
+	// create js array "p" for pipo params, set to current values of param_attr_
+	jerry_release_value(param_array_); // have to release previous value
+	param_array_ = create_array(global_object_, "p", param_attr_.size());
 	set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
+
+	// create js obj "c" with column labels and their indices to be used in expr	
+	jerry_release_value(labels_obj_); // have to release previous value
+	labels_obj_ = jerry_create_object();
+	set_property(global_object_, "c", labels_obj_);
+	if (labels != NULL)
+	  for (int i = 0; i < width; i++)
+	  {
+	    if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
+	    {
+	      jerry_value_t index = jerry_create_number(i);
+	      set_property(labels_obj_, labels[i], index);
+	      jerry_release_value(index);
+	    }
+	  }
 
 	// run expr once to determine output size
 	jerry_value_t ret_value = jerry_run(parsed_expr_);
