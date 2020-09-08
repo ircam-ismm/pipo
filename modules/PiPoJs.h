@@ -21,7 +21,8 @@
 #include "jerryscript-ext/handler.h"
 
 
-// Pointer to the current context.
+// jerryscript multi-context solution (for completely independent interpreters):
+// Keep pointers to the current context, must be set through callbacks below after context switch, before using any library function
 // Note that it is a thread-local variable, and is hopefully thread safe.
 __thread jerry_context_t *current_context_p = NULL;
 
@@ -42,6 +43,7 @@ class PiPoJs : public PiPo
 {
 public:
   PiPoScalarAttr<const char *>  expr_attr_;
+  PiPoScalarAttr<const char *>  label_expr_attr_;
   PiPoVarSizeAttr<float>	param_attr_;
 
 private:
@@ -79,8 +81,9 @@ private:
 public:
   PiPoJs (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    expr_attr_ (this, "expr", "JS expression producing output frame from input in array a", true, ""),
-    param_attr_(this, "p",    "Parameter array p for JS expression", false)
+    expr_attr_       (this, "expr", "JS expression producing output frame array from input in array a", true, ""),
+    label_expr_attr_ (this, "labelexpr", "JS expression producing stream label array from input labels in array l", true, ""),
+    param_attr_      (this, "p",    "Parameter array p for JS expression", false)
   {
     //printf("PiPoJs %p ctor\n", this);
 
@@ -213,8 +216,32 @@ private:
     set_property (global_object_, "frm", frm_obj);
     return frm_obj;
   }
-
+  
+  const std::string value_to_string (jerry_value_t errval, const std::string &defval = "")
+  {
+    std::string errmsg = defval;
     
+    if (jerry_value_is_string(errval))
+    {
+      size_t errlen = jerry_get_string_size(errval); // including terminating 0
+      errmsg.resize(errlen);
+      jerry_string_to_char_buffer(errval, (jerry_char_t*) &errmsg[0], errlen);
+    }
+    return errmsg;
+  }
+
+  void check_error (jerry_value_t value, const std::string &message)
+  {
+    if (jerry_value_is_error(value))
+    {
+      jerry_error_t errtype = jerry_get_error_type(value);
+      jerry_value_t errval  = jerry_get_value_from_error(value, false);
+      std::string errmsg = value_to_string(errval, "(no message)");
+      jerry_release_value(errval);
+      throw std::logic_error(message +": "+ error_name_[errtype] +" '"+ errmsg +"'");
+    }
+  }
+	
 /****************************************
  *
  * useful functions made available in js
@@ -245,7 +272,8 @@ public:
   CREATE_HANDLER(ftom)
   CREATE_HANDLER(atodb)
   CREATE_HANDLER(dbtoa)
-    
+
+	  
 /****************************************
  *
  * pipo API methods
@@ -265,6 +293,10 @@ public:
 	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
 	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
+    const char **outlabels = labels;
+    std::vector<const char *> outlabelarr; // output labels pointer array, if changed
+    std::vector<std::string>  outlabelstr; // stores output of label expression
+
     try {
       // we need to store the max frame size in case hasVarSize is true
       framesize_ = width * height; 
@@ -275,26 +307,62 @@ public:
       if (expr_len > 0)
       {
 	jerry_port_set_current_context(jscontext_);
+
+	// parse frame expression
 	jerry_release_value(parsed_expr_); // have to release previous value
         parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
-
-	if (jerry_value_is_error(parsed_expr_))
-	{
-	  jerry_error_t errtype = jerry_get_error_type(parsed_expr_);
-	  jerry_value_t errval  = jerry_get_value_from_error(parsed_expr_, false);
-	  std::string   errmsg = "(no message)";
-	  
-	  if (jerry_value_is_string(errval))
-	  {
-	    size_t errlen = jerry_get_string_size(errval);
-	    unsigned char errbuf[errlen];
-	    jerry_string_to_char_buffer(errval, errbuf, errlen);
-	    errmsg = (const char *) errbuf;
-	  }
-	  jerry_release_value(errval);
-	  throw std::logic_error(std::string("can't parse js expression '") + expr_str +"': "+ error_name_[errtype] +" '"+ errmsg +"'");
-	}
+	check_error(parsed_expr_, std::string("can't parse js expression '") + expr_str +"'");
 	
+	// parse and run label expression
+	const char *label_expr_str = label_expr_attr_.getStr(0);
+	size_t	    label_expr_len = strlen(label_expr_str);
+	
+	if (label_expr_len > 0)
+	{
+	  jerry_value_t parsed_label_expr = jerry_parse(NULL, 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
+	  check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'");
+
+	  // run label expr
+	  jerry_value_t ret_value = jerry_run(parsed_label_expr);
+
+	  // determine return type: string or untyped array (no typed array for string)
+	  if (jerry_value_is_string(ret_value))
+	  {
+	    outlabelstr.resize(1);
+	    outlabelstr[0] = value_to_string(ret_value);
+	  }
+	  else if (jerry_value_is_array(ret_value))
+	  {
+	    size_t numlabels = jerry_get_array_length(ret_value);
+	    outlabelstr.resize(numlabels);
+
+	    for (unsigned int j = 0; j < numlabels; j++)
+	    {
+	      jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
+	      outlabelstr[j] = value_to_string(elem, "");
+	      jerry_release_value(elem);
+	    }
+	  }
+	  else if (jerry_value_is_error(ret_value))
+	  { // error
+	    jerry_release_value(ret_value);
+	    throw std::logic_error("error evaluating labelexpr to determine output labels");
+	  }
+	  else
+	  { // wrong type
+	    jerry_release_value(ret_value);
+	    throw std::logic_error("wrong label expr return type");
+	  }
+
+	  // copy to string array
+	  outlabelarr.reserve(outlabelstr.size());
+	  for (int i = 0; i < outlabelstr.size(); i++)
+	    outlabelarr.push_back(outlabelstr[i].c_str());
+	  outlabels = &outlabelarr[0];
+	  
+	  jerry_release_value(ret_value);
+	}
+		
 	// create js array "a" for pipo input, set to 0
 	jerry_release_value(input_array_); // have to release previous value
 	input_array_ = create_array(global_object_, "a", framesize_);
@@ -306,7 +374,7 @@ public:
 	param_array_ = create_array(global_object_, "p", param_attr_.size());
 	set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
 
-	// create js obj "c" with column labels and their indices to be used in expr	
+	// create js obj "c" with input column labels and their indices to be used in expr	
 	jerry_release_value(labels_obj_); // have to release previous value
 	labels_obj_ = jerry_create_object();
 	set_property(global_object_, "c", labels_obj_);
@@ -338,7 +406,6 @@ public:
 	  { // different output size: interpret as row
 	    width = len;
 	    height = 1;
-	    labels = NULL; // no labels, TODO: use attr
 	  } // else: same size, pass width, height, labels unchanged
 	  output_type_ = array;
 	}
@@ -349,7 +416,6 @@ public:
 	  { // different output size: interpret as row
 	    width = len;
 	    height = 1;
-	    labels = NULL; // no labels, TODO: use attr
 	  } // else: same size, pass width, height, labels unchanged
 	  output_type_ = typedarray;
 	}
@@ -366,6 +432,8 @@ public:
 	  throw std::logic_error("wrong expr return type");
 	}
 
+	outlabelarr.resize(width); // resize labels to actually used columns, just in case width is greater than label size
+	
 	jerry_release_value(ret_value);
       }
       else
@@ -386,7 +454,7 @@ public:
     // pass on produced stream layout
     outframesize_ = width * height;
     return propagateStreamAttributes(hasTimeTags, rate, offset, width, height,
-                                     labels, hasVarSize, domain, maxFrames);
+                                     outlabels, hasVarSize, domain, maxFrames);
   } // streamAttributes
 
   
