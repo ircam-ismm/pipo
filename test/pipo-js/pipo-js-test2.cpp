@@ -319,14 +319,21 @@ TEST_CASE ("pipo.js")
 
   SECTION ("Setup output labels")
   {
-    const char *outlab[] = { "column_1", "column_2", "column_3", "" };
+    const char *outlab[]  = { "column_1", "column_2", "column_3", "" };
 
-    SECTION ("one label")
+    js.expr_attr_.set("a");
+    js.label_expr_attr_.set("'column_1'");
+
+    SECTION ("one label replace")
     {
-      js.expr_attr_.set("a");
-      js.label_expr_attr_.set("'column_1'");
       int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
       CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
+    }
+
+    SECTION ("one label NULL")
+    {
+      int ret2 = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
+      CHECK_STREAMATTRIBUTES(ret2, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
     }
     
     SECTION ("three labels")
@@ -345,6 +352,44 @@ TEST_CASE ("pipo.js")
       js.label_expr_attr_.set("[ 'column_1', 'column_2', 'column_3' ]");
       int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
       CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
+    }
+
+    SECTION ("extend labels")
+    {
+      const int outframesize = 2;
+      js.expr_attr_.set("[ a[0], a[0] * 2 ]");
+      js.label_expr_attr_.set("l.concat('column_2')");
+
+      SECTION ("extend labels concat")
+      {
+	const char *outlab2[] = { "scalar", "column_2" };
+	int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+	CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
+      }
+      
+      SECTION ("extend NULL labels")
+      {
+	const char *outlab2[] = { "column_2", "" };
+	int ret2 = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
+	CHECK_STREAMATTRIBUTES(ret2, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
+      }
+
+      js.label_expr_attr_.set("l[1] = 'column_2'; l");
+
+      SECTION ("extend labels out of bounds")
+      {
+	const char *outlab2[] = { "scalar", "column_2" };
+	js.label_expr_attr_.set("l[1] = 'column_2'; l");
+	int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+	CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
+      }
+    
+      SECTION ("extend labels out of bounds")
+      {
+	const char *outlab2[] = { "", "column_2" };
+	int ret2 = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
+	CHECK_STREAMATTRIBUTES(ret2, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
+      }
     }
   }
 }
