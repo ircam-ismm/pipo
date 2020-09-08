@@ -48,8 +48,8 @@ public:
 
 private:
   std::vector<PiPoValue> buffer_;
-  unsigned int           framesize_ = 0;    // cache max frame size
-  unsigned int           outframesize_ = 0;    // cache max frame size
+  unsigned int           inframesize_  = 0;    // cache max input frame size
+  unsigned int           outframesize_ = 0;    // frame size to be produced
   jerry_context_t	*jscontext_;
   jerry_value_t		 global_object_;
   jerry_value_t		 parsed_expr_;
@@ -230,7 +230,7 @@ private:
     return errmsg;
   }
 
-  void check_error (jerry_value_t value, const std::string &message)
+  void check_error (jerry_value_t value, const std::string &message, bool release = false)
   {
     if (jerry_value_is_error(value))
     {
@@ -238,6 +238,7 @@ private:
       jerry_value_t errval  = jerry_get_value_from_error(value, false);
       std::string errmsg = value_to_string(errval, "(no message)");
       jerry_release_value(errval);
+      if (release) jerry_release_value(value);
       throw std::logic_error(message +": "+ error_name_[errtype] +" '"+ errmsg +"'");
     }
   }
@@ -293,153 +294,157 @@ public:
 	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
 	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
-    const char **outlabels = labels;
+    inframesize_ = width * height; // we need to store the max frame size in case hasVarSize is true
+    int outwidth = width, outheight = height;
+    bool outlabels_given = false;       // default: pass labels through
     std::vector<const char *> outlabelarr; // output labels pointer array, if changed
     std::vector<std::string>  outlabelstr; // stores output of label expression
 
     try {
-      // we need to store the max frame size in case hasVarSize is true
-      framesize_ = width * height; 
-
       const char *expr_str = expr_attr_.getStr(0);
       size_t	  expr_len = strlen(expr_str);
 
-      if (expr_len > 0)
-      {
-	jerry_port_set_current_context(jscontext_);
+      if (expr_len == 0)
+	// no expression given
+	throw std::logic_error("no expr given");
+      
+      jerry_port_set_current_context(jscontext_);
 
-	// parse frame expression
-	jerry_release_value(parsed_expr_); // have to release previous value
-        parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
-	check_error(parsed_expr_, std::string("can't parse js expression '") + expr_str +"'");
+      // parse and run label expression
+      const char *label_expr_str = label_expr_attr_.getStr(0);
+      size_t	  label_expr_len = strlen(label_expr_str);
 	
-	// parse and run label expression
-	const char *label_expr_str = label_expr_attr_.getStr(0);
-	size_t	    label_expr_len = strlen(label_expr_str);
-	
-	if (label_expr_len > 0)
+      if (label_expr_len > 0)
+      { // label expr is given, parse, run, retrieve output label list
+	jerry_value_t parsed_label_expr = jerry_parse(NULL, 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
+	check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'", true);
+
+	// run label expr
+	jerry_value_t ret_value = jerry_run(parsed_label_expr);
+	jerry_release_value(parsed_label_expr);
+
+	// determine return type: string or untyped array (no typed array for string)
+	if (jerry_value_is_string(ret_value))
 	{
-	  jerry_value_t parsed_label_expr = jerry_parse(NULL, 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
-	  check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'");
-
-	  // run label expr
-	  jerry_value_t ret_value = jerry_run(parsed_label_expr);
-
-	  // determine return type: string or untyped array (no typed array for string)
-	  if (jerry_value_is_string(ret_value))
-	  {
-	    outlabelstr.resize(1);
-	    outlabelstr[0] = value_to_string(ret_value);
-	  }
-	  else if (jerry_value_is_array(ret_value))
-	  {
-	    size_t numlabels = jerry_get_array_length(ret_value);
-	    outlabelstr.resize(numlabels);
-
-	    for (unsigned int j = 0; j < numlabels; j++)
-	    {
-	      jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
-	      outlabelstr[j] = value_to_string(elem, "");
-	      jerry_release_value(elem);
-	    }
-	  }
-	  else if (jerry_value_is_error(ret_value))
-	  { // error
-	    jerry_release_value(ret_value);
-	    throw std::logic_error("error evaluating labelexpr to determine output labels");
-	  }
-	  else
-	  { // wrong type
-	    jerry_release_value(ret_value);
-	    throw std::logic_error("wrong label expr return type");
-	  }
-
-	  // copy to string array
-	  outlabelarr.reserve(outlabelstr.size());
-	  for (int i = 0; i < outlabelstr.size(); i++)
-	    outlabelarr.push_back(outlabelstr[i].c_str());
-	  outlabels = &outlabelarr[0];
-	  
-	  jerry_release_value(ret_value);
-	}
-		
-	// create js array "a" for pipo input, set to 0
-	jerry_release_value(input_array_); // have to release previous value
-	input_array_ = create_array(global_object_, "a", framesize_);
-	std::vector<PiPoValue> zeros(framesize_);
-	set_array(input_array_, framesize_, zeros.data());
-
-	// create js array "p" for pipo params, set to current values of param_attr_
-	jerry_release_value(param_array_); // have to release previous value
-	param_array_ = create_array(global_object_, "p", param_attr_.size());
-	set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
-
-	// create js obj "c" with input column labels and their indices to be used in expr	
-	jerry_release_value(labels_obj_); // have to release previous value
-	labels_obj_ = jerry_create_object();
-	set_property(global_object_, "c", labels_obj_);
-	if (labels != NULL)
-	  for (int i = 0; i < width; i++)
-	  {
-	    if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
-	    {
-	      jerry_value_t index = jerry_create_number(i);
-	      set_property(labels_obj_, labels[i], index);
-	      jerry_release_value(index);
-	    }
-	  }
-
-	// run expr once to determine output size
-	jerry_value_t ret_value = jerry_run(parsed_expr_);
-
-	// determine return type: scalar, untyped array, typed array
-	if (jerry_value_is_number(ret_value))
-	{
-	  width = 1;
-	  height = 1;
-	  output_type_ = scalar;
+	  outlabelstr.resize(1);
+	  outlabelstr[0] = value_to_string(ret_value);
 	}
 	else if (jerry_value_is_array(ret_value))
 	{
-	  uint32_t len = jerry_get_array_length(ret_value);
-	  if (len != framesize_)
-	  { // different output size: interpret as row
-	    width = len;
-	    height = 1;
-	  } // else: same size, pass width, height, labels unchanged
-	  output_type_ = array;
-	}
-	else if (jerry_value_is_typedarray(ret_value))
-	{
-	  uint32_t len = jerry_get_typedarray_length(ret_value);
-	  if (len != framesize_)
-	  { // different output size: interpret as row
-	    width = len;
-	    height = 1;
-	  } // else: same size, pass width, height, labels unchanged
-	  output_type_ = typedarray;
+	  size_t numlabels = jerry_get_array_length(ret_value);
+	  outlabelstr.resize(numlabels);
+
+	  for (unsigned int j = 0; j < numlabels; j++)
+	  {
+	    jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
+	    outlabelstr[j] = value_to_string(elem, "");
+	    jerry_release_value(elem);
+	  }
 	}
 	else if (jerry_value_is_error(ret_value))
 	{ // error
-	  output_type_ = other;
 	  jerry_release_value(ret_value);
-	  throw std::logic_error("error evaluating expr to determine output frame size");
+	  throw std::logic_error("error evaluating labelexpr to determine output labels");
 	}
 	else
 	{ // wrong type
-	  output_type_ = other;
 	  jerry_release_value(ret_value);
-	  throw std::logic_error("wrong expr return type");
+	  throw std::logic_error("wrong label expr return type");
+	}
+	jerry_release_value(ret_value);
+
+	// copy to string array
+	outlabelarr.resize(outlabelstr.size());
+	for (int i = 0; i < outlabelstr.size(); i++)
+	  outlabelarr[i] = outlabelstr[i].c_str();
+
+	outlabels_given = true;
+      } // end label expr
+		
+      // create js array "a" for pipo input, set to 0
+      jerry_release_value(input_array_); // have to release previous value
+      input_array_ = create_array(global_object_, "a", inframesize_);
+      std::vector<PiPoValue> zeros(inframesize_);
+      set_array(input_array_, inframesize_, zeros.data());
+
+      // create js array "p" for pipo params, set to current values of param_attr_
+      jerry_release_value(param_array_); // have to release previous value
+      param_array_ = create_array(global_object_, "p", param_attr_.size());
+      set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
+
+      // create js obj "c" with input column labels and their indices to be used in expr	
+      jerry_release_value(labels_obj_); // have to release previous value
+      labels_obj_ = jerry_create_object();
+      set_property(global_object_, "c", labels_obj_);
+      if (labels != NULL)
+	for (int i = 0; i < width; i++)
+	{
+	  if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
+	  {
+	    jerry_value_t index = jerry_create_number(i);
+	    set_property(labels_obj_, labels[i], index);
+	    jerry_release_value(index);
+	  }
 	}
 
-	outlabelarr.resize(width); // resize labels to actually used columns, just in case width is greater than label size
-	
+      // parse and run frame expression once to determine output frame size
+      jerry_release_value(parsed_expr_); // have to release previous value
+      parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
+      check_error(parsed_expr_, std::string("can't parse js expression '") + expr_str +"'");
+      jerry_value_t ret_value = jerry_run(parsed_expr_);
+
+      // determine return type: scalar, untyped array, typed array, output dims and labels     
+      if (jerry_value_is_number(ret_value))
+      {
+	outwidth = 1;
+	outheight = 1;
+	output_type_ = scalar;
+      }
+      else if (jerry_value_is_array(ret_value))
+      {
+	uint32_t len = jerry_get_array_length(ret_value);
+	if (len != inframesize_)
+	{ // different output size: interpret as row
+	  outwidth = len;
+	  outheight = 1;
+	} // else: same size, pass width, height, labels unchanged
+	output_type_ = array;
+      }
+      else if (jerry_value_is_typedarray(ret_value))
+      {
+	uint32_t len = jerry_get_typedarray_length(ret_value);
+	if (len != inframesize_)
+	{ // different output size: interpret as row
+	  outwidth = len;
+	  outheight = 1;
+	} // else: same size, pass width, height, labels unchanged
+	output_type_ = typedarray;
+      }
+      else if (jerry_value_is_error(ret_value))
+      { // error
+	output_type_ = other;
 	jerry_release_value(ret_value);
+	throw std::logic_error("error evaluating expr to determine output frame size");
       }
       else
-      { // no expression given
-	throw std::logic_error("no expr given");
+      { // wrong type
+	output_type_ = other;
+	jerry_release_value(ret_value);
+	throw std::logic_error("wrong expr return type");
       }
+
+      jerry_release_value(ret_value);
+      
+      // check column labels
+      if (outlabels_given)
+      { // output labels are given
+	outlabelarr.resize(outwidth, ""); // resize to actually used columns, just in case outwidth is greater than label size
+	labels = &outlabelarr[0];	
+      }
+      else if (outwidth != width)
+      { // no new output labels given but width changed: invalidate labels (don't pass labels but anonymous columns)
+	labels = NULL;
+      } // else: no output labels given, same width: pass on input labels
       
       // A general pipo can not work in place, we need to create an output buffer
       buffer_.resize(width * height * maxFrames);
@@ -452,10 +457,10 @@ public:
     }
     
     // pass on produced stream layout
-    outframesize_ = width * height;
-    return propagateStreamAttributes(hasTimeTags, rate, offset, width, height,
-                                     outlabels, hasVarSize, domain, maxFrames);
-  } // streamAttributes
+    outframesize_ = outwidth * outheight;
+    return propagateStreamAttributes(hasTimeTags, rate, offset, outwidth, outheight,
+                                     labels, hasVarSize, domain, maxFrames);
+  } // end streamAttributes()
 
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
