@@ -46,6 +46,16 @@ TEST_CASE ("pipo.js")
     REQUIRE(ret == -1);	// expect failure and error message
   }
   
+  SECTION ("Catch Label Syntax Error")
+  {
+    js.expr_attr_.set("a");
+    js.label_expr_attr_.set("asdf 0 jlkl");
+
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+
+    REQUIRE(ret == -1);	// expect failure and error message
+  }
+  
   SECTION ("Setup Scalar")
   {
     js.expr_attr_.set("a[0] * 2");
@@ -289,7 +299,7 @@ TEST_CASE ("pipo.js")
     }    
   }
 
-  SECTION ("Setup using labels")
+  SECTION ("Setup expr using input label object")
   {
     js.expr_attr_.set("print('c is ' + c); a[c.scalar] * c.scalar");
 
@@ -304,6 +314,37 @@ TEST_CASE ("pipo.js")
       CHECK_FRAMES(ret2, rx, 0, outframesize, numframes);
       CHECK(rx.values[0] == vals[numframes - 1]);
       rx.zero();
+    }
+  }
+
+  SECTION ("Setup output labels")
+  {
+    const char *outlab[] = { "column_1", "column_2", "column_3", "" };
+
+    SECTION ("one label")
+    {
+      js.expr_attr_.set("a");
+      js.label_expr_attr_.set("'column_1'");
+      int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+      CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
+    }
+    
+    SECTION ("three labels")
+    {
+      const int outframesize = 3;
+      js.expr_attr_.set("[ a[0], 2, 3 ]");
+      js.label_expr_attr_.set("[ 'column_1', 'column_2', 'column_3' ]");
+      int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+      CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
+    }
+        
+    SECTION ("numlabels/width mismatch")
+    {
+      const int outframesize = 4;
+      js.expr_attr_.set("[ a[0], 2, 3, 4 ]");
+      js.label_expr_attr_.set("[ 'column_1', 'column_2', 'column_3' ]");
+      int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+      CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab, 0, 0, 100);
     }
   }
 }
