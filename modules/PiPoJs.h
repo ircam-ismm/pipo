@@ -290,7 +290,7 @@ public:
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-    printf("PiPoJs %p streamAttributes:\n", this); /* %s\n", this,
+/* printf("PiPoJs %p streamAttributes:\n", this); /* %s\n", this,
 	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
 	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
@@ -319,10 +319,29 @@ public:
 	jerry_value_t parsed_label_expr = jerry_parse(NULL, 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
 	check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'", true);
 
+	// create js array "l" with input labels
+	jerry_value_t labels_array = jerry_create_array(labels != NULL  ?  width  :  0);
+	set_property(global_object_, "l", labels_array);
+	if (labels != NULL)
+	  for (int i = 0; i < width; i++)
+	  {
+	    jerry_value_t labval     = jerry_create_string((const jerry_char_t *) (labels[i] != NULL  ?  labels[i]  :  ""));
+	    jerry_value_t set_result = jerry_set_property_by_index(labels_array, i, labval);
+	    if (jerry_value_is_error(set_result))
+	    {
+	      jerry_release_value(set_result);	    
+	      jerry_release_value(labval);	    
+	      throw std::logic_error(std::string("failed to set input label ") + labels[i]);
+	    }
+	    jerry_release_value(set_result);	    
+	    jerry_release_value(labval);	    
+	  }
+
 	// run label expr
 	jerry_value_t ret_value = jerry_run(parsed_label_expr);
 	jerry_release_value(parsed_label_expr);
-
+	jerry_release_value(labels_array);
+  
 	// determine return type: string or untyped array (no typed array for string)
 	if (jerry_value_is_string(ret_value))
 	{
