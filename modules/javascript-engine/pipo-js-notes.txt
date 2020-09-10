@@ -16,7 +16,7 @@ make install
 # python jerryscript/tools/srcgenerator.py --output-dir ../src --jerry-core --jerry-port-default --jerry-libm
 
 cd mubu-and-co/common/pipo/modules/javascript-engine
-jerryscript/tools/build.py --all-in-one ON   --jerry-ext ON --builddir=.. --cmake-param="-DCMAKE_INSTALL_PREFIX=./" --cmake-param="-DENABLE_ALL_IN_ONE_SOURCE=ON" --cmake-param="-DJERRY_CMDLINE=0" --cmake-param="-DJERRY_ERROR_MESSAGES=1" --cmake-param="-DJERRY_EXTERNAL_CONTEXT=1" --cmake-param="-DJERRY_LOGGING=1" --cmake-param="-DJERRY_MEM_STATS=1"
+jerryscript/tools/build.py --all-in-one ON   --jerry-ext ON --builddir=.. --cmake-param="-DCMAKE_INSTALL_PREFIX=./" --cmake-param="-DENABLE_ALL_IN_ONE_SOURCE=ON" --cmake-param="-DJERRY_CMDLINE=0" --cmake-param="-DJERRY_ERROR_MESSAGES=1" --cmake-param="-DJERRY_LINE_INFO=1" --cmake-param="-DJERRY_EXTERNAL_CONTEXT=1" --cmake-param="-DJERRY_LOGGING=1" --cmake-param="-DJERRY_MEM_STATS=1"
 
 --> generates javascript-engine/src and some other not necessary dirs
 
