@@ -1,7 +1,7 @@
 /* 
 - run just this test from xcode build
-  cd pipo/test
-  ../build/xcode/DerivedData/Build/Products/Debug/pipo_test --success pipo.js
+  common/pipo/build/xcode/DerivedData/Build/Products/Debug/pipo_test --success pipo.js
+  maxpipo/build/osx-macho/build/Debug/pipo-test pipo.js
 
 - quick compile with:
   clang pipo-js-test2.cpp -I .. -I ../../sdk/src -I ../../modules -I ../../modules/javascript-engine/include/ -L ../../modules/javascript-engine/lib/ -ljerry-core -ljerry-ext -ljerry-port-default  &&  ./a.out
@@ -379,14 +379,13 @@ TEST_CASE ("pipo.js")
       SECTION ("extend labels out of bounds")
       {
 	const char *outlab2[] = { "scalar", "column_2" };
-	js.label_expr_attr_.set("l[1] = 'column_2'; l");
 	int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
 	CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
       }
     
-      SECTION ("extend labels out of bounds")
+      SECTION ("extend NULL labels out of bounds")
       {
-	const char *outlab2[] = { "", "column_2" };
+	const char *outlab2[] = { "undefined", "column_2" };
 	int ret2 = js.streamAttributes(false, 1000, 0, inframesize, 1, NULL, 0, 0, 100);
 	CHECK_STREAMATTRIBUTES(ret2, rx, false, 1000, 0, outframesize, 1, outlab2, 0, 0, 100);
       }
