@@ -221,12 +221,11 @@ private:
   {
     std::string errmsg = defval;
     
-    if (jerry_value_is_string(errval))
-    {
-      size_t errlen = jerry_get_string_size(errval); // including terminating 0
-      errmsg.resize(errlen);
-      jerry_string_to_char_buffer(errval, (jerry_char_t*) &errmsg[0], errlen);
-    }
+    jerry_value_t strval = jerry_value_to_string(errval);
+    size_t errlen = jerry_get_string_size(strval); // including terminating 0
+    errmsg.resize(errlen);
+    jerry_string_to_char_buffer(strval, (jerry_char_t*) &errmsg[0], errlen);
+    jerry_release_value(strval);
     return errmsg;
   }
 
@@ -236,10 +235,10 @@ private:
     {
       jerry_error_t errtype = jerry_get_error_type(value);
       jerry_value_t errval  = jerry_get_value_from_error(value, false);
-      std::string errmsg = value_to_string(errval, "(no message)");
+      const std::string errmsg = value_to_string(errval, "(no message)");
       jerry_release_value(errval);
       if (release) jerry_release_value(value);
-      throw std::logic_error(message +": "+ error_name_[errtype] +" '"+ errmsg +"'");
+      throw std::logic_error(message +": "+ errmsg); // error_name_[errtype] included in errmsg
     }
   }
 	
@@ -310,13 +309,28 @@ public:
       
       jerry_port_set_current_context(jscontext_);
 
+      // create js obj "c" with input column labels and their indices to be used in expr and labelexpr	
+      jerry_release_value(labels_obj_); // have to release previous value
+      labels_obj_ = jerry_create_object();
+      set_property(global_object_, "c", labels_obj_);
+      if (labels != NULL)
+	for (int i = 0; i < width; i++)
+	{
+	  if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
+	  {
+	    jerry_value_t index = jerry_create_number(i);
+	    set_property(labels_obj_, labels[i], index);
+	    jerry_release_value(index);
+	  }
+	}
+
       // parse and run label expression
       const char *label_expr_str = label_expr_attr_.getStr(0);
       size_t	  label_expr_len = strlen(label_expr_str);
 	
       if (label_expr_len > 0)
       { // label expr is given, parse, run, retrieve output label list
-	jerry_value_t parsed_label_expr = jerry_parse(NULL, 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
+	jerry_value_t parsed_label_expr = jerry_parse((const jerry_char_t *) "labelexpr", 0, (const jerry_char_t *) label_expr_str, label_expr_len, JERRY_PARSE_NO_OPTS);
 	check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'", true);
 
 	// create js array "l" with input labels
@@ -339,6 +353,8 @@ public:
 
 	// run label expr
 	jerry_value_t ret_value = jerry_run(parsed_label_expr);
+	check_error(parsed_label_expr, std::string("can't parse label js expression '") + label_expr_str +"'", true);
+
 	jerry_release_value(parsed_label_expr);
 	jerry_release_value(labels_array);
   
@@ -391,24 +407,9 @@ public:
       param_array_ = create_array(global_object_, "p", param_attr_.size());
       set_array(param_array_, param_attr_.size(), param_attr_.getPtr());
 
-      // create js obj "c" with input column labels and their indices to be used in expr	
-      jerry_release_value(labels_obj_); // have to release previous value
-      labels_obj_ = jerry_create_object();
-      set_property(global_object_, "c", labels_obj_);
-      if (labels != NULL)
-	for (int i = 0; i < width; i++)
-	{
-	  if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
-	  {
-	    jerry_value_t index = jerry_create_number(i);
-	    set_property(labels_obj_, labels[i], index);
-	    jerry_release_value(index);
-	  }
-	}
-
       // parse and run frame expression once to determine output frame size
       jerry_release_value(parsed_expr_); // have to release previous value
-      parsed_expr_ = jerry_parse(NULL, 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
+      parsed_expr_ = jerry_parse((const jerry_char_t *) "expr", 0, (const jerry_char_t *) expr_str, expr_len, JERRY_PARSE_NO_OPTS);
       check_error(parsed_expr_, std::string("can't parse js expression '") + expr_str +"'");
       jerry_value_t ret_value = jerry_run(parsed_expr_);
 
@@ -442,8 +443,7 @@ public:
       else if (jerry_value_is_error(ret_value))
       { // error
 	output_type_ = other;
-	jerry_release_value(ret_value);
-	throw std::logic_error("error evaluating expr to determine output frame size");
+	check_error(ret_value, "error evaluating expr to determine output frame size", true); // will release ret_value and throw std::logic_error
       }
       else
       { // wrong type
