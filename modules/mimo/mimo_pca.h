@@ -65,6 +65,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "jsoncpp/include/json.h"
+#include <algorithm>
 
 #ifdef WIN32
 extern "C" {
