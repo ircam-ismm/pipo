@@ -47,6 +47,7 @@
 extern "C" {
 #include <stdlib.h>
 }
+#include <algorithm>
 
 
 static const float       default_value = 0.0;
