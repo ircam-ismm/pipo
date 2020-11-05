@@ -67,17 +67,16 @@ class PiPoDelta : public PiPo
 public:
   PiPoScalarAttr<int>  filter_size_param;
   PiPoScalarAttr<bool> normalize;
+  PiPoScalarAttr<bool> absolute;
     
   PiPoDelta (Parent *parent, PiPo *receiver = NULL) 
   : PiPo(parent, receiver),
     buffer(), weights(), frame(), 
     filter_size(0), input_size(0), missing_inputs(0), normalization_factor(1),
     filter_size_param(this, "size", "Filter Size", true, 7),
-    normalize(this, "normalize", "Normalize output", true, true)
-  {
-    
-    
-  }
+    normalize(this, "normalize", "Normalize Output", false, true),
+    absolute(this, "absolute", "Output Absolute Delta Value", false, false)
+  { }
   
   ~PiPoDelta ()
   { }
@@ -190,6 +189,12 @@ public:
         {
           for (unsigned int i = 0; i < size; i++)
             frame[i] *= normalization_factor;
+        }
+
+        if (absolute.get())
+        {
+          for (unsigned int i = 0; i < size; i++)
+            frame[i] = fabs(frame[i]);
         }
 
         ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);
