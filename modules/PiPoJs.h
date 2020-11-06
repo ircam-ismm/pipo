@@ -47,7 +47,7 @@ public:
   PiPoVarSizeAttr<float>	param_attr_;
 
 private:
-  std::vector<PiPoValue> buffer_;
+  std::vector<PiPoValue> buffer_;              // output buffer
   unsigned int           inframesize_  = 0;    // cache max input frame size
   unsigned int           outframesize_ = 0;    // frame size to be produced
   jerry_context_t	*jscontext_;
@@ -466,7 +466,7 @@ public:
       } // else: no output labels given, same width: pass on input labels
       
       // A general pipo can not work in place, we need to create an output buffer
-      buffer_.resize(width * height * maxFrames);
+      buffer_.resize(outwidth * outheight * maxFrames);
     }
     catch (std::exception &e)
     {
