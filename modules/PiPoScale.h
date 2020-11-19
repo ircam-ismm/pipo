@@ -107,18 +107,213 @@ with
 class PiPoScale : public PiPo
 {
 public:
-  enum ScaleFun { ScaleLin, ScaleLog, ScaleExp };
+  // scaler base class
+  class Scaler 
+  {
+  public:
+    Scaler (PiPoScale *pipo) : pipo_(pipo) { }
+    virtual ~Scaler() {};
+      
+    // setup scaler when input stream attributes and parameters are known
+    // can use PiPoScale members: funcBase, minLogVal
+    virtual void setup (int framesize) = 0;
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) = 0;
+
+    // template that generates a function to apply scalefunc to each element of a frame to be scaled
+    template<typename ScaleFuncType>
+    void scale_frame (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows, ScaleFuncType scalefunc)
+    {
+      if (!clip)
+      {
+	for (unsigned int i = 0; i < numframes * numrows; i++)
+	{
+	  for (unsigned int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+	  {
+	    buffer[k] = scalefunc(values[k], j);
+	  }
+	  
+	  buffer += pipo_->width;
+	  values += pipo_->width;
+	}
+      }
+      else
+      { // clipped
+	for (unsigned int i = 0; i < numframes * numrows; i++)
+	{
+	  for (unsigned int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+	  {
+	    double f = values[k];
+	    
+	    if (f <= pipo_->extInMin[j])
+	      buffer[k] = pipo_->extOutMin[j];
+	    else if (f >= pipo_->extInMax[j])
+	      buffer[k] = pipo_->extOutMax[j];
+	    else
+	      buffer[k] = scalefunc(f, j);
+	  }
+	  
+	  buffer += pipo_->width;
+	  values += pipo_->width;
+	}
+      }
+    }
+  
+  protected:
+    PiPoScale *pipo_;
+  };
+
+  
+  // derived scaler classes
+  class ScalerLinear : public Scaler
+  {
+  public:
+    ScalerLinear (PiPoScale *pipo) : Scaler(pipo) {}
+    
+    virtual void setup (int framesize) override
+    {
+      inScale.resize(framesize);
+      inOffset.resize(framesize);
+
+      for (unsigned int i = 0; i < framesize; i++)
+      {
+	inScale[i]  = ((pipo_->extOutMax[i] - pipo_->extOutMin[i]) / (pipo_->extInMax[i] - pipo_->extInMin[i]));
+	inOffset[i] =  (pipo_->extOutMin[i] - pipo_->extInMin[i] * inScale[i]);
+      }
+    }
+    
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
+    {
+      Scaler::scale_frame(clip, values, buffer, numframes, numrows,
+	[=] (PiPoValue x, int j) -> PiPoValue { return x * inScale[j] + inOffset[j]; });
+    }
+
+  private:
+    std::vector<double> inScale;
+    std::vector<double> inOffset;
+  };
+
+  class ScalerLog : public Scaler
+  {
+  public:
+    ScalerLog (PiPoScale *pipo) : Scaler(pipo) {}
+    
+    virtual void setup (int framesize) override
+    {
+      inScale.resize(framesize);
+      inOffset.resize(framesize);
+      outScale.resize(framesize);
+      outOffset.resize(framesize);
+
+      for (unsigned int i = 0; i < framesize; i++)
+      {
+	inScale[i]   = (pipo_->funcBase - 1.) / (pipo_->extInMax[i] - pipo_->extInMin[i]);
+	inOffset[i]  = 1.0 - pipo_->extInMin[i] * inScale[i];
+	outScale[i]  = (pipo_->extOutMax[i] - pipo_->extOutMin[i]) / log(pipo_->funcBase);
+	outOffset[i] = pipo_->extOutMin[i];
+      }
+    }
+    
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
+    {
+      Scaler::scale_frame(clip, values, buffer, numframes, numrows,
+        [=] (PiPoValue x, int j) -> PiPoValue
+        {
+	  double inVal = x * inScale[j] + inOffset[j]; //TODO: why double?
+		
+	  if (inVal < pipo_->minLogVal)
+	    inVal = pipo_->minLogVal;
+	  
+	  return outScale[j] * logf(inVal) + outOffset[j];
+	});
+    }
+	
+  private:
+    std::vector<double> inScale;
+    std::vector<double> inOffset;
+    std::vector<double> outScale;
+    std::vector<double> outOffset;
+  };
+
+  class ScalerExp : public Scaler
+  {
+  public:
+    ScalerExp (PiPoScale *pipo) : Scaler(pipo) {}
+    
+    virtual void setup (int framesize) override
+    {
+      inScale.resize(framesize);
+      inOffset.resize(framesize);
+      outScale.resize(framesize);
+      outOffset.resize(framesize);
+
+      for (unsigned int i = 0; i < framesize; i++)
+      {
+	inScale[i]   = log(pipo_->funcBase) / (pipo_->extInMax[i] - pipo_->extInMin[i]);
+	inOffset[i]  = -pipo_->extInMin[i] * inScale[i];
+	outScale[i]  = (pipo_->extOutMax[i] - pipo_->extOutMin[i]) / (pipo_->funcBase - 1.0);
+	outOffset[i] = pipo_->extOutMin[i] - outScale[i];
+      }
+    }
+    
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
+    {
+      Scaler::scale_frame(clip, values, buffer, numframes, numrows,
+        [=] (PiPoValue x, int j) -> PiPoValue
+	{
+	  return outScale[j] * expf(x * inScale[j] + inOffset[j]) + outOffset[j];
+	});
+    }
+	
+  private:
+    std::vector<double> inScale;
+    std::vector<double> inOffset;
+    std::vector<double> outScale;
+    std::vector<double> outOffset;
+  };
+
+  
+  // create and register a scaler instance
+  class ScalerFactory
+  {
+  public:
+    ScalerFactory (PiPoScale *pipo)
+    : pipo_(pipo)
+    { }
+      
+    template <typename T>
+    size_t add_scaler (const char *name, const char *description)
+    {
+      pipo_->func.addEnumItem(name, description);
+      scalers_.push_back(&ScalerFactory::create<T>);
+      return(scalers_.size());
+    }
+    
+    Scaler *create_scaler (int index)
+    {
+      return ((*this).*(scalers_[index]))(pipo_);	// call indexed creation function as method on ScalerFactory object
+    }
+
+  private:
+    typedef Scaler *(ScalerFactory::* createfunc_t)(PiPoScale *);	// createfunc_t is type name of creation function
+    std::vector<createfunc_t> scalers_;		// list of creation functions
+    PiPoScale *pipo_;
+
+    template <typename T>
+    Scaler *create (PiPoScale *pipo) { return new T(pipo); }
+  };
+  
+  
+public:
+  enum ScaleFun { ScaleLin, ScaleLog, ScaleExp, NumScaleFunc };
   enum CompleteMode { CompleteNot, CompleteRepeatLast, CompleteRepeatAll };
   
 private:
+  ScalerFactory fac;
+  Scaler *scaler_;
   std::vector<double> extInMin;
   std::vector<double> extInMax;
   std::vector<double> extOutMin;
   std::vector<double> extOutMax;
-  std::vector<double> inScale;
-  std::vector<double> inOffset;
-  std::vector<double> outScale;
-  std::vector<double> outOffset;
   std::vector<float> buffer;
   unsigned int frameSize;
   enum ScaleFun scaleFunc;
@@ -142,7 +337,9 @@ public:
   PiPoScalarAttr<int> numCols;
   
   PiPoScale(Parent *parent, PiPo *receiver = NULL)
-  : PiPo(parent, receiver), inScale(), inOffset(), outScale(), outOffset(), buffer(),
+  : PiPo(parent, receiver), buffer(),
+    fac(this),
+    scaler_(NULL),
     inMin(this, "inmin", "Input Minimum", true),
     inMax(this, "inmax", "Input Maximum", true),
     outMin(this, "outmin", "Output Minimum", true),
@@ -157,16 +354,17 @@ public:
   {
     this->frameSize = 0;
     this->scaleFunc = (enum ScaleFun) this->func.get();
-    this->funcBase = this->base.get();
+    this->funcBase  = this->base.get();
     this->minLogVal = this->minlog.get();
-    
-    this->func.addEnumItem("lin", "Linear scaling");
-    this->func.addEnumItem("log", "Logarithmic scaling");
-    this->func.addEnumItem("exp", "Exponential scaling");
-    
+
     this->complete.addEnumItem("zeroone");
     this->complete.addEnumItem("repeatlast");
     this->complete.addEnumItem("repeatall");
+
+    // register scaler classes, add to enum with func.addEnumItem
+    fac.add_scaler<ScalerLinear>("lin", "Linear scaling");
+    fac.add_scaler<ScalerLog>("log", "Logarithmic scaling");
+    fac.add_scaler<ScalerExp>("exp", "Exponential scaling");
   }
 
 private:
@@ -177,6 +375,8 @@ private:
 public:
   ~PiPoScale(void)
   {
+    if (scaler_)
+      delete scaler_;
   }
   
   void extendVector(PiPoVarSizeAttr<double> &attrVec, std::vector<double> &extVec, unsigned int size, double def, enum CompleteMode mode)
@@ -264,11 +464,6 @@ public:
     extendVector(this->outMin, this->extOutMin, frameSize, 0.0, completeMode);
     extendVector(this->outMax, this->extOutMax, frameSize, 1.0, completeMode);
     
-    this->inScale.resize(frameSize);
-    this->inOffset.resize(frameSize);
-    this->outScale.resize(frameSize);
-    this->outOffset.resize(frameSize);
-
     if(scaleFunc <= ScaleLin)
     {
       scaleFunc = ScaleLin;
@@ -276,8 +471,8 @@ public:
     }
     else
     {
-      if(scaleFunc > ScaleExp)
-        scaleFunc = ScaleExp;
+      if (scaleFunc >= NumScaleFunc)
+        scaleFunc = NumScaleFunc - 1;
       
       if(funcBase == 1.0)
         scaleFunc = ScaleLin;
@@ -290,52 +485,16 @@ public:
     
     if(funcBase < this->minLogVal)
       funcBase = this->minLogVal;
-    
-    switch(scaleFunc)
-    {
-      case ScaleLin:
-      {
-        for(unsigned int i = 0; i < frameSize; i++)
-        {
-          this->inScale[i] = ((this->extOutMax[i] - this->extOutMin[i]) / (this->extInMax[i] - this->extInMin[i]));
-          this->inOffset[i] =  (this->extOutMin[i] - this->extInMin[i] * this->inScale[i]);
-        }
-        
-        break;
-      }
-        
-      case ScaleLog:
-      {
-        for(unsigned int i = 0; i < frameSize; i++)
-        {
-          this->inScale[i] = (funcBase - 1.) / (this->extInMax[i] - this->extInMin[i]);
-          this->inOffset[i] = 1.0 - this->extInMin[i] * this->inScale[i];
-          this->outScale[i] = (this->extOutMax[i] - this->extOutMin[i]) / log(funcBase);
-          this->outOffset[i] = this->extOutMin[i];
-        }
-        
-        break;
-      }
-        
-      case ScaleExp:
-      {
-        for(unsigned int i = 0; i < frameSize; i++)
-        {
-          this->inScale[i] = log(funcBase) / (this->extInMax[i] - this->extInMin[i]);
-          this->inOffset[i] = -this->extInMin[i] * this->inScale[i];
-          this->outScale[i] = (this->extOutMax[i] - this->extOutMin[i]) / (funcBase - 1.0);
-          this->outOffset[i] = this->extOutMin[i] - this->outScale[i];
-        }
-        
-        break;
-      }
-    }
-    
+
     this->scaleFunc = scaleFunc;
     this->funcBase = funcBase;
-    
     this->frameSize = frameSize;
     this->buffer.resize(frameSize * maxFrames);
+
+    // call factory to create the proper scale func, configure it
+    if (scaler_) delete(scaler_);
+    scaler_ = fac.create_scaler(scaleFunc);
+    scaler_->setup(frameSize);
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
   }
@@ -344,124 +503,16 @@ public:
   {
     float *buffer = &this->buffer[0];
     bool clip = this->clip.get();
-    unsigned int numrows = size / this->width;
+    unsigned int numrows = this->width > 0  ?  size / this->width  :  0;
 
     if (this->elemOffset > 0 || this->numElems < (int)size)
     { /* copy through unscaled values */
       memcpy(buffer, values, numframes * size * sizeof(float));
     }
-    
-    if(!clip)
-    {
-      switch(this->scaleFunc)
-      {
-        case ScaleLin:
-          for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-	    for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-	      buffer[k] = values[k] * this->inScale[j] + this->inOffset[j];
-            
-	    buffer += this->width;
-	    values += this->width;
-          }
-        break;
-          
-        case ScaleLog:
-          for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-            for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-            {
-              double inVal = values[k] * this->inScale[j] + this->inOffset[j];
-              
-              if(inVal < this->minLogVal)
-                inVal = this->minLogVal;
-              
-              buffer[k] = this->outScale[j] * logf(inVal) + this->outOffset[j];
-            }
-            
-            buffer += this->width;
-            values += this->width;
-          }
-        break;
-          
-        case ScaleExp:
-          for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-            for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-              buffer[k] = this->outScale[j] * expf(values[k] * this->inScale[j] + this->inOffset[j]) + this->outOffset[j];
-            
-            buffer += this->width;
-            values += this->width;
-          }
-        break;
-      }
-    }
-    else
-    { /* with clipping on */
-      switch(this->scaleFunc)
-      {
-        case ScaleLin:
-          for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-            for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-            {
-              double f = values[k];
-              
-              if(f <= this->extInMin[j])
-                buffer[k] = this->extOutMin[j];
-              else if(f >= this->extInMax[j])
-                buffer[k] = this->extOutMax[j];
-              else
-                buffer[k] = f * this->inScale[j] + this->inOffset[j];
-            }
-            
-            buffer += this->width;
-            values += this->width;
-          }
-        break;
-          
-        case ScaleLog:
-	  for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-            for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-            {
-              double f = values[k];
-              
-              if(f <= this->extInMin[j])
-                buffer[k] = this->extOutMin[j];
-              else if(f >= this->extInMax[j])
-                buffer[k] = this->extOutMax[j];
-              else
-                buffer[k] = this->outScale[j] * log(values[k] * this->inScale[j] + this->inOffset[j]) + this->outOffset[j];
-            }
-            
-            buffer += this->width;
-            values += this->width;
-          }
-        break;
-          
-        case ScaleExp:
-          for (unsigned int i = 0; i < numframes * numrows; i++)
-          {
-            for (unsigned int j = 0, k = this->elemOffset; j < this->numElems; j++, k++)
-            {
-              double f = values[k];
-              
-              if(f <= this->extInMin[j])
-                buffer[k] = this->extOutMin[j];
-              else if(f >= this->extInMax[j])
-                buffer[k] = this->extOutMax[j];
-              else
-                buffer[k] = this->outScale[j] * exp(values[k] * this->inScale[j] + this->inOffset[j]) + this->outOffset[j];
-            }
-            
-            buffer += this->width;
-            values += this->width;
-          }
-        break;
-      }
-    }
-    
+
+    // apply scale func
+    scaler_->scale(clip, values, buffer, numframes, numrows);
+
     return this->propagateFrames(time, weight, &this->buffer[0], size, numframes);
   }
 };
