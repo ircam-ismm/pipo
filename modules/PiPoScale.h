@@ -115,10 +115,14 @@ public:
     virtual ~Scaler() {};
       
     // setup scaler when input stream attributes and parameters are known
-    // can use PiPoScale members: funcBase, minLogVal
+    // can use PiPoScale members: funcBase, minLogVal, extInMin/Max/OutMin/Max
     virtual void setup (int framesize) = 0;
+
+    // apply scaling from values to buffer for numElems starting at elemOffset
+    // uses PiPoScale members: numElems, elemOffset, width, extInMin/Max/OutMin/Max
     virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) = 0;
 
+  protected:
     // template that generates a function to apply scalefunc to each element of a frame to be scaled
     template<typename ScaleFuncType>
     void scale_frame (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows, ScaleFuncType scalefunc)
@@ -160,7 +164,7 @@ public:
   
   protected:
     PiPoScale *pipo_;
-  };
+  }; // end base class Scaler
 
   
   // derived scaler classes
@@ -190,7 +194,7 @@ public:
   private:
     std::vector<double> inScale;
     std::vector<double> inOffset;
-  };
+  }; // end class ScalerLinear
 
   class ScalerLog : public Scaler
   {
@@ -232,8 +236,9 @@ public:
     std::vector<double> inOffset;
     std::vector<double> outScale;
     std::vector<double> outOffset;
-  };
+  }; // end class ScalerLog
 
+  
   class ScalerExp : public Scaler
   {
   public:
@@ -269,16 +274,14 @@ public:
     std::vector<double> inOffset;
     std::vector<double> outScale;
     std::vector<double> outOffset;
-  };
+  }; // end class ScalerExp
 
   
   // create and register a scaler instance
   class ScalerFactory
   {
   public:
-    ScalerFactory (PiPoScale *pipo)
-    : pipo_(pipo)
-    { }
+    ScalerFactory (PiPoScale *pipo) : pipo_(pipo)  { }
       
     template <typename T>
     size_t add_scaler (const char *name, const char *description)
@@ -300,7 +303,7 @@ public:
 
     template <typename T>
     Scaler *create (PiPoScale *pipo) { return new T(pipo); }
-  };
+  }; // end class ScalerFactory
   
   
 public:
@@ -472,7 +475,7 @@ public:
     else
     {
       if (scaleFunc >= NumScaleFunc)
-        scaleFunc = NumScaleFunc - 1;
+        scaleFunc = (enum ScaleFun) (NumScaleFunc - 1);
       
       if(funcBase == 1.0)
         scaleFunc = ScaleLin;
