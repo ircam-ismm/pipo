@@ -168,10 +168,10 @@ public:
 
   
   // derived scaler classes
-  class ScalerLinear : public Scaler
+  class ScalerLin : public Scaler
   {
   public:
-    ScalerLinear (PiPoScale *pipo) : Scaler(pipo) {}
+    ScalerLin (PiPoScale *pipo) : Scaler(pipo) {}
     
     virtual void setup (int framesize) override
     {
@@ -194,7 +194,7 @@ public:
   private:
     std::vector<double> inScale;
     std::vector<double> inOffset;
-  }; // end class ScalerLinear
+  }; // end class ScalerLin
 
   class ScalerLog : public Scaler
   {
@@ -276,6 +276,39 @@ public:
     std::vector<double> outOffset;
   }; // end class ScalerExp
 
+
+  // scaler classes that clip on input range (mapped to output values of FUNC(x, j) -> PiPoValue)
+  //TODO: this macro should use some template magic
+# define make_scaler_class_with_func(_NAME_, _FUNC_)			\
+  class _NAME_ : public Scaler						\
+  {									\
+  public:								\
+    _NAME_ (PiPoScale *pipo) : Scaler(pipo) {}				\
+									\
+    virtual void setup (int framesize) override				\
+    {									\
+      for (unsigned int j = 0; j < framesize; j++)			\
+      { /* override extended output range */				\
+	pipo_->extOutMin[j] = _FUNC_(pipo_->extInMin[j], j);		\
+	pipo_->extOutMax[j] = _FUNC_(pipo_->extInMax[j], j);		\
+      }									\
+    }									\
+									\
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override \
+    {									\
+      Scaler::scale_frame(clip, values, buffer, numframes, numrows, _FUNC_); \
+    }									\
+  } // end class ScalerWithFunc
+
+# define m2f  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
+# define f2m  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return 69.0 + 17.3123404906676 * log(x / ref); }
+# define a2db [] (PiPoValue x, int j) -> PiPoValue { return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
+# define db2a [] (PiPoValue x, int j) -> PiPoValue { return exp(0.11512925465 * x); }
+
+  make_scaler_class_with_func(ScalerM2F,  m2f);
+  make_scaler_class_with_func(ScalerF2M,  f2m);
+  make_scaler_class_with_func(ScalerA2DB, a2db);
+  make_scaler_class_with_func(ScalerDB2A, db2a);
   
   // create and register a scaler instance
   class ScalerFactory
@@ -288,12 +321,20 @@ public:
     {
       pipo_->func.addEnumItem(name, description);
       scalers_.push_back(&ScalerFactory::create<T>);
+      return(scalers_.size() - 1); // return index of just added creator func
+    }
+/*    
+    template <typename T, typename FUNC>
+    size_t add_scaler (const char *name, const char *description, FUNC scalefunc)
+    {
+      pipo_->func.addEnumItem(name, description);
+      scalers_.push_back(&ScalerFactory::create<T>);
       return(scalers_.size());
     }
-    
+*/    
     Scaler *create_scaler (int index)
     {
-      return ((*this).*(scalers_[index]))(pipo_);	// call indexed creation function as method on ScalerFactory object
+      return ((*this).*(scalers_[index]))(pipo_);	// call indexed creation function *(scalers_[index]) as method on ScalerFactory object (*this)
     }
 
   private:
@@ -303,17 +344,19 @@ public:
 
     template <typename T>
     Scaler *create (PiPoScale *pipo) { return new T(pipo); }
+
+    
   }; // end class ScalerFactory
   
   
 public:
-  enum ScaleFun { ScaleLin, ScaleLog, ScaleExp, NumScaleFunc };
+  enum ScaleFun { ScaleLin, ScaleLog, ScaleExp, ScaleM2F, ScaleF2M, ScaleA2DB, ScaleDB2A, NumScaleFunc };
   enum CompleteMode { CompleteNot, CompleteRepeatLast, CompleteRepeatAll };
   
 private:
   ScalerFactory fac;
   Scaler *scaler_;
-  std::vector<double> extInMin;
+  std::vector<double> extInMin;	// in/out ranges for all input columns (extended from lists given in in/out Min/Max attr)
   std::vector<double> extInMax;
   std::vector<double> extOutMin;
   std::vector<double> extOutMax;
@@ -365,9 +408,16 @@ public:
     this->complete.addEnumItem("repeatall");
 
     // register scaler classes, add to enum with func.addEnumItem
-    fac.add_scaler<ScalerLinear>("lin", "Linear scaling");
-    fac.add_scaler<ScalerLog>("log", "Logarithmic scaling");
-    fac.add_scaler<ScalerExp>("exp", "Exponential scaling");
+    bool order_ok =
+      fac.add_scaler<ScalerLin> ("lin",   "Linear scaling")      == ScaleLin   &&
+      fac.add_scaler<ScalerLog> ("log",   "Logarithmic scaling") == ScaleLog   &&
+      fac.add_scaler<ScalerExp> ("exp",   "Exponential scaling") == ScaleExp   &&
+      fac.add_scaler<ScalerM2F> ("mtof",  "MIDI to Hertz") 	 == ScaleM2F   &&
+      fac.add_scaler<ScalerF2M> ("ftom",  "Hertz to MIDI") 	 == ScaleF2M   &&
+      fac.add_scaler<ScalerA2DB>("atodb", "linear to dB")  	 == ScaleA2DB  &&
+      fac.add_scaler<ScalerDB2A>("dbtoa", "dB to linear")  	 == ScaleDB2A;
+
+    if (!order_ok) throw; // assure that order of add corresponds to enum indices
   }
 
 private:
