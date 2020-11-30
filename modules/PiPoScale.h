@@ -301,7 +301,7 @@ public:
   } // end class ScalerWithFunc
 
 # define m2f  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
-# define f2m  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return 69.0 + 17.3123404906676 * log(x / ref); }
+# define f2m  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return (x) <= 0.0000000001  ? -999. :  69.0 + 17.3123404906676 * log(x / ref); }
 # define a2db [] (PiPoValue x, int j) -> PiPoValue { return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
 # define db2a [] (PiPoValue x, int j) -> PiPoValue { return exp(0.11512925465 * x); }
 
