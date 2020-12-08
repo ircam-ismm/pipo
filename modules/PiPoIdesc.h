@@ -12,7 +12,7 @@
 #ifndef _PIPO_IDESC_
 #define _PIPO_IDESC_
 
-#define IDESC_DEBUG DEBUG*2
+#define IDESC_DEBUG (DEBUG*0)
 
 #include "PiPo.h"
 #include <vector>
@@ -64,9 +64,9 @@ private:
   std::vector<PiPoValue>        outbuf_;
   bool				initialised_;
   int				status_;
-  std::map<int, int>		doffset_;
-  std::map<int, int>		dwidth_;
-  int				numcols_;
+  std::map<int, int>		doffset_; // maps idesc-internal descr. id to start index in output columns
+  std::map<int, int>		dwidth_;  // maps idesc-internal descr. id to number of output columns
+  int				numcols_; // total number of output columns
   const char                  **colnames_;
 
   void clearcolnames();
@@ -205,8 +205,8 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 
   double winlen = WindowSize.getDbl() / factor;	// window and hop size in sec
   double hoplen = HopSize.getDbl()    / factor;	// hop size in sec
-  int    ndescr = descriptors.getSize();
-  numcols_ = 0;
+  int    ndescr = descriptors.getSize(); // length of @descriptors attr list
+  numcols_ = 0; // number of output columns (>= ndescr)
 
 #if IDESC_DEBUG >= 1
   printf("PiPoIdesc streamAttributes timetags %d  rate %.0f  offset %f  width %d  size %d  labels %s  "
@@ -252,26 +252,40 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       // set window type
       idesc_->set_window(window.getStr());
 
-      // set up idesc descriptors
+      // set up unique list of idesc descriptors
+      int ndescr_unique = 0;
+      int ndescr_dropped = 0;
+      std::map<int, int> descr_seen;
+      
       for (int i = 0; i < ndescr; i++)
       {
-        const char *dname = descriptors.getStr(i);
-        int         did   = descriptors.getInt(i);
+        const char *dname = descriptors.getStr(i - ndescr_dropped);
+        int         did   = descriptors.getInt(i - ndescr_dropped);
 
         if (dname  &&  did >= 0)
         {
-          colnames_[i] = strdup(dname);
-          idesc_->set_descriptor(did, idesc::idesc::get_default_variation(did));
-        }
+	  if (descr_seen.count(did) == 0)
+	  { // first occurrence in list
+	    descr_seen[did] = ndescr_unique;
+	    colnames_[ndescr_unique++] = strdup(dname);
+	    idesc_->set_descriptor(did, idesc::idesc::get_default_variation(did));
+	  }
+	  else
+	  { // was already in list: ignore for idesc, remove from attr list (will be ndescr_dropped shorter)
+	    descriptors.remove(i - ndescr_dropped);
+	    ndescr_dropped++;
+	  }
+	}
         else
         {
-          throw std::invalid_argument(std::string("unknown descriptor name at index ")); //C++11: + std::to_string(i));
+          throw std::invalid_argument(std::string("unknown descriptor name at index ") + std::to_string(i)); //C++11
         }
 
 #if IDESC_DEBUG >= 1
         post("colnames descr %2d/%2d: %s\n", i, ndescr, colnames_[i]);
 #endif
       }
+      ndescr = ndescr_unique;
 
       // build idesc graph
       idesc_->build_descriptors();
@@ -280,34 +294,36 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       for (int i = 0; i < ndescr; i++)
       {
         int did = descriptors.getInt(i);
-        int dcols = idesc_->get_dimensions(did);
-        dwidth_[did] = dcols;
-        doffset_[did] = numcols_;
-        numcols_ += dcols;
+	int dcols = idesc_->get_dimensions(did);
+	dwidth_[did]  = dcols;    // number of output columns of user-specified descr. i
+	doffset_[did] = numcols_; // start index output columns of user-specified descr. i
+	numcols_ += dcols;
       }
       outbuf_.resize(numcols_);
 
-      if (numcols_ > ndescr)
+      if (numcols_ > ndescr) // at least one descr has more than 1 output columns
       { // generate column names with index for non-singleton descriptors
         colnames_ = (const char **) realloc(colnames_, numcols_ * sizeof(char *));
         for (int i = ndescr - 1; i >= 0; i--)
         {
-          int did = descriptors.getInt(i);
-          //post("  descr %d width %d -> col %d (numcols %d): %s\n", i, dwidth_[did], doffset_[did], numcols_, colnames_[i]);
+          int did = descriptors.getInt(i); // get internal descr id
+          int dwidth  = dwidth_[did];
+          int doffset = doffset_[did];
+          //post("  descr %d width %d -> col %d (numcols %d): %s\n", i, dwidth, doffset, numcols_, colnames_[i]);
 
-          if (dwidth_[did] == 1)
-            colnames_[doffset_[did]] = colnames_[i];	// move strdup'ed string pointer
+          if (dwidth == 1)
+            colnames_[doffset] = colnames_[i];	// one output column: move strdup'ed string pointer
           else
-          {
+          { // several output columns: generate labels as name+index
             char nbuf[128];
-            int  w = dwidth_[did] > 9  ?  2  :  1;
+            int  digits = width > 9  ?  2  :  1; // one or two digits?
 
-            for (int j = dwidth_[did] - 1; j >= 0; j--)
+            for (int j = dwidth - 1; j >= 0; j--)
             {
-              snprintf(nbuf, 128, "%s%0*d", colnames_[i], w, j);
-              colnames_[doffset_[did] + j] = strdup(nbuf);
+              snprintf(nbuf, 128, "%s%0*d", colnames_[i], digits, j);
+              colnames_[doffset + j] = strdup(nbuf);
 
-              //post("    colname %d: %s\n", doffset_[did] + j, colnames_[doffset_[did] + j]);
+              //post("    colname %d: %s\n", doffset + j, colnames_[doffset + j]);
             }
           }
         }
