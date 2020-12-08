@@ -417,7 +417,11 @@ public:
       fac.add_scaler<ScalerA2DB>("atodb", "linear to dB")  	 == ScaleA2DB  &&
       fac.add_scaler<ScalerDB2A>("dbtoa", "dB to linear")  	 == ScaleDB2A;
 
-    if (!order_ok) throw; // assure that order of add corresponds to enum indices
+#if DEBUG
+    if (!order_ok)
+      printf("enum order not good"),
+      throw(std::logic_error("enum order not good")); // assure that order of add corresponds to enum indices
+#endif
   }
 
 private:
