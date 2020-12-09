@@ -274,6 +274,7 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 	  { // was already in list: ignore for idesc, remove from attr list (will be ndescr_dropped shorter)
 	    descriptors.remove(i - ndescr_dropped);
 	    ndescr_dropped++;
+	    signalWarning(std::string("double occurence of ") +dname+ " in descriptor attribute was removed");
 	  }
 	}
         else
