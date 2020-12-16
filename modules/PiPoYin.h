@@ -70,14 +70,16 @@ public:
   PiPoScalarAttr<double>	minFreq;
   PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double>	yinThreshold;
+  PiPoScalarAttr<bool> old;
   
   // constructor
   PiPoYin (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
-    downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
-    yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
-    yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
+  minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
+  downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
+  yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+  old(this, "old", "Yin old or new behavior", false, false),
+  yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
     
@@ -201,6 +203,57 @@ public:
     }
   }
   
+  // mean-based downsampling (code fixed by Jean Philippe)
+  int downsample_reverse (float *in, int size, float *out, int downsamplingexp)
+  {
+    int downVectorSize = size >> downsamplingexp;
+    int i, j;
+    
+    if (downVectorSize > 0)
+    {
+      switch(downsamplingexp)
+      {
+        case 3:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 8)
+            out[i] = 0.125 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3] + in[j + 4] + in[j + 5] + in[j + 6] + in[j + 7]);
+        }
+          break;
+          
+        case 2:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 4)
+            out[i] = 0.25 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3]);
+        }
+          break;
+          
+        case 1:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 2)
+            out[i] = 0.5 * (in[j] + in[j + 1]);
+        }
+          break;
+          
+        default:
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j++)
+            out[i] = in[j];
+          break;
+      }
+    }
+    else
+    {
+      downVectorSize = 1;
+      float sum = 0.0;
+      
+      for (i = 0; i < size; i++)
+        sum += in[i];
+      
+      out[0] = sum / (float) size;
+    }
+    
+    return downVectorSize;
+  }
+  
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     float min;
@@ -209,12 +262,19 @@ public:
     float periodicity; /* 1.0 - sqrt(min) */
     float energy; /* sqrt(autocorrelation[0]/ (size - ac_size)) */
     float outvalues[4];
+    bool oldBehavior = this->old.get();
     
     if (buffer_ == NULL)
       return -1;
     
-    int downsize = downsample(values, size, buffer_, std::max<int>(0, downSampling.get()));
+    int downsize;
     
+    if(oldBehavior)
+      downsize = downsample(values, size, buffer_, std::max<int>(0, downSampling.get()));
+    else
+      // reverse values in order to match pitch against the most recent ones
+      downsize = downsample_reverse(values, size, buffer_, std::max<int>(0, downSampling.get()));
+      
     if (downsize <= ac_size_)
     { // error: input frame size too small for minfreq
       signalError("input frame size too small for given minfreq");
