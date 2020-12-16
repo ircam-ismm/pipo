@@ -24,7 +24,12 @@
 // jerryscript multi-context solution (for completely independent interpreters):
 // Keep pointers to the current context, must be set through callbacks below after context switch, before using any library function
 // Note that it is a thread-local variable, and is hopefully thread safe.
+#ifdef WIN32
+__declspec( thread ) jerry_context_t* current_context_p = NULL;
+
+#else
 __thread jerry_context_t *current_context_p = NULL;
+#endif
 
 // Set the current_context_p as the passed pointer.
 static void jerry_port_set_current_context (jerry_context_t *context_p) /**< points to the created context */
