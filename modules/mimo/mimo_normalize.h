@@ -69,50 +69,50 @@ public:
     { }
     
     int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
-  {	// use first track's stream config for all (TODO: ???)
-        is_var_size_ = streamattr[0]->hasVarSize;
-        size_	     = streamattr[0]->dims[0] * streamattr[0]->dims[1];
-        stats_.setup(numbuffers, numtracks, bufsizes, streamattr);
-        traindata_.resize(numbuffers);
-        for (int i = 0; i < numbuffers; i++)
-            traindata_[i].resize(bufsizes[i] * size_);
-        return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
+    {	// use first track's stream config for all (TODO: ???)
+      is_var_size_ = streamattr[0]->hasVarSize;
+      size_	     = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+      stats_.setup(numbuffers, numtracks, bufsizes, streamattr);
+      traindata_.resize(numbuffers);
+      for (int i = 0; i < numbuffers; i++)
+	traindata_[i].resize(bufsizes[i] * size_);
+      return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
     }
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        if(stats_.train(0, trackindex, numbuffers, buffers) < 0)
-            return -1;
+      if(stats_.train(0, trackindex, numbuffers, buffers) < 0)
+	return -1;
 
-	model_ = stats_.getmodel();
-        std::vector<mimo_buffer> outbufs(numbuffers);
-        outbufs.assign(buffers, buffers + numbuffers);
+      model_ = stats_.getmodel();
+      std::vector<mimo_buffer> outbufs(numbuffers);
+      outbufs.assign(buffers, buffers + numbuffers);
         
-        for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
-        {
-            const PiPoValue *data = buffers[bufferindex].data;
+      for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
+      {
+	const PiPoValue *data = buffers[bufferindex].data;
             
-            for (int i = 0; i < buffers[bufferindex].numframes; ++i)
-            {
-                int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
+	for (int i = 0; i < buffers[bufferindex].numframes; ++i)
+	{
+	  int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
                 
-                for (int j = 0; j < mtxsize; ++j)
-                {
-                    PiPoValue min = model_->min[j];
-                    PiPoValue max = model_->max[j];
-                    PiPoValue normalized;
-                    if(abs(max-min) < 1e-06)
-                        normalized = 0;
-                    else
-                        normalized = (data[j] - min) / (float)(max - min);
-                    traindata_[bufferindex][i * mtxsize + j] = normalized;
-                }
-                data += size_;
-                outbufs[bufferindex].data = traindata_[bufferindex].data();
-            }
-        }
+	  for (int j = 0; j < mtxsize; ++j)
+	  {
+	    PiPoValue min = model_->min[j];
+	    PiPoValue max = model_->max[j];
+	    PiPoValue normalized;
+	    if(abs(max-min) < 1e-06)
+	      normalized = 0;
+	    else
+	      normalized = (data[j] - min) / (float)(max - min);
+	    traindata_[bufferindex][i * mtxsize + j] = normalized;
+	  }
+	  data += size_;
+	  outbufs[bufferindex].data = traindata_[bufferindex].data();
+	}
+      }
 
-        return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
     }
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
