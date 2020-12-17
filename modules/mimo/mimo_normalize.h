@@ -38,7 +38,7 @@
 #ifndef mimo_norm_h
 #define mimo_norm_h
 
-#include <alloca>
+#include <alloca.h>
 #include "jsoncpp/include/json.h"
 #include "mimo.h"
 #include "mimo_stats.h"

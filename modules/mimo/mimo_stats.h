@@ -41,6 +41,7 @@
 #include <cfloat>
 #include <vector>
 #include <memory>
+#include <alloca.h>
 
 #include "mimo.h"
 #include "jsoncpp/include/json.h"
@@ -153,7 +154,7 @@ public:
     {
       std::cout << "mimo.stats model dimension mismatch error in\n" << std::endl
 		<< json_string << std::endl;
-      printf("%d =? %d =? %d =? %d =? %d =? %d\n", num.size(), min.size(), max.size(), mean.size(), std.size());
+      printf("%lu =? %d =? %d =? %d =? %d =? %d\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
       return -1;
     }    
   }
@@ -379,12 +380,10 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
   {
     bool ok = 1;
+    PiPoValue* norm = (PiPoValue *) alloca(size * sizeof(PiPoValue));
     
     for (unsigned int i = 0; i < num; i++)
     {
-      //PiPoValue norm[size];
-      PiPoValue* norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
-
       // normalise
       for (unsigned int j = 0; j < size; j++)
 	if (stats_.std[j] != 0)
@@ -395,8 +394,6 @@ public:
       ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
       values += size;
-
-      free(norm);
     }
 
     return ok ? 0 : -1;
