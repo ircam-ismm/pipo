@@ -47,45 +47,44 @@
 class MiMoNormalize : public Mimo
 {
 private:
-    mimo_stats stats;
-    stats_model_data* _model;	 // _model points to stats_model_data in stats object, or is NULL when invalid
-    const PiPoStreamAttributes* _streamattr;
-    //todo: PiPoenumattr normtype_; // minmax, meanstd
-    PiPoDictionaryAttr model_attr;
-    std::vector<std::vector<PiPoValue>> _traindata;
-    int _size = 0;
-    std::vector<std::string>	labelstore_;
+    mimo_stats		stats_;
+    stats_model_data*	model_ = NULL;	 // model_ points to stats_model_data in stats object, or is NULL when invalid
+    int			size_ = 0;
+    bool		is_var_size_ = false;
+
+    PiPoDictionaryAttr			model_attr_;
+    PiPoScalarAttr<PiPo::Enumerate>	normtype_attr_; // minmax, meanstd
+    std::vector<std::vector<PiPoValue>> traindata_;
+    std::vector<std::string>		labelstore_;
 
 public:
     MiMoNormalize(Parent *parent, Mimo *receiver = nullptr)
-    :   Mimo(parent, receiver)
-    ,   stats(parent, receiver)
-    ,   _model(NULL)
-    ,   model_attr(this, "model", "The model for processing", true, "")
-    {
-    }
+    : Mimo(parent, receiver),
+      stats_(parent, receiver),
+      model_attr_(this, "model", "The model for processing", true, ""),
+      normtype_attr_(this, "type", "Type of normalization: minmax or meanstd", true, 0)
+    { }
     
     ~MiMoNormalize(void)
-    {
-    }
+    { }
     
     int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
-    {
-        _streamattr = *streamattr;
-        _size = _streamattr[0].dims[0] * _streamattr[0].dims[1];
-        stats.setup(numbuffers, numtracks, bufsizes, streamattr);
-        _traindata.resize(numbuffers);
+  {	// use first track's stream config for all (TODO: ???)
+        is_var_size_ = streamattr[0]->hasVarSize;
+        size_	     = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+        stats_.setup(numbuffers, numtracks, bufsizes, streamattr);
+        traindata_.resize(numbuffers);
         for (int i = 0; i < numbuffers; i++)
-            _traindata[i].resize(bufsizes[i] * _size);
+            traindata_[i].resize(bufsizes[i] * size_);
         return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
     }
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        if(stats.train(0, trackindex, numbuffers, buffers) < 0)
+        if(stats_.train(0, trackindex, numbuffers, buffers) < 0)
             return -1;
 
-	_model = stats.getmodel();
+	model_ = stats_.getmodel();
         std::vector<mimo_buffer> outbufs(numbuffers);
         outbufs.assign(buffers, buffers + numbuffers);
         
@@ -95,21 +94,21 @@ public:
             
             for (int i = 0; i < buffers[bufferindex].numframes; ++i)
             {
-                int mtxsize = _streamattr->hasVarSize ? buffers[bufferindex].varsize[i] : _size;
+                int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
                 
                 for (int j = 0; j < mtxsize; ++j)
                 {
-                    PiPoValue min = _model->min[j];
-                    PiPoValue max = _model->max[j];
+                    PiPoValue min = model_->min[j];
+                    PiPoValue max = model_->max[j];
                     PiPoValue normalized;
                     if(abs(max-min) < 1e-06)
                         normalized = 0;
                     else
                         normalized = (data[j] - min) / (float)(max - min);
-                    _traindata[bufferindex][(i*mtxsize)+j] = normalized;
+                    traindata_[bufferindex][i * mtxsize + j] = normalized;
                 }
-                data += _size;
-                outbufs[bufferindex].data = _traindata[bufferindex].data();
+                data += size_;
+                outbufs[bufferindex].data = traindata_[bufferindex].data();
             }
         }
 
@@ -118,17 +117,17 @@ public:
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-      if (stats.getmodel()->from_json(model_attr.getJson()) == -1)
+      if (stats_.getmodel()->from_json(model_attr_.getJson()) == -1)
       {
-	_model = NULL;	// mark as invalid (can't load)
+	model_ = NULL;	// mark as invalid (can't load)
 	return -1;
       }
       
-      _model = stats.getmodel(); // set only when parsing finished
-      if (_model->mean.size() < width * height)
+      model_ = stats_.getmodel(); // set only when parsing finished
+      if (model_->mean.size() < width * height)
       { // if model has less elements than data, extend (additional columns will pass through)
-	_model->mean.resize(width * height);
-	_model->std.resize(width * height);
+	model_->mean.resize(width * height);
+	model_->std.resize(width * height);
       }
 	
       // make labels
@@ -152,17 +151,17 @@ public:
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
-      bool ok = _model != NULL;
+      bool ok = model_ != NULL;
       PiPoValue *norm = (PiPoValue *) alloca(size * sizeof(PiPoValue));
     
       for (unsigned int i = 0; ok  &&  i < num; i++)
       {
 	// normalise
 	for (unsigned int j = 0; j < size; j++)
-	  if (_model->std[j] != 0)
-	    norm[j] = (values[j] - _model->mean[j]) / _model->std[j];
+	  if (model_->std[j] != 0)
+	    norm[j] = (values[j] - model_->mean[j]) / model_->std[j];
 	  else
-	    norm[j] = (values[j] - _model->mean[j]);
+	    norm[j] = (values[j] - model_->mean[j]);
 
 	ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
@@ -174,7 +173,7 @@ public:
     
     mimo_model_data *getmodel()
     {
-        return _model;
+        return model_;
     }
     
 };
