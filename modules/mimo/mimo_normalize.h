@@ -38,6 +38,7 @@
 #ifndef mimo_norm_h
 #define mimo_norm_h
 
+#include <alloca>
 #include "jsoncpp/include/json.h"
 #include "mimo.h"
 #include "mimo_stats.h"
@@ -152,11 +153,10 @@ public:
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
       bool ok = _model != NULL;
+      PiPoValue *norm = (PiPoValue *) alloca(size * sizeof(PiPoValue));
     
       for (unsigned int i = 0; ok  &&  i < num; i++)
       {
-	//PiPoValue norm[size];
-          PiPoValue *norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
 	// normalise
 	for (unsigned int j = 0; j < size; j++)
 	  if (_model->std[j] != 0)
@@ -167,8 +167,6 @@ public:
 	ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
 	values += size;
-
-    free(norm);
       }
 
       return ok ? 0 : -1;
