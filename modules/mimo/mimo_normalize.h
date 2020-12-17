@@ -71,7 +71,7 @@ public:
       normtype_attr_(this, "type", "Type of normalization: minmax or meanstd", true, 0)
     {
       normtype_attr_.addEnumItem("minmax",  "Normalize to range [0, 1]");
-      normtype_attr_.addEnumItem("meanstd", "Center around zero and normalize to [-std, std]");
+      normtype_attr_.addEnumItem("meanstd", "Center around zero and divide by std");
     }
     
     ~MiMoNormalize(void)
