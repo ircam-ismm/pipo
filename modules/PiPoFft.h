@@ -176,34 +176,34 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    int fftSize = this->size.get();
-    enum OutputMode outputMode = (enum OutputMode)this->mode.get();
-    bool norm = this->norm.get();
-    enum WeightingMode weightingMode = (enum WeightingMode)this->weighting.get();
-    int inputSize = width * size;
-    double sampleRate = (double)size / domain;
-    int outputSize, outputWidth;
-    const char *fftColNames[2];
+    bool		norm		   = this->norm.get();
+    int			new_fft_size	   = this->size.get();
+    enum OutputMode     new_output_mode    = (enum OutputMode)    this->mode.get();
+    enum WeightingMode  new_weighting_mode = (enum WeightingMode) this->weighting.get();
+    double              new_samplerate     = (double) size / domain;
+    int			inputSize	   = width * size;
+    int			outputSize, outputWidth;
+    const char	       *fftColNames[2];
     
-    if(fftSize <= 0)
-      fftSize = rta_inextpow2(inputSize);
-    else if(fftSize > MAX_FFT_SIZE)
-      fftSize = MAX_FFT_SIZE;
+    if (new_fft_size <= 0)
+      new_fft_size = rta_inextpow2(inputSize);
+    else if (new_fft_size > MAX_FFT_SIZE)
+      new_fft_size = MAX_FFT_SIZE;
     
-    if(norm)
-      this->fftScale = 1.0 / fftSize;
+    if (norm)
+      this->fftScale = 1.0 / new_fft_size;
     else
       this->fftScale = 1.0;
     
-    outputSize = fftSize / 2;
+    outputSize = new_fft_size / 2;
     
-    if(outputMode > LogPowerFft)
-      outputMode = LogPowerFft;
+    if (new_output_mode > LogPowerFft)
+      new_output_mode = LogPowerFft;
     
-    if(weightingMode > Itur468Weighting)
-      weightingMode = Itur468Weighting;
+    if (new_weighting_mode > Itur468Weighting)
+      new_weighting_mode = Itur468Weighting;
     
-    switch(outputMode)
+    switch (new_output_mode)
     {
       case ComplexFft:
       {
@@ -235,21 +235,21 @@ public:
       }
     }
     
-    if (fftSize != this->fftSize  ||  weightingMode != this->weightingMode  ||  sampleRate != this->sampleRate)
+    if (new_fft_size != this->fftSize  ||  new_weighting_mode != this->weightingMode  ||  new_samplerate != this->sampleRate)
     { // parameters have changed, setup FFT
       PiPoValue *nyquistMagPtr;
       
       /* alloc output frame */
-      this->fftFrame.resize(fftSize + 2);
+      this->fftFrame.resize(new_fft_size + 2);
       this->fftWeights.resize(outputSize + 1);
-      this->fftSize = fftSize;
+      this->fftSize = new_fft_size;
       
-      nyquistMagPtr = &this->fftFrame[fftSize];
-      this->fftFrame[fftSize + 1] = 0.0; /* zero nyquist phase */
+      nyquistMagPtr = &this->fftFrame[new_fft_size];
+      this->fftFrame[new_fft_size + 1] = 0.0; /* zero nyquist phase */
       
-      double indexToFreq = sampleRate / fftSize;
+      double indexToFreq = new_samplerate / new_fft_size;
       
-      switch(weightingMode)
+      switch (new_weighting_mode)
       {
         case NoWeighting:
         {
@@ -350,14 +350,14 @@ public:
       if(this->fftSetup != NULL)
         rta_fft_setup_delete(this->fftSetup);
       
-      rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (rta_real_t *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], fftSize, nyquistMagPtr);
+      rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (rta_real_t *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], new_fft_size, nyquistMagPtr);
     }
 
-    this->sampleRate = sampleRate;
-    this->outputMode = outputMode;
-    this->weightingMode = weightingMode;
+    this->sampleRate = new_samplerate;
+    this->outputMode = new_output_mode;
+    this->weightingMode = new_weighting_mode;
     
-    return this->propagateStreamAttributes(0, rate, offset, outputWidth, outputSize + 1, fftColNames, 0, 0.5 * sampleRate, 1);
+    return this->propagateStreamAttributes(0, rate, offset, outputWidth, outputSize + 1, fftColNames, 0, 0.5 * new_samplerate, 1);
   }
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
