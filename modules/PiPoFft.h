@@ -51,7 +51,7 @@ extern "C" {
 }
 
 #define MIN_FFT_SIZE 16
-#define MAX_FFT_SIZE 65536
+#define MAX_FFT_SIZE 65536 * 4
 #define DB_TO_LIN(x) (exp(0.115129254649702 * x))
 
 static const double itur468Coeffs[21][2] = {
@@ -203,8 +203,6 @@ public:
     if(weightingMode > Itur468Weighting)
       weightingMode = Itur468Weighting;
     
-    this->sampleRate = sampleRate;
-    
     switch(outputMode)
     {
       case ComplexFft:
@@ -237,8 +235,8 @@ public:
       }
     }
     
-    if(fftSize != this->fftSize || weightingMode != this->weightingMode)
-    {
+    if (fftSize != this->fftSize  ||  weightingMode != this->weightingMode  ||  sampleRate != this->sampleRate)
+    { // parameters have changed, setup FFT
       PiPoValue *nyquistMagPtr;
       
       /* alloc output frame */
@@ -354,7 +352,8 @@ public:
       
       rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (rta_real_t *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], fftSize, nyquistMagPtr);
     }
-    
+
+    this->sampleRate = sampleRate;
     this->outputMode = outputMode;
     this->weightingMode = weightingMode;
     
