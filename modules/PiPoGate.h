@@ -205,14 +205,18 @@ public:
       else
         // within silence, check for onset (but avoid re-trigger)
         frameisonset = energy > onsetThreshold  &&  time >= this->onsettime + minimumInterval;
-      
+
+#if DEBUG
+      // printf("PiPoGate::frames time %f energy %f switch %d is on %d dur %f\n", time, energy, frameisonset, segison, time - this->onsettime);
+#endif
+     
       if (!this->reportduration)
       { /* output marker only */
-  if (frameisonset)
-  { /* report immediate onset */
-    ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
-    this->onsettime = time;
-  }
+        if (frameisonset)
+        { /* report immediate onset */
+          ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
+          this->onsettime = time;
+        }
       }
       else
       { // check for onset and offset (segment begin and end)
