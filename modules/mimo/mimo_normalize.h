@@ -38,11 +38,14 @@
 #ifndef mimo_norm_h
 #define mimo_norm_h
 
+#ifdef WIN32
+#include <malloc.h>
+#else
 #include <alloca.h>
+#endif
 #include "jsoncpp/include/json.h"
 #include "mimo.h"
 #include "mimo_stats.h"
-
 
 class MiMoNormalize : public Mimo
 {
@@ -153,7 +156,11 @@ public:
       if (labels)
       {
 	const std::string suffix("Norm");
+#ifdef WIN32
+    newlabels = (const char**)_malloca(width * sizeof(char*));
+#else
 	newlabels = (const char **) alloca(width * sizeof(char *));
+#endif
 	labelstore_.resize(width);
 
 	for (unsigned int i = 0; i < width; i++)
