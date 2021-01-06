@@ -42,13 +42,19 @@
 
 #include "PiPo.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 #include "rta_configuration.h"
 #include "rta_fft.h"
 #include "rta_int.h"
 #include <float.h>
 #include <math.h>
+
+#ifdef __cplusplus
 }
+#endif
 
 #define MIN_FFT_SIZE 16
 #define MAX_FFT_SIZE 65536 * 4
