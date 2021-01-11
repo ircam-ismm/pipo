@@ -118,13 +118,13 @@ public:
     {
       case MillisecondsUnit:
 	// we expect signal input, so one input data frame is one signal sample frame (of which only the first element is used)
-	frameSize = std::max(1., this->size.get() * 0.001 * rate);
-	hopSize   = std::max(1., this->hop.get()  * 0.001 * rate);
+	frameSize = (std::max)(1., this->size.get() * 0.001 * rate);
+	hopSize   = (std::max)(1., this->hop.get()  * 0.001 * rate);
       break;
 	
       case SamplesUnit:
-	frameSize = std::max(1., this->size.get());
-	hopSize   = std::max(1., this->hop.get());
+	frameSize = (std::max)(1., this->size.get());
+	hopSize   = (std::max)(1., this->hop.get());
       break;
 
       default:

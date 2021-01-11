@@ -119,7 +119,7 @@ public:
   {
     enum BandsModeE bandsMode = static_cast<BandsModeE>(this->mode.get());
     enum EqualLoudnessModeE eqlMode = static_cast<EqualLoudnessModeE>(this->eqlmode.get());
-    int numBands = std::max(1, this->num.get());
+    int numBands = (std::max)(1, this->num.get());
     int specSize = size;
     float sampleRate = 2.0 * domain;
 
