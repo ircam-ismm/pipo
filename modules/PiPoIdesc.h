@@ -12,7 +12,7 @@
 #ifndef _PIPO_IDESC_
 #define _PIPO_IDESC_
 
-#define IDESC_DEBUG (DEBUG*0)
+#define IDESC_DEBUG (DEBUG*1)
 
 #include "PiPo.h"
 #include <vector>
@@ -69,6 +69,10 @@ private:
   int				numcols_; // total number of output columns
   const char                  **colnames_;
 
+  int db_loudness_did;
+  bool db_loudness_requested;
+  bool db_loudness_warned;
+  
   void clearcolnames();
 };
 
@@ -144,6 +148,10 @@ PiPoIdesc::PiPoIdesc(PiPo::Parent *parent, PiPo *receiver)
   for (int i = 0; i < num_descr_available; i++)
     descriptors.addEnumItem(idesc::idesc::get_descriptor_name(i));
 
+  db_loudness_did = descriptors.getEnumIndex("Loudness");
+  db_loudness_requested = false;
+  db_loudness_warned = false;
+  
   // set up window type and unit enums
   window.addEnumItem("blackman");
   window.addEnumItem("hamming");
@@ -256,6 +264,8 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       int ndescr_unique = 0;
       int ndescr_dropped = 0;
       std::map<int, int> descr_seen;
+      db_loudness_requested = false;
+      db_loudness_warned = false;
       
       for (int i = 0; i < ndescr; i++)
       {
@@ -269,6 +279,9 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 	    descr_seen[did] = ndescr_unique;
 	    colnames_[ndescr_unique++] = strdup(dname);
 	    idesc_->set_descriptor(did, idesc::idesc::get_default_variation(did));
+
+	    if (did == db_loudness_did)
+	      db_loudness_requested = true;
 	  }
 	  else
 	  { // was already in list: ignore for idesc, remove from attr list (will be ndescr_dropped shorter)
@@ -397,17 +410,30 @@ int PiPoIdesc::reset (void)
 // compute and output data
 //
 
+// called by idesc lib for every descriptor computed: write into pipo output frame
 void PiPoIdesc::datacallback (int descrid, int varnum, int numval,
                               IDESC_REAL_TYPE *values, void* obj)
 {
   PiPoIdesc *self = (PiPoIdesc *) obj;
 
   // gather data for each descriptor
+  if (self->db_loudness_requested == false  &&  descrid == self->db_loudness_did)
+  {
+    if (self->db_loudness_warned)
+    {
+      printf("GOTCHA!!!!!!!!!!!!!!! pipo.ircamdescriptor %p  gets %d Loudness (%d) values %f although it never wanted it!!!!!!!!!!!!!!!!\n", self, numval, descrid, values[0]);
+      post("Hmmm, pipo.ircamdescriptor gets %d Loudness (%d) values %f although it never wanted it.\n", numval, descrid, values[0]);
+      self->db_loudness_warned = true;
+    }
+    return;
+  }
+
   int offset = self->doffset_[descrid];
   for (int i = 0; i < self->dwidth_[descrid]; i++)
     self->outbuf_[offset + i] = values[i];
 }
 
+// called by idesc lib after all descriptor were computed and transmitted in datacallback: write propagate pipo output frame
 void PiPoIdesc::endcallback (double frame_time_sec, void* obj)
 {
   PiPoIdesc *self = (PiPoIdesc *) obj;
