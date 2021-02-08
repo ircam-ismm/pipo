@@ -101,7 +101,7 @@ public:
 
       model_ = stats_.getmodel();
       std::vector<mimo_buffer> outbufs(numbuffers);
-      outbufs.assign(buffers, buffers + numbuffers);
+      outbufs.assign(buffers, buffers + numbuffers); // copy buffer layout, timestamps pointer; data will be reassigned from traindata_
 
       // get and check model element range for local vectors
       std::vector<PiPoValue> normoffset(size_);
@@ -118,12 +118,13 @@ public:
                 
 	  for (int j = 0; j < mtxsize; ++j)
 	  {
-	    traindata_[bufferindex][i * mtxsize + j] = (data[j] - normoffset[j]) * normfact[j];
+            traindata_[bufferindex][i * size_ + j] = (data[j] - normoffset[j]) * normfact[j]; //todo: optimize: get pointer
 	  }
 	  
 	  data += size_;
-	  outbufs[bufferindex].data = traindata_[bufferindex].data();
 	}
+
+        outbufs[bufferindex].data = traindata_[bufferindex].data();
       }
 
       return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
