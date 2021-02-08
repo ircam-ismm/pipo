@@ -48,11 +48,11 @@ private:
     Json::Value root;
     Json::Reader reader;
 public:
-    int json_size() override
+    size_t json_size() override
     {
         return 0;
     }
-    char* to_json (char* out, int size) throw() override
+    char* to_json (char* out, size_t size) throw() override
     {
         return 0;
     }
