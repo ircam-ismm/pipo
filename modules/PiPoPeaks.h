@@ -101,7 +101,7 @@ public:
     thresholdWidth(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
     thresholdHeight(this, "thheight", "minimum height for peaks", true, 0.),
     thresholdDev(this, "thdev", "maximum deviation from mean value", true, 0.),
-    rangeLow(this, "rangelow", "minimun of band where to search for peaks", true, 0.),
+    rangeLow(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
     rangeHigh(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
     //domainScale(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
@@ -129,7 +129,8 @@ public:
     const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
 
     this->allocatedPeaksSize = maxNumPeaks;
-    if(this->allocatedPeaksSize < DEFAULT_NUM_ALLOC_PEAKS) this->allocatedPeaksSize = DEFAULT_NUM_ALLOC_PEAKS;
+    if(this->allocatedPeaksSize < DEFAULT_NUM_ALLOC_PEAKS)
+	this->allocatedPeaksSize = DEFAULT_NUM_ALLOC_PEAKS;
     this->buffer_.resize(this->allocatedPeaksSize * 2);
     
     return this->propagateStreamAttributes(true, rate, offset, 2, maxNumPeaks, peaksColNames, 1, 0.0, 1);
@@ -253,12 +254,13 @@ public:
         peaks_ptr[2 * n_found + 1] = max_amp;
         n_found++;
         
-        if((this->keepMode.get() == 0 && n_found >= maxNumPeaks) || (this->keepMode.get() == 1 && n_found >= this->allocatedPeaksSize))
+        if ((this->keepMode.get() == 1 && n_found >= maxNumPeaks) ||		// keep first
+	    (this->keepMode.get() == 0 && n_found >= this->allocatedPeaksSize)) // keep strongest
           break;
       }
     }
     
-    if(this->keepMode.get() == 0)// keep strongest
+    if (this->keepMode.get() == 0) // keep strongest
     {
       qsort((void *)peaks_ptr, n_found, sizeof(peak_t), peaks_compare_amp);
       
