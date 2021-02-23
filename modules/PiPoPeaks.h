@@ -83,13 +83,13 @@ private:
   
 public:
   PiPoScalarAttr<int>		numPeaks_attr_;
-  PiPoScalarAttr<PiPo::Enumerate> keepMode_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> keep_mode_attr_;
   //PiPoScalarAttr<PiPo::Enumerate> downSampling_attr_;
-  PiPoScalarAttr<double>	thresholdWidth_attr_;
-  PiPoScalarAttr<double>	thresholdHeight_attr_;
-  PiPoScalarAttr<double>	thresholdDev_attr_;
-  PiPoScalarAttr<double>	rangeLow_attr_;
-  PiPoScalarAttr<double>	rangeHigh_attr_;
+  PiPoScalarAttr<double>	threshold_width_attr_;
+  PiPoScalarAttr<double>	threshold_height_attr_;
+  PiPoScalarAttr<double>	threshold_dev_attr_;
+  PiPoScalarAttr<double>	range_low_attr_;
+  PiPoScalarAttr<double>	range_high_attr_;
   //PiPoScalarAttr<double>	domainScale_attr_;
   
   // constructor
@@ -97,17 +97,17 @@ public:
   : PiPo(parent, receiver), buffer_(),
     max_num_peaks_(16), allocated_peaks_size_(0), domscale_(1.),
     numPeaks_attr_(this, "numpeaks", "Maximum number of peaks to be estimated", true, max_num_peaks_),
-    keepMode_attr_(this, "keep", "keep first or strongest peaks", true, 0),
+    keep_mode_attr_(this, "keep", "keep first or strongest peaks", true, 0),
     //downSampling_attr_(this, "downsampling", "Downsampling Exponent", true, 2),
-    thresholdWidth_attr_(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
-    thresholdHeight_attr_(this, "thheight", "minimum height for peaks", true, 0.),
-    thresholdDev_attr_(this, "thdev", "maximum deviation from mean value", true, 0.),
-    rangeLow_attr_(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
-    rangeHigh_attr_(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
+    threshold_width_attr_(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
+    threshold_height_attr_(this, "thheight", "minimum height for peaks", true, 0.),
+    threshold_dev_attr_(this, "thdev", "maximum deviation from mean value", true, 0.),
+    range_low_attr_(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
+    range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
     //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
-    keepMode_attr_.addEnumItem("strongest", "keep strongest peak");
-    keepMode_attr_.addEnumItem("lowest", "keep first peak");
+    keep_mode_attr_.addEnumItem("strongest", "keep strongest peak");
+    keep_mode_attr_.addEnumItem("lowest", "keep first peak");
   }
   
   ~PiPoPeaks (void)
@@ -147,15 +147,15 @@ public:
     double mean = -ABS_MAX;
     unsigned int start, end;
     unsigned int i, j;
-    double thresholdDev = thresholdDev_attr_.get();
-    double thresholdHeight = thresholdHeight_attr_.get();
-    double thresholdWidth = thresholdWidth_attr_.get();
-    int max_search = keepMode_attr_.get() == 0  // max number of peaks to search depends on keepmode
+    double threshold_dev = threshold_dev_attr_.get();
+    double threshold_height = threshold_height_attr_.get();
+    double threshold_width = threshold_width_attr_.get();
+    int max_search = keep_mode_attr_.get() == 0  // max number of peaks to search depends on keepmode
 	?  allocated_peaks_size_ // keep strongest: search all
 	:  max_num_peaks_; 	 // keep first: search up to max num peaks to output
     
-    start = std::floor(rangeLow_attr_.get() / domscale_);
-    end   = std::ceil(rangeHigh_attr_.get() / domscale_);
+    start = std::floor(range_low_attr_.get() / domscale_);
+    end   = std::ceil(range_high_attr_.get() / domscale_);
     
     if (start < 1)
       start = 1;
@@ -163,23 +163,23 @@ public:
     if (end >= size)
       end = size - 1;
 
-    if(thresholdDev > 0.0)
+    if (threshold_dev > 0.0)
     {
       mean = 0.0;
       
-      for(i=0, j=0; i < size; i++, j++)
-          mean += values[j];
+      for (i = 0; i < size; i++)
+          mean += values[i];
         
       mean /= size;
     }
     
-    for(i = start, j = start; i < end; i++, j++)
+    for (i = start, j = start; i < end; i++, j++)
     {
       double center = values[j];
       double left = values[j - 1];
       double right = values[j + 1];
         
-      if(center >= left && center > right)
+      if (center >= left && center > right)
       {
         double a = 0.5 * (right + left) - center;
         double b = 0.5 * (right - left);
@@ -187,22 +187,21 @@ public:
         double max_amp = (a * frac + b) * frac + center;
         double max_index = i + frac;
           
-        if(fabs(max_amp - mean) < thresholdDev)
+        if (fabs(max_amp - mean) < threshold_dev)
           continue;
         
-        if(thresholdHeight > 0.0 || thresholdWidth > 0.0)
+        if (threshold_height > 0.0 || threshold_width > 0.0)
         {
           double min_right_amp = center;
           double min_left_amp = center;
           double min_right_index = size;
           double min_left_index = 0;
           unsigned int k, l;
+          double threshold_width_bins = threshold_width / domscale_;
           
-          thresholdWidth = thresholdWidth / domscale_;
-          
-          for(k=i+1, l=j+1; k<size-1; k++, l++)
+          for (k=i+1, l=j+1; k<size-1; k++, l++)
           {
-            if(values[l] <= values[l + 1])
+            if (values[l] <= values[l + 1])
             {
               left = values[l - 1];
               center = values[l];
@@ -218,9 +217,9 @@ public:
             }
           }
           
-          for(k=i-1, l=j-1; k>0; k--, l-=1)
+          for (k=i-1, l=j-1; k>0; k--, l-=1)
           {
-            if(values[l] <= values[l - 1])
+            if (values[l] <= values[l - 1])
             {
               left = values[l - 1];
               center = values[l];
@@ -236,10 +235,10 @@ public:
             }
           }
           
-          if(max_amp - min_right_amp < thresholdHeight || max_amp - min_left_amp < thresholdHeight)
+          if (max_amp - min_right_amp < threshold_height || max_amp - min_left_amp < threshold_height)
             continue;
           
-          if(min_right_index - min_left_index < thresholdWidth)
+          if (min_right_index - min_left_index < threshold_width_bins)
             continue;
         }
         
@@ -252,7 +251,7 @@ public:
       }
     }
     
-    if (keepMode_attr_.get() == 0) // keep strongest
+    if (keep_mode_attr_.get() == 0) // keep strongest
     {
       qsort((void *)peaks_ptr, n_found, sizeof(peak_t), peaks_compare_amp);
       
