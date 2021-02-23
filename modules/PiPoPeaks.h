@@ -48,7 +48,6 @@
 
 #define PIPO_PEAKS_DEBUG 1
 #define ABS_MAX 2147483647.0
-#define DEFAULT_NUM_ALLOC_PEAKS 200
 
 typedef struct
 {
@@ -127,9 +126,7 @@ public:
     
     const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
 
-    this->allocatedPeaksSize = maxNumPeaks;
-    if(this->allocatedPeaksSize < DEFAULT_NUM_ALLOC_PEAKS)
-	this->allocatedPeaksSize = DEFAULT_NUM_ALLOC_PEAKS;
+    this->allocatedPeaksSize = width * height / 2 + 1; // we can find at maximum a number of peaks of half the size of the input vector
     this->buffer_.resize(this->allocatedPeaksSize * 2);
     
     return this->propagateStreamAttributes(true, rate, offset, 2, maxNumPeaks, peaksColNames, 1, 0.0, 1);
