@@ -77,38 +77,37 @@ class PiPoPeaks : public PiPo
 {
 private:
   std::vector<float> buffer_;
-  int domsr;
-  double peaks_sr;
-  int maxNumPeaks;
-  int allocatedPeaksSize;
+  double domscale_;
+  int max_num_peaks_;
+  int allocated_peaks_size_;
   
 public:
-  PiPoScalarAttr<int>	numPeaks;
-  PiPoScalarAttr<PiPo::Enumerate> keepMode;
-  //PiPoScalarAttr<PiPo::Enumerate> downSampling;
-  PiPoScalarAttr<double>	thresholdWidth;
-  PiPoScalarAttr<double>	thresholdHeight;
-  PiPoScalarAttr<double>	thresholdDev;
-  PiPoScalarAttr<double>	rangeLow;
-  PiPoScalarAttr<double>	rangeHigh;
-  //PiPoScalarAttr<double>	domainScale;
+  PiPoScalarAttr<int>		numPeaks_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> keepMode_attr_;
+  //PiPoScalarAttr<PiPo::Enumerate> downSampling_attr_;
+  PiPoScalarAttr<double>	thresholdWidth_attr_;
+  PiPoScalarAttr<double>	thresholdHeight_attr_;
+  PiPoScalarAttr<double>	thresholdDev_attr_;
+  PiPoScalarAttr<double>	rangeLow_attr_;
+  PiPoScalarAttr<double>	rangeHigh_attr_;
+  //PiPoScalarAttr<double>	domainScale_attr_;
   
   // constructor
   PiPoPeaks (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer_(),
-    maxNumPeaks(16), allocatedPeaksSize(0), domsr(1),
-    numPeaks(this, "numpeaks", "Maximum number of peaks to be estimated", true, maxNumPeaks),
-    keepMode(this, "keep", "keep first or strongest peaks", true, 0),
-    //downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
-    thresholdWidth(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
-    thresholdHeight(this, "thheight", "minimum height for peaks", true, 0.),
-    thresholdDev(this, "thdev", "maximum deviation from mean value", true, 0.),
-    rangeLow(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
-    rangeHigh(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
-    //domainScale(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
+    max_num_peaks_(16), allocated_peaks_size_(0), domscale_(1.),
+    numPeaks_attr_(this, "numpeaks", "Maximum number of peaks to be estimated", true, max_num_peaks_),
+    keepMode_attr_(this, "keep", "keep first or strongest peaks", true, 0),
+    //downSampling_attr_(this, "downsampling", "Downsampling Exponent", true, 2),
+    thresholdWidth_attr_(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
+    thresholdHeight_attr_(this, "thheight", "minimum height for peaks", true, 0.),
+    thresholdDev_attr_(this, "thdev", "maximum deviation from mean value", true, 0.),
+    rangeLow_attr_(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
+    rangeHigh_attr_(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
+    //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
-    this->keepMode.addEnumItem("strongest", "keep strongest peak");
-    this->keepMode.addEnumItem("lowest", "keep first peak");
+    keepMode_attr_.addEnumItem("strongest", "keep strongest peak");
+    keepMode_attr_.addEnumItem("lowest", "keep first peak");
   }
   
   ~PiPoPeaks (void)
@@ -121,54 +120,49 @@ public:
            this, hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
 
-    maxNumPeaks = std::max(1, this->numPeaks.get());
-    this->peaks_sr = domain * 2.;	// derive audio sampling rate from fft domain (= frequency range of bins)
-    
-    const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
+    max_num_peaks_ = std::max(1, numPeaks_attr_.get());
 
-    this->allocatedPeaksSize = width * height / 2 + 1; // we can find at maximum a number of peaks of half the size of the input vector
-    this->buffer_.resize(this->allocatedPeaksSize * 2);
+    // calculate factor to convert bin to peak freq  WAS: this->domainScale_attr_.get();
+    // derive audio sampling rate from fft domain (= frequency range of bins) is peaks_sr = domain * 2. 
+    domscale_ = domain / static_cast<double>(width * height); // domscale is max bin's domain value (frequency)
     
-    return this->propagateStreamAttributes(true, rate, offset, 2, maxNumPeaks, peaksColNames, 1, 0.0, 1);
+    const char *peaksColNames[] = { "Frequency", "Amplitude" } ;
+
+    allocated_peaks_size_ = width * height / 2 + 1; // we can find at maximum a number of peaks of half the size of the input vector
+    buffer_.resize(allocated_peaks_size_ * 2);
+    
+    return propagateStreamAttributes(true, rate, offset, 2, max_num_peaks_, peaksColNames, 1, 0.0, 1);
   }
   
   int reset (void)
   {    
-    return this->propagateReset();
+    return propagateReset();
   }
 
   
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    float *peaks_ptr = &this->buffer_[0];
+    float *peaks_ptr = &buffer_[0];
     int n_found = 0;
     double mean = -ABS_MAX;
     unsigned int start, end;
     unsigned int i, j;
-    double thresholdDev = this->thresholdDev.get();
-    double thresholdHeight = this->thresholdHeight.get();
-    double thresholdWidth = this->thresholdWidth.get();
-    int max_search = this->keepMode.get() == 0  // max number of peaks to search
-	?  allocatedPeaksSize	// keep strongest
-	:  maxNumPeaks; 	// keep first
-
-    double domscale = -0.5; // default factor to convert sr to nyquist  WAS: this->domainScale.get();
+    double thresholdDev = thresholdDev_attr_.get();
+    double thresholdHeight = thresholdHeight_attr_.get();
+    double thresholdWidth = thresholdWidth_attr_.get();
+    int max_search = keepMode_attr_.get() == 0  // max number of peaks to search depends on keepmode
+	?  allocated_peaks_size_ // keep strongest: search all
+	:  max_num_peaks_; 	 // keep first: search up to max num peaks to output
     
-    if(this->domsr != 0) // domsr is always 1
-      domscale *= this->peaks_sr; // domscale is max bin's domain value (frequency)
+    start = std::floor(rangeLow_attr_.get() / domscale_);
+    end   = std::ceil(rangeHigh_attr_.get() / domscale_);
     
-    if(domscale < 0.0)
-      domscale = -domscale / static_cast<double>(size);
-    
-    start = std::floor(this->rangeLow.get() / domscale);
-    end   = std::ceil(this->rangeHigh.get() / domscale);
-      
-    if(start < 1)
+    if (start < 1)
       start = 1;
     
-    if(end >= size)
+    if (end >= size)
       end = size - 1;
-      
+
     if(thresholdDev > 0.0)
     {
       mean = 0.0;
@@ -204,7 +198,7 @@ public:
           double min_left_index = 0;
           unsigned int k, l;
           
-          thresholdWidth = thresholdWidth / domscale;
+          thresholdWidth = thresholdWidth / domscale_;
           
           for(k=i+1, l=j+1; k<size-1; k++, l++)
           {
@@ -249,7 +243,7 @@ public:
             continue;
         }
         
-        peaks_ptr[2 * n_found] = max_index * domscale;
+        peaks_ptr[2 * n_found] = max_index * domscale_;
         peaks_ptr[2 * n_found + 1] = max_amp;
         n_found++;
         
@@ -258,17 +252,17 @@ public:
       }
     }
     
-    if (this->keepMode.get() == 0) // keep strongest
+    if (keepMode_attr_.get() == 0) // keep strongest
     {
       qsort((void *)peaks_ptr, n_found, sizeof(peak_t), peaks_compare_amp);
       
-      if (n_found > maxNumPeaks)
-        n_found = maxNumPeaks;
+      if (n_found > max_num_peaks_)
+        n_found = max_num_peaks_;
       
       std::qsort(static_cast<void *>(peaks_ptr), n_found, sizeof(peak_t), peaks_compare_freq);
     }
-    return propagateFrames(time, 1.0, peaks_ptr, 2*n_found, 1);
+    return propagateFrames(time, 1.0, peaks_ptr, 2 * n_found, 1);
   }
 };
 
-#endif
+#endif // _PIPO_PEAKS_
