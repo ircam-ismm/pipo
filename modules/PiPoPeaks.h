@@ -80,6 +80,7 @@ private:
   std::vector<float> buffer_;
   int domsr;
   double peaks_sr;
+  int maxNumPeaks;
   int allocatedPeaksSize;
   
 public:
@@ -96,7 +97,8 @@ public:
   // constructor
   PiPoPeaks (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer_(),
-    numPeaks(this, "numpeaks", "Maximum number of peaks to be estimated", true, 16),
+    maxNumPeaks(16), allocatedPeaksSize(0), domsr(1),
+    numPeaks(this, "numpeaks", "Maximum number of peaks to be estimated", true, maxNumPeaks),
     keepMode(this, "keep", "keep first or strongest peaks", true, 0),
     //downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
     thresholdWidth(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
@@ -108,13 +110,10 @@ public:
   {
     this->keepMode.addEnumItem("strongest", "keep strongest peak");
     this->keepMode.addEnumItem("lowest", "keep first peak");
-    this->domsr = 1;
-    this->allocatedPeaksSize = 0;
   }
   
   ~PiPoPeaks (void)
-  {
-  }
+  {  }
 
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
@@ -123,7 +122,7 @@ public:
            this, hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
 
-    int maxNumPeaks = std::max(1, this->numPeaks.get());
+    maxNumPeaks = std::max(1, this->numPeaks.get());
     this->peaks_sr = domain * 2.;	// derive audio sampling rate from fft domain (= frequency range of bins)
     
     const char * peaksColNames[] = { "Frequency", "Amplitude" } ;
@@ -152,9 +151,8 @@ public:
     double thresholdDev = this->thresholdDev.get();
     double thresholdHeight = this->thresholdHeight.get();
     double thresholdWidth = this->thresholdWidth.get();
-    int maxNumPeaks = this->numPeaks.get();
     int max_search = this->keepMode.get() == 0  // max number of peaks to search
-	?  this->allocatedPeaksSize // keep strongest
+	?  allocatedPeaksSize	// keep strongest
 	:  maxNumPeaks; 	// keep first
 
     double domscale = -0.5; // default factor to convert sr to nyquist  WAS: this->domainScale.get();
