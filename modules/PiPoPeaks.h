@@ -1,4 +1,5 @@
-/**
+/** -*-mode:c; c-basic-offset: 2; eval: (subword-mode) -*-
+ *
  * @file PiPoPeaks.h
  * @author Riccardo.Borghesi@ircam.fr
  * @brief PiPo estimating local maxima of a vector
@@ -105,7 +106,6 @@ public:
     rangeHigh(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
     //domainScale(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
-
     this->keepMode.addEnumItem("strongest", "keep strongest peak");
     this->keepMode.addEnumItem("lowest", "keep first peak");
     this->domsr = 1;
@@ -153,6 +153,10 @@ public:
     double thresholdHeight = this->thresholdHeight.get();
     double thresholdWidth = this->thresholdWidth.get();
     int maxNumPeaks = this->numPeaks.get();
+    int max_search = this->keepMode.get() == 0  // max number of peaks to search
+	?  this->allocatedPeaksSize // keep strongest
+	:  maxNumPeaks; 	// keep first
+
     double domscale = -0.5; // default factor to convert sr to nyquist  WAS: this->domainScale.get();
     
     if(this->domsr != 0) // domsr is always 1
@@ -254,9 +258,8 @@ public:
         peaks_ptr[2 * n_found + 1] = max_amp;
         n_found++;
         
-        if ((this->keepMode.get() == 1 && n_found >= maxNumPeaks) ||		// keep first
-	    (this->keepMode.get() == 0 && n_found >= this->allocatedPeaksSize)) // keep strongest
-          break;
+        if (n_found >= max_search)
+	  break;
       }
     }
     
@@ -264,7 +267,7 @@ public:
     {
       qsort((void *)peaks_ptr, n_found, sizeof(peak_t), peaks_compare_amp);
       
-      if(n_found > this->numPeaks.get())
+      if (n_found > maxNumPeaks)
         n_found = maxNumPeaks;
       
       std::qsort(static_cast<void *>(peaks_ptr), n_found, sizeof(peak_t), peaks_compare_freq);
