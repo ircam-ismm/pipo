@@ -112,8 +112,8 @@ public:
     slice.hop.set(128);
     slice.norm.set("power");
     yin.minFreq.set(0); // adapt to slice size and sr
-    fft.mode.set("power");
-    fft.weighting.set("itur468");
+    fft.mode_attr_.set("power");
+    fft.weighting_attr_.set("itur468");
     sum.colname.set("Loudness");
     moments.scaling.set("Domain");
 

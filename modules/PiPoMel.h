@@ -65,7 +65,7 @@ public:
     /* set internal attributes */
     this->wind.set(PiPoSlice::BlackmanWindow);
     this->norm.set(PiPoSlice::PowerNorm);
-    this->fft.mode.set(PiPoFft::PowerFft);
+    this->fft.mode_attr_.set(PiPoFft::PowerFft);
     this->bands.mode.set(PiPoBands::MelBands);
     this->bands.log.set(false);
   }

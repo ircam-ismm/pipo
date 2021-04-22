@@ -1,4 +1,5 @@
-/**
+/** -*- mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
  * @file PiPoFft.h
  * @author Norbert.Schnell@ircam.fr
  * 
@@ -129,65 +130,66 @@ class PiPoFft : public PiPo
 public:
   enum OutputMode { ComplexFft, MagnitudeFft, PowerFft, LogPowerFft };
   enum WeightingMode { NoWeighting, AWeighting, BWeighting, CWeighting, DWeighting, Itur468Weighting};
-  
-  std::vector<PiPoValue> fftFrame;	// assuming PiPoValue == rta_real_t
-  std::vector<PiPoValue> fftWeights;
-  double sampleRate;
-  int fftSize;
-  enum OutputMode outputMode;
-  enum WeightingMode weightingMode;
-  rta_fft_setup_t *fftSetup;
-  rta_real_t fftScale;
+
+private:
+  std::vector<PiPoValue> fftFrame_;	// assuming PiPoValue == rta_real_t
+  std::vector<PiPoValue> fftWeights_;
+  double sampleRate_;
+  int fftSize_;
+  enum OutputMode outputMode_;
+  enum WeightingMode weightingMode_;
+  rta_fft_setup_t *fftSetup_;
+  rta_real_t fftScale_;
 
 public:
-  PiPoScalarAttr<int> size;
-  PiPoScalarAttr<PiPo::Enumerate> mode;
-  PiPoScalarAttr<bool> norm;
-  PiPoScalarAttr<PiPo::Enumerate> weighting;
+  PiPoScalarAttr<int>             size_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> mode_attr_;
+  PiPoScalarAttr<bool>            norm_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> weighting_attr_;
 
-  PiPoFft(Parent *parent, PiPo *receiver = NULL) :
-  PiPo(parent, receiver),
-  fftFrame(),
-  fftWeights(),
-  size(this, "size", "FFT Size", true, 0),
-  mode(this, "mode", "FFT Mode", true, PowerFft),  
-  norm(this, "norm", "Normalize FFT", true, true),
-  weighting(this, "weighting", "FFT Weighting", true, NoWeighting)
+  PiPoFft(Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver),
+    fftFrame_(),
+    fftWeights_(),
+    size_attr_(this, "size", "FFT Size", true, 0),
+    mode_attr_(this, "mode", "FFT Mode", true, PowerFft),  
+    norm_attr_(this, "norm", "Normalize FFT", true, true),
+    weighting_attr_(this, "weighting", "FFT Weighting", true, NoWeighting)
   {
-    this->sampleRate = 1.0;
-    this->fftSize = 0;
-    this->outputMode = PowerFft;
-    this->weightingMode = NoWeighting;
-    this->fftSetup = NULL;
-    this->fftScale = 1.0;
+    sampleRate_    = 1.0;
+    fftSize_       = 0;
+    outputMode_    = PowerFft;
+    weightingMode_ = NoWeighting;
+    fftSetup_      = NULL;
+    fftScale_      = 1.0;
 
-    this->mode.addEnumItem("complex", "Complex output");
-    this->mode.addEnumItem("magnitude", "Magnitude spectrum");
-    this->mode.addEnumItem("power", "Power spectrum");
-    this->mode.addEnumItem("logpower", "Logarithmic power spectrum");
+    mode_attr_.addEnumItem("complex", "Complex output");
+    mode_attr_.addEnumItem("magnitude", "Magnitude spectrum");
+    mode_attr_.addEnumItem("power", "Power spectrum");
+    mode_attr_.addEnumItem("logpower", "Logarithmic power spectrum");
 
-    this->weighting.addEnumItem("none", "No weighting");
-    this->weighting.addEnumItem("a", "dB-A weighting");
-    this->weighting.addEnumItem("b", "dB-B weighting");
-    this->weighting.addEnumItem("c", "dB-C weighting");
-    this->weighting.addEnumItem("d", "dB-C weighting");
-    this->weighting.addEnumItem("itur468", "ITU-R 468 weighting");
+    weighting_attr_.addEnumItem("none", "No weighting");
+    weighting_attr_.addEnumItem("a", "dB-A weighting");
+    weighting_attr_.addEnumItem("b", "dB-B weighting");
+    weighting_attr_.addEnumItem("c", "dB-C weighting");
+    weighting_attr_.addEnumItem("d", "dB-C weighting");
+    weighting_attr_.addEnumItem("itur468", "ITU-R 468 weighting");
   }
   
   ~PiPoFft(void)
   {
-    if(this->fftSetup != NULL)
-      rta_fft_setup_delete(this->fftSetup);
+    if(fftSetup_ != NULL)
+      rta_fft_setup_delete(fftSetup_);
   }
   
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    bool		norm		   = this->norm.get();
-    int			new_fft_size	   = this->size.get();
-    enum OutputMode     new_output_mode    = (enum OutputMode)    this->mode.get();
-    enum WeightingMode  new_weighting_mode = (enum WeightingMode) this->weighting.get();
-    double              new_samplerate     = (double) size / domain;
-    int			inputSize	   = width * size;
+    bool		norm		   = norm_attr_.get();
+    int			new_fft_size	   = size_attr_.get();
+    enum OutputMode     new_output_mode    = (enum OutputMode)    mode_attr_.get();
+    enum WeightingMode  new_weighting_mode = (enum WeightingMode) weighting_attr_.get();
+    double              new_samplerate     = (double) height / domain;
+    int			inputSize	   = width * height;
     int			outputSize, outputWidth;
     const char	       *fftColNames[2];
     
@@ -197,9 +199,9 @@ public:
       new_fft_size = MAX_FFT_SIZE;
     
     if (norm)
-      this->fftScale = 1.0 / new_fft_size;
+      fftScale_ = 1.0 / new_fft_size;
     else
-      this->fftScale = 1.0;
+      fftScale_ = 1.0;
     
     outputSize = new_fft_size / 2;
     
@@ -241,17 +243,17 @@ public:
       }
     }
     
-    if (new_fft_size != this->fftSize  ||  new_weighting_mode != this->weightingMode  ||  new_samplerate != this->sampleRate)
+    if (new_fft_size != fftSize_  ||  new_weighting_mode != weightingMode_  ||  new_samplerate != sampleRate_)
     { // parameters have changed, setup FFT
       PiPoValue *nyquistMagPtr;
       
       /* alloc output frame */
-      this->fftFrame.resize(new_fft_size + 2);
-      this->fftWeights.resize(outputSize + 1);
-      this->fftSize = new_fft_size;
+      fftFrame_.resize(new_fft_size + 2);
+      fftWeights_.resize(outputSize + 1);
+      fftSize_ = new_fft_size;
       
-      nyquistMagPtr = &this->fftFrame[new_fft_size];
-      this->fftFrame[new_fft_size + 1] = 0.0; /* zero nyquist phase */
+      nyquistMagPtr = &fftFrame_[new_fft_size];
+      fftFrame_[new_fft_size + 1] = 0.0; /* zero nyquist phase */
       
       double indexToFreq = new_samplerate / new_fft_size;
       
@@ -260,7 +262,7 @@ public:
         case NoWeighting:
         {
           for(int i = 0; i <= outputSize; i++)
-            this->fftWeights[i] = 1.0f;
+            fftWeights_[i] = 1.0f;
           
           break;
         }
@@ -269,14 +271,14 @@ public:
         {
           static const double weightScale = 1.258953930848941;
           
-          this->fftWeights[0] = 0.0;
+          fftWeights_[0] = 0.0;
           
           for(int i = 1; i <= outputSize; i++)
           {
             double freq = indexToFreq * i;
             double fsq = freq * freq;
             double w = fsq * fsq * 12200.0 * 12200.0 / ((fsq + 20.6 * 20.6) * (fsq + 12200.0 * 12200.0) * sqrt((fsq + 107.7 * 107.7) * (fsq + 737.9 * 737.9)));
-            this->fftWeights[i] = (float)(w * weightScale);
+            fftWeights_[i] = (float)(w * weightScale);
           }
           
           break;
@@ -286,14 +288,14 @@ public:
         {
           static const double weightScale = 1.019724962918924;
 
-          this->fftWeights[0] = 0.0;
+          fftWeights_[0] = 0.0;
           
           for(int i = 1; i <= outputSize; i++)
           {
             double freq = indexToFreq * i;
             double fsq = freq * freq;
             double w = freq * fsq * 12200.0 * 12200 / ((fsq + 20.6 * 20.6) * sqrt(fsq + 158.5 * 158.5) * (fsq + 12200 * 12200));
-            this->fftWeights[i] = (float)(w * weightScale);
+            fftWeights_[i] = (float)(w * weightScale);
           }
           
           break;
@@ -303,14 +305,14 @@ public:
         {
           static const double weightScale = 1.007146464025963;
           
-          this->fftWeights[0] = 0.0;
+          fftWeights_[0] = 0.0;
           
           for(int i = 1; i <= outputSize; i++)
           {
             double freq = indexToFreq * i;
             double fsq = freq * freq;
             double w = fsq * 12200.0 * 12200.0 / ((fsq + 20.6 * 20.6) * (fsq + 12200.0 * 12200.0));
-            this->fftWeights[i] = (float)(w * weightScale);
+            fftWeights_[i] = (float)(w * weightScale);
           }
           
           break;
@@ -320,7 +322,7 @@ public:
         {
           static const double weightScale = 0.999730463675085;
           
-          this->fftWeights[0] = 0.0;
+          fftWeights_[0] = 0.0;
           
           for(int i = 1; i <= outputSize; i++)
           {
@@ -332,7 +334,7 @@ public:
             double d2 = 11723776.0 * fsq;
             double h = (n1 * n1 + n2) / (d1 * d1 + d2);
             double w = 14499.711699348260202 * freq * sqrt(h / ((fsq + 79919.29) * (fsq + 1345600.0)));
-            this->fftWeights[i] = (float)(w * weightScale);
+            fftWeights_[i] = (float)(w * weightScale);
           }
                     
           break;
@@ -340,12 +342,12 @@ public:
           
         case Itur468Weighting:
         {
-          this->fftWeights[0] = 0.0;
+          fftWeights_[0] = 0.0;
 
           for(int i = 1; i <= outputSize; i++)
           {
             double freq = indexToFreq * i;
-            this->fftWeights[i] = (float)getItur468Factor(freq);
+            fftWeights_[i] = (float)getItur468Factor(freq);
           }
           
           break;
@@ -353,36 +355,35 @@ public:
       }
       
       /* setup FFT */    
-      if(this->fftSetup != NULL)
-        rta_fft_setup_delete(this->fftSetup);
+      if(fftSetup_ != NULL)
+        rta_fft_setup_delete(fftSetup_);
       
-      rta_fft_real_setup_new(&this->fftSetup, rta_fft_real_to_complex_1d, (rta_real_t *)&this->fftScale, NULL, inputSize, &this->fftFrame[0], new_fft_size, nyquistMagPtr);
+      rta_fft_real_setup_new(&fftSetup_, rta_fft_real_to_complex_1d, (rta_real_t *)&fftScale_, NULL, inputSize, &fftFrame_[0], new_fft_size, nyquistMagPtr);
     }
 
-    this->sampleRate = new_samplerate;
-    this->outputMode = new_output_mode;
-    this->weightingMode = new_weighting_mode;
+    sampleRate_ = new_samplerate;
+    outputMode_ = new_output_mode;
+    weightingMode_ = new_weighting_mode;
     
-    return this->propagateStreamAttributes(0, rate, offset, outputWidth, outputSize + 1, fftColNames, 0, 0.5 * new_samplerate, 1);
+    return propagateStreamAttributes(0, rate, offset, outputWidth, outputSize + 1, fftColNames, 0, 0.5 * new_samplerate, 1);
   }
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-    if(this->fftSetup != NULL)
+    if (fftSetup_ != NULL)
     {
-      PiPoValue *fftFrame = &this->fftFrame[0];
-      unsigned int outputMode = this->outputMode;
-      int fftSize = this->fftSize;
-      int outputSize = fftSize / 2;
-      PiPoValue *outputFrame;
-      int outputWidth;
+      PiPoValue   *fftFrame   = &fftFrame_[0];
+      unsigned int outputMode = outputMode_;
+      int          outputSize = fftSize_ / 2;
+      PiPoValue   *outputFrame;
+      int          outputWidth;
       
       if(outputMode > LogPowerFft)
         outputMode = LogPowerFft;
       
       for(unsigned int i = 0; i < num; i++)
       {
-        rta_fft_execute(fftFrame, values, size, this->fftSetup);
+        rta_fft_execute(fftFrame, values, size, fftSetup_);
         
         switch(outputMode)
         {
@@ -392,12 +393,12 @@ public:
             outputFrame = fftFrame;
             
             /* apply weighting */
-            if(this->weightingMode != NoWeighting)
+            if(weightingMode_ != NoWeighting)
             {
               for(int i = 0; i <= outputSize; i++)
               {
-                outputFrame[2 * i] *= this->fftWeights[i];
-                outputFrame[2 * i + 1] *= this->fftWeights[i];
+                outputFrame[2 * i] *= fftWeights_[i];
+                outputFrame[2 * i + 1] *= fftWeights_[i];
               }
             }
             
@@ -409,22 +410,22 @@ public:
             float re, im;
             
             outputWidth = 1;
-            outputFrame = &this->fftFrame[outputSize];
+            outputFrame = &fftFrame_[outputSize];
             
             re = fftFrame[outputSize * 2];
             im = fftFrame[outputSize * 2 + 1];
-            outputFrame[outputSize] = sqrtf(re * re + im * im) * this->fftWeights[outputSize];
+            outputFrame[outputSize] = sqrtf(re * re + im * im) * fftWeights_[outputSize];
             
             for(int i = outputSize - 1; i > 0; i--)
             {
               re = fftFrame[i * 2];
               im = fftFrame[i * 2 + 1];
-              outputFrame[i] = 2 * sqrtf(re * re + im * im) * this->fftWeights[i];
+              outputFrame[i] = 2 * sqrtf(re * re + im * im) * fftWeights_[i];
             }
             
             re = fftFrame[0];
             im = fftFrame[1];
-            outputFrame[i] = sqrtf(re * re + im * im) * this->fftWeights[outputSize];
+            outputFrame[i] = sqrtf(re * re + im * im) * fftWeights_[outputSize];
             
             break;
           }
@@ -434,21 +435,21 @@ public:
             float re, im;
             
             outputWidth = 1;
-            outputFrame = &this->fftFrame[outputSize];
+            outputFrame = &fftFrame_[outputSize];
             
-            re = fftFrame[outputSize * 2] * this->fftWeights[outputSize];
-            im = fftFrame[outputSize * 2 + 1] * this->fftWeights[outputSize];
+            re = fftFrame[outputSize * 2] * fftWeights_[outputSize];
+            im = fftFrame[outputSize * 2 + 1] * fftWeights_[outputSize];
             outputFrame[outputSize] = re * re + im * im;
             
             for(int i = outputSize - 1; i > 0; i--)
             {
-              re = fftFrame[i * 2] * this->fftWeights[i];
-              im = fftFrame[i * 2 + 1] * this->fftWeights[i];
+              re = fftFrame[i * 2] * fftWeights_[i];
+              im = fftFrame[i * 2 + 1] * fftWeights_[i];
               outputFrame[i] = 4 * (re * re + im * im);
             }
                     
-            re = fftFrame[0] * this->fftWeights[0];
-            im = fftFrame[1] * this->fftWeights[0];
+            re = fftFrame[0] * fftWeights_[0];
+            im = fftFrame[1] * fftWeights_[0];
             outputFrame[0] = re * re + im * im;
           
             break;
@@ -461,24 +462,24 @@ public:
             float re, im, pow;
             
             outputWidth = 1;
-            outputFrame = &this->fftFrame[outputSize];
+            outputFrame = &fftFrame_[outputSize];
             
-            re = fftFrame[outputSize * 2] * this->fftWeights[outputSize];
-            im = fftFrame[outputSize * 2 + 1] * this->fftWeights[outputSize];
+            re = fftFrame[outputSize * 2] * fftWeights_[outputSize];
+            im = fftFrame[outputSize * 2 + 1] * fftWeights_[outputSize];
             pow = re * re + im * im;
           
             outputFrame[outputSize] = ((pow > minLogValue)? (10.0f * log10f(pow)): minLog);
           
             for(int i = outputSize - 1; i > 0; i--)
             {
-              re = fftFrame[i * 2] * this->fftWeights[i];
-              im = fftFrame[i * 2 + 1] * this->fftWeights[i];
+              re = fftFrame[i * 2] * fftWeights_[i];
+              im = fftFrame[i * 2 + 1] * fftWeights_[i];
               pow = re * re + im * im;
               outputFrame[i] = ((pow > minLogValue)? (10.0f * log10f(pow)): minLog);
             }
             
-            re = fftFrame[0] * this->fftWeights[0];
-            im = fftFrame[1] * this->fftWeights[0];
+            re = fftFrame[0] * fftWeights_[0];
+            im = fftFrame[1] * fftWeights_[0];
             pow = re * re + im * im;
             outputFrame[0] = ((pow > minLogValue)? (10.0f * log10f(pow)): minLog);
             
@@ -486,7 +487,7 @@ public:
           }
         }
         
-        int ret = this->propagateFrames(time, weight, outputFrame, outputWidth * (outputSize + 1), 1);
+        int ret = propagateFrames(time, weight, outputFrame, outputWidth * (outputSize + 1), 1);
         
         if(ret != 0)
           return ret;
