@@ -66,6 +66,13 @@ class PiPoCQT : public PiPo
 public:
   enum OutputMode { ComplexFft, MagnitudeFft, PowerFft, LogPowerFft, NumOutputMode };
 
+private:
+  essentia::standard::ConstantQ *constantq_; // essentia class
+  double input_samplerate_;
+  enum OutputMode output_mode_;
+  int num_bins_;
+
+public:
   PiPoScalarAttr<PiPo::Enumerate> mode_attr_;
   //PiPoScalarAttr<bool>            norm_attr_;
 
@@ -80,16 +87,10 @@ public:
   PiPoScalarAttr<double> minimumKernelSize_attr_; 
   PiPoScalarAttr<bool>   zeroPhase_attr_;
 
-private:
-  essentia::standard::ConstantQ constantq_; // essentia class
-  double input_samplerate_;
-  enum OutputMode output_mode_;
-  int num_bins_;
-
 public:
   PiPoCQT(Parent *parent, PiPo *receiver = NULL)
-  : PiPo(parent),
-    constantq_(), num_bins_(0), output_mode_(PowerFft), input_samplerate_(1),
+  : PiPo(parent), constantq_(NULL), input_samplerate_(0),
+    num_bins_(0), output_mode_(PowerFft),
     mode_attr_(this, "mode", "FFT Mode", true, output_mode_),  
     minFrequency_attr_     (this, "minFrequency",      "minimum frequency [Hz]", !false, 32.7),
     numberBins_attr_       (this, "numberBins",        "number of frequency bins, starting at minFrequency", true, 84),
@@ -121,6 +122,7 @@ public:
     windowType_attr_.addEnumItem("blackmanharris92", "blackmanharris92");
 
     essentia::init(); // init essentia algorithm factory
+    constantq_ = new essentia::standard::ConstantQ(); // then we can use an algorithm
   }
   
   ~PiPoCQT(void)
@@ -133,7 +135,7 @@ public:
     //bool		norm		   = norm_attr_.get();
     enum OutputMode     new_output_mode    = (enum OutputMode) mode_attr_.get();
     double              new_samplerate     = (double) height / domain; // retrieve input audio sampling rate
-    int			input_size	   = width * height;
+    int			input_size	   = width * height; // number of samples in slice (width is #channels)
     int                 outwidth;
     const char	       *outcolnames[2];
 
@@ -171,14 +173,14 @@ public:
         break;
       }
     }
-    
+
     // set all essentia cqt parameters from pipo attrs
-    //constantq_.sampleRate   = input_samplerate_ = new_samplerate;
-    //constantq_.numberBins   = num_bins_   = numberBins_attr_.get();
-    //constantq_.minFrequency = minFrequency_attr_.get();
+    //constantq_->sampleRate   = input_samplerate_ = new_samplerate;
+    //constantq_->numberBins   = num_bins_   = numberBins_attr_.get();
+    //constantq_->minFrequency = minFrequency_attr_.get();
     // ....
 
-    constantq_.configure();
+    constantq_->configure();
 
     /*todo: check if maybe configure can be skipped for most params??? then attrs can actually set false for changesStream param
     if (new_samplerate != input_samplerate_  ||  num_bins_ != numberBins_attr_.get())
@@ -201,7 +203,7 @@ public:
       // copy values to or set input vector for cqt
       // ...
 
-      //constantq_.execute();
+      constantq_->compute();
 
       PiPoValue   *cqt_frame;   // get pointer to cqt output frame (num_bins_ x 2)
       PiPoValue   *out_frame;
@@ -320,8 +322,8 @@ public:
 
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    // set interdependent slice parameters from cqt's pipo attrs
-    size.set(cqt_.numberBins_attr_.get());
+    // set interdependent slice parameters from cqt's pipo attrs (without calling streamattr on slice)
+    size.set(cqt_.numberBins_attr_.get(), true);
 
     // call PiPoSlice base class streamAttributes, which will propagate to cqt_.streamAttributes (it's receiver)
     return PiPoSlice::streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
