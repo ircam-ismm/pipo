@@ -123,6 +123,7 @@ public:
 
     essentia::init(); // init essentia algorithm factory
     constantq_ = new essentia::standard::ConstantQ(); // then we can use an algorithm
+    constantq_->declareParameters(); // why do we have to call this explicitly? (but without, no parameter can be set...)
   }
   
   ~PiPoCQT(void)
@@ -175,11 +176,12 @@ public:
     }
 
     // set all essentia cqt parameters from pipo attrs
-    //constantq_->sampleRate   = input_samplerate_ = new_samplerate;
-    //constantq_->numberBins   = num_bins_   = numberBins_attr_.get();
-    //constantq_->minFrequency = minFrequency_attr_.get();
+    essentia::ParameterMap params;
+    params.add("sampleRate", essentia::Parameter(input_samplerate_ = new_samplerate));
+    params.add("numberBins", essentia::Parameter(num_bins_         = numberBins_attr_.get()));
+    // minFrequency = minFrequency_attr_.get();
     // ....
-
+    constantq_->setParameters(params);
     constantq_->configure();
 
     /*todo: check if maybe configure can be skipped for most params??? then attrs can actually set false for changesStream param
