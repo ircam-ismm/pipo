@@ -177,10 +177,16 @@ public:
 
     // set all essentia cqt parameters from pipo attrs
     essentia::ParameterMap params;
-    params.add("sampleRate", essentia::Parameter(input_samplerate_ = new_samplerate));
-    params.add("numberBins", essentia::Parameter(num_bins_         = numberBins_attr_.get()));
-    // minFrequency = minFrequency_attr_.get();
-    // ....
+    params.add("sampleRate",        essentia::Parameter(input_samplerate_ = new_samplerate));
+    params.add("numberBins",        essentia::Parameter(num_bins_         = numberBins_attr_.get()));
+    params.add("minFrequency",      essentia::Parameter(minFrequency_attr_.get()));
+    params.add("binsPerOctave",     essentia::Parameter(binsPerOctave_attr_.get()));
+    params.add("threshold",         essentia::Parameter(threshold_attr_.get()));
+    params.add("scale",             essentia::Parameter(scale_attr_.get()));
+    params.add("windowType",        essentia::Parameter(windowType_attr_.getStr()));
+    params.add("minimumKernelSize", essentia::Parameter(minimumKernelSize_attr_.getInt()));
+    params.add("zeroPhase",         essentia::Parameter(zeroPhase_attr_.get()));
+
     constantq_->setParameters(params);
     constantq_->configure();
 
@@ -199,21 +205,20 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     // values points to num frames of input audio slice of size total elements,
-    
+    try {
     for (int i = 0; i < num; i++)
     {
-      // copy values to or set input vector for cqt
-      // ...
-
+      // copy values and set input vector for cqt
+      std::vector<PiPoValue> cqt_in(values, values + size); //xxxx member, init once
+      std::vector<std::complex<float> > cqt_out; //xxxx member, init once
+      
+      constantq_->input("frame").set(cqt_in);
+      constantq_->output("constantq").set(cqt_out);
       constantq_->compute();
 
-      PiPoValue   *cqt_frame;   // get pointer to cqt output frame (num_bins_ x 2)
+      PiPoValue   *cqt_frame = reinterpret_cast<PiPoValue *>(cqt_out.data());  // get pointer to complex cqt output frame (num_bins_ x 2)
       PiPoValue   *out_frame;
       int          out_width;
-
-#if MOCKUP
-      cqt_frame = values; // use input data as pseudo-output
-#endif
 
       // copy cqt output to output frame, possibly transforming to output_mode_
       switch (output_mode_)
@@ -284,6 +289,11 @@ public:
       
       values += size;
     }
+    } catch(essentia::EssentiaException &e) {
+      std::cerr << e.what() << std::endl;
+    } catch(...) {
+      printf("argh!\n");
+    }
     return 0;
   }
 }; // PiPoCQT
@@ -301,19 +311,20 @@ public:
     cqt_(parent, receiver)   // the cqt module outputs to the receiver
   {
     // make slice and cqt attrs visible to host
-    addAttr(this, "hop",  "Hop Size", &hop, true); // first one clears list 
-    addAttr(this, "size", "CQT Output Size", &cqt_.numberBins_attr_); // will also set slice.size
-    addAttr(this, "minfreq", "CQT minimum frequency [Hz]", &cqt_.minFrequency_attr_);
-    addAttr(this, "octavebins", "CQT number of bins per octave", &cqt_.binsPerOctave_attr_);
-    addAttr(this, "threshold", "CQT threshold", &cqt_.threshold_attr_);
-    addAttr(this, "scale", "CQT filters scale", &cqt_.scale_attr_);
-    addAttr(this, "window", "CQT window type", &cqt_.windowType_attr_);
+    addAttr(this, "hop",	   "Hop Size", &hop, true); // first one clears list 
+    //addAttr(this, "size",	   "Window Size", &size, true); // slice.size is determined by cqt params
+    addAttr(this, "numbins",	   "CQT Output Size", &cqt_.numberBins_attr_);
+    addAttr(this, "minfreq",	   "CQT minimum frequency [Hz]", &cqt_.minFrequency_attr_);
+    addAttr(this, "octavebins",	   "CQT number of bins per octave", &cqt_.binsPerOctave_attr_);
+    addAttr(this, "threshold",	   "CQT threshold", &cqt_.threshold_attr_);
+    addAttr(this, "scale",	   "CQT filters scale", &cqt_.scale_attr_);
+    addAttr(this, "window",	   "CQT window type", &cqt_.windowType_attr_);
     addAttr(this, "minkernelsize", "CQT minimum kernel size", &cqt_.minimumKernelSize_attr_);
-    addAttr(this, "zeroPhase", "CQT zero-phase windowing", &cqt_.zeroPhase_attr_);
+    addAttr(this, "zeroPhase",	   "CQT zero-phase windowing", &cqt_.zeroPhase_attr_);
 
     // init and fix other slice attributes for cqt
     hop.set(512);
-    size.set(2048);
+    size.set(32768);
     unit.set(PiPoSlice::SamplesUnit);
     wind.set(PiPoSlice::NoWindow);      // windowing is done in PiPoCQT
     norm.set(PiPoSlice::NoNorm);
@@ -323,9 +334,15 @@ public:
   void setReceiver (PiPo *receiver, bool add) { cqt_.setReceiver(receiver, add); };
 
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {  
+  {
+    // Constant Q factor (resolution of filter windows, larger values correspond to longer windows.
+    double Q = cqt_.scale_attr_.get() / (pow(2, 1 / (double) cqt_.binsPerOctave_attr_.get()) - 1);
+  
+    // The largest window size we'll require. We center-pad filters to the next power of two of the maximum filter length.
+    int windowSize = essentia::nextPowerTwo((int) ceil(Q * rate / cqt_.minFrequency_attr_.get()));
+  
     // set interdependent slice parameters from cqt's pipo attrs (without calling streamattr on slice)
-    size.set(cqt_.numberBins_attr_.get(), true);
+    size.set(windowSize, true);
 
     // call PiPoSlice base class streamAttributes, which will propagate to cqt_.streamAttributes (it's receiver)
     return PiPoSlice::streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
