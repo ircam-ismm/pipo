@@ -67,7 +67,9 @@ public:
   enum OutputMode { ComplexFft, MagnitudeFft, PowerFft, LogPowerFft, NumOutputMode };
 
 private:
-  essentia::standard::ConstantQ *constantq_; // essentia class
+  essentia::standard::ConstantQ    *constantq_; // essentia class
+  std::vector<PiPoValue>            cqt_in_;    // input frame to by used by constantq_
+  std::vector<std::complex<float> > cqt_out_;   // output frame to by used by constantq_
   double input_samplerate_;
   enum OutputMode output_mode_;
   int num_bins_;
@@ -132,7 +134,9 @@ public:
   }
   
   int streamAttributes(bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {  
+  {
+    try {
+
     //bool		norm		   = norm_attr_.get();
     enum OutputMode     new_output_mode    = (enum OutputMode) mode_attr_.get();
     double              new_samplerate     = (double) height / domain; // retrieve input audio sampling rate
@@ -190,6 +194,12 @@ public:
     constantq_->setParameters(params);
     constantq_->configure();
 
+    // resize and set input/output vectors for cqt
+    cqt_in_.reserve(input_size);
+    cqt_out_.reserve(num_bins_);
+    constantq_->input("frame").set(cqt_in_);
+    constantq_->output("constantq").set(cqt_out_);
+
     /*todo: check if maybe configure can be skipped for most params??? then attrs can actually set false for changesStream param
     if (new_samplerate != input_samplerate_  ||  num_bins_ != numberBins_attr_.get())
     { // structure-changing parameters have changed, setup cqt
@@ -200,23 +210,29 @@ public:
     output_mode_ = new_output_mode;
     
     return propagateStreamAttributes(0, framerate, offset, outwidth, num_bins_, outcolnames, 0, 0.5 * new_samplerate, 1);
-  }
+
+    } catch(std::exception &e) {
+      std::cerr << e.what() << std::endl;
+      signalError(e.what());
+    } catch(...) {
+      printf("argh!\n");
+    }
+    return -1; // after catch, return error
+  } // streamAttributes
+
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-    // values points to num frames of input audio slice of size total elements,
     try {
+
+    // values points to num frames of input audio slice of size total elements,
     for (int i = 0; i < num; i++)
     {
-      // copy values and set input vector for cqt
-      std::vector<PiPoValue> cqt_in(values, values + size); //xxxx member, init once
-      std::vector<std::complex<float> > cqt_out; //xxxx member, init once
-      
-      constantq_->input("frame").set(cqt_in);
-      constantq_->output("constantq").set(cqt_out);
+      // copy values to input vector for cqt (set in streamAttributes)
+      cqt_in_.assign(values, values + size); // copy input frame (todo: use slice's vector directly, bypassing frames argument)
       constantq_->compute();
 
-      PiPoValue   *cqt_frame = reinterpret_cast<PiPoValue *>(cqt_out.data());  // get pointer to complex cqt output frame (num_bins_ x 2)
+      PiPoValue   *cqt_frame = reinterpret_cast<PiPoValue *>(cqt_out_.data());  // get pointer to complex cqt output frame (num_bins_ x 2)
       PiPoValue   *out_frame;
       int          out_width;
 
@@ -289,12 +305,15 @@ public:
       
       values += size;
     }
-    } catch(essentia::EssentiaException &e) {
+    return 0;
+
+    } catch(std::exception &e) {
       std::cerr << e.what() << std::endl;
+      signalError(e.what());
     } catch(...) {
       printf("argh!\n");
     }
-    return 0;
+    return -1; // after catch, return error
   }
 }; // PiPoCQT
 
@@ -310,9 +329,9 @@ public:
   : PiPoSlice(parent, &cqt_), // chain ourselves (we are the slicer) to propagate our slices to the cqt module
     cqt_(parent, receiver)   // the cqt module outputs to the receiver
   {
-    // make slice and cqt attrs visible to host
+    // make user-settable slice and cqt attrs visible to host
+    // slice.size is determined by cqt params, cqt samplerate by input audio stream
     addAttr(this, "hop",	   "Hop Size", &hop, true); // first one clears list 
-    //addAttr(this, "size",	   "Window Size", &size, true); // slice.size is determined by cqt params
     addAttr(this, "numbins",	   "CQT Output Size", &cqt_.numberBins_attr_);
     addAttr(this, "minfreq",	   "CQT minimum frequency [Hz]", &cqt_.minFrequency_attr_);
     addAttr(this, "octavebins",	   "CQT number of bins per octave", &cqt_.binsPerOctave_attr_);
@@ -325,7 +344,7 @@ public:
     // init and fix other slice attributes for cqt
     hop.set(512);
     size.set(32768);
-    unit.set(PiPoSlice::SamplesUnit);
+    unit.set(PiPoSlice::SamplesUnit); //todo: make user-selectable, then check in size calc
     wind.set(PiPoSlice::NoWindow);      // windowing is done in PiPoCQT
     norm.set(PiPoSlice::NoNorm);
   }
@@ -335,14 +354,16 @@ public:
 
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
+    // recalc essentia constantq required window size as in constantq.cpp:
+
     // Constant Q factor (resolution of filter windows, larger values correspond to longer windows.
     double Q = cqt_.scale_attr_.get() / (pow(2, 1 / (double) cqt_.binsPerOctave_attr_.get()) - 1);
   
     // The largest window size we'll require. We center-pad filters to the next power of two of the maximum filter length.
     int windowSize = essentia::nextPowerTwo((int) ceil(Q * rate / cqt_.minFrequency_attr_.get()));
   
-    // set interdependent slice parameters from cqt's pipo attrs (without calling streamattr on slice)
-    size.set(windowSize, true);
+    // set interdependent slice parameters from cqt's pipo attrs 
+    size.set(windowSize, true /* without calling streamattr on slice */);
 
     // call PiPoSlice base class streamAttributes, which will propagate to cqt_.streamAttributes (it's receiver)
     return PiPoSlice::streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
