@@ -93,19 +93,18 @@ public:
   PiPoCQT(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent), constantq_(NULL), input_samplerate_(0),
     num_bins_(0), output_mode_(PowerFft),
-    mode_attr_(this, "mode", "FFT Mode", true, output_mode_),  
-    minFrequency_attr_     (this, "minFrequency",      "minimum frequency [Hz]", !false, 32.7),
+    // declare pipo attributes, all essentia cqt params need reconfiguring, thus changesstream = true
+    mode_attr_(this, "mode", "FFT Mode", true, output_mode_),
+    minFrequency_attr_     (this, "minFrequency",      "minimum frequency [Hz]", true, 32.7),
     numberBins_attr_       (this, "numberBins",        "number of frequency bins, starting at minFrequency", true, 84),
-    binsPerOctave_attr_    (this, "binsPerOctave",     "number of bins per octave", !false, 12),
-///  sampleRate_attr_       (this, "sampleRate",        "FFT sampling rate [Hz]", true, 44100.),
-    threshold_attr_        (this, "threshold",         "bins whose magnitude is below this quantile are discarded", !false, 0.01),
-    scale_attr_            (this, "scale",             "filters scale. Larger values use longer windows", !false, (double) 1.0),
-    minimumKernelSize_attr_(this, "minimumKernelSize", "minimum size allowed for frequency kernels", !false, 4),
-    zeroPhase_attr_        (this, "zeroPhase",         "a boolean value that enables zero-phase windowing. Input audio frames should be windowed with the same phase mode", !false, false),
-    windowType_attr_       (this, "windowType",        "the window type", !false, 1) // default: hann
+    binsPerOctave_attr_    (this, "binsPerOctave",     "number of bins per octave", true, 12),
+    threshold_attr_        (this, "threshold",         "bins whose magnitude is below this quantile are discarded", true, 0.01),
+    scale_attr_            (this, "scale",             "filters scale. Larger values use longer windows", true, (double) 1.0),
+    minimumKernelSize_attr_(this, "minimumKernelSize", "minimum size allowed for frequency kernels", true, 4),
+    zeroPhase_attr_        (this, "zeroPhase",         "a boolean value that enables zero-phase windowing. Input audio frames should be windowed with the same phase mode", true, false),
+    windowType_attr_       (this, "windowType",        "the window type", true, 1) // default: hann
 
   //"{hamming,hann,hannnsgcq,triangular,square,blackmanharris62,blackmanharris70,blackmanharris74,blackmanharris92}", "hann");
-
     //??? norm_attr_(this, "norm", "Normalize FFT", true, true)
   {
     mode_attr_.addEnumItem("complex", "Complex output");
@@ -127,12 +126,16 @@ public:
     constantq_ = new essentia::standard::ConstantQ(); // then we can use an algorithm
     constantq_->declareParameters(); // why do we have to call this explicitly? (but without, no parameter can be set...)
   }
-  
+
   ~PiPoCQT(void)
   {
     essentia::shutdown();
   }
-  
+
+  // forbid copy
+  PiPoCQT (const PiPoCQT &other) = delete;
+  PiPoCQT &operator= (const PiPoCQT &other) = delete;
+
   int streamAttributes(bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     try {
@@ -331,7 +334,7 @@ public:
   {
     // make user-settable slice and cqt attrs visible to host
     // slice.size is determined by cqt params, cqt samplerate by input audio stream
-    addAttr(this, "hop",	   "Hop Size", &hop, true); // first one clears list 
+    addAttr(this, "hop",	   "Hop Size", &hop, true /* first one clears list */);
     addAttr(this, "numbins",	   "CQT Output Size", &cqt_.numberBins_attr_);
     addAttr(this, "minfreq",	   "CQT minimum frequency [Hz]", &cqt_.minFrequency_attr_);
     addAttr(this, "octavebins",	   "CQT number of bins per octave", &cqt_.binsPerOctave_attr_);
@@ -339,11 +342,11 @@ public:
     addAttr(this, "scale",	   "CQT filters scale", &cqt_.scale_attr_);
     addAttr(this, "window",	   "CQT window type", &cqt_.windowType_attr_);
     addAttr(this, "minkernelsize", "CQT minimum kernel size", &cqt_.minimumKernelSize_attr_);
-    addAttr(this, "zeroPhase",	   "CQT zero-phase windowing", &cqt_.zeroPhase_attr_);
+    addAttr(this, "zerophase",	   "CQT zero-phase windowing", &cqt_.zeroPhase_attr_);
 
     // init and fix other slice attributes for cqt
     hop.set(512);
-    size.set(32768);
+    size.set(65536); // start with large window to reserve big vectors
     unit.set(PiPoSlice::SamplesUnit); //todo: make user-selectable, then check in size calc
     wind.set(PiPoSlice::NoWindow);      // windowing is done in PiPoCQT
     norm.set(PiPoSlice::NoNorm);
@@ -351,6 +354,9 @@ public:
 
   // the receiver of our little pipo chain will receive the output of the cqt module
   void setReceiver (PiPo *receiver, bool add) { cqt_.setReceiver(receiver, add); };
+
+  // let all children know their parent (module factory leaves it at NULL for ctor, sets it later)
+  void setParent (Parent *p) { parent = p; cqt_.setParent(p); }
 
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
