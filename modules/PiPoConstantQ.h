@@ -82,7 +82,6 @@ public:
   PiPoScalarAttr<double> minFrequency_attr_;
   PiPoScalarAttr<int>    numberBins_attr_; 
   PiPoScalarAttr<int>    binsPerOctave_attr_;
-//  PiPoScalarAttr<double> sampleRate_attr_; 
   PiPoScalarAttr<double> threshold_attr_; 
   PiPoScalarAttr<double> scale_attr_; 
   PiPoScalarAttr<PiPo::Enumerate> windowType_attr_; 
@@ -92,11 +91,11 @@ public:
 public:
   PiPoCQT(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent), constantq_(NULL), input_samplerate_(0),
-    num_bins_(0), output_mode_(PowerFft),
+    num_bins_(0), output_mode_(LogPowerFft),
     // declare pipo attributes, all essentia cqt params need reconfiguring, thus changesstream = true
-    mode_attr_(this, "mode", "FFT Mode", true, output_mode_),
-    minFrequency_attr_     (this, "minFrequency",      "minimum frequency [Hz]", true, 32.7),
-    numberBins_attr_       (this, "numberBins",        "number of frequency bins, starting at minFrequency", true, 84),
+    mode_attr_             (this, "mode",              "output scaling mode", true, output_mode_),
+    minFrequency_attr_     (this, "minFrequency",      "minimum frequency [Hz]", true, 32.7), // C1, 4th piano key
+    numberBins_attr_       (this, "numberBins",        "number of frequency bins, starting at minFrequency", true, 84), // up to B7, last piano key
     binsPerOctave_attr_    (this, "binsPerOctave",     "number of bins per octave", true, 12),
     threshold_attr_        (this, "threshold",         "bins whose magnitude is below this quantile are discarded", true, 0.01),
     scale_attr_            (this, "scale",             "filters scale. Larger values use longer windows", true, (double) 1.0),
@@ -212,7 +211,7 @@ public:
     
     output_mode_ = new_output_mode;
     
-    return propagateStreamAttributes(0, framerate, offset, outwidth, num_bins_, outcolnames, 0, 0.5 * new_samplerate, 1);
+    return propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, num_bins_, outcolnames, 0, 0.5 * new_samplerate, 1);
 
     } catch(std::exception &e) {
       std::cerr << e.what() << std::endl;
@@ -276,7 +275,7 @@ public:
           {
             re = cqt_frame[i * 2];
             im = cqt_frame[i * 2 + 1];
-            out_frame[i] = 4 * (re * re + im * im); // why 4?
+            out_frame[i] = 4 * (re * re + im * im);
           }
         }
         break;
@@ -335,6 +334,7 @@ public:
     // make user-settable slice and cqt attrs visible to host
     // slice.size is determined by cqt params, cqt samplerate by input audio stream
     addAttr(this, "hop",	   "Hop Size", &hop, true /* first one clears list */);
+    addAttr(this, "mode",	   "CQT Output Scaling", &cqt_.mode_attr_);
     addAttr(this, "numbins",	   "CQT Output Size", &cqt_.numberBins_attr_);
     addAttr(this, "minfreq",	   "CQT minimum frequency [Hz]", &cqt_.minFrequency_attr_);
     addAttr(this, "octavebins",	   "CQT number of bins per octave", &cqt_.binsPerOctave_attr_);
