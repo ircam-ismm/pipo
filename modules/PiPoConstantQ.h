@@ -46,6 +46,7 @@
 #include <vector>
 #include "PiPo.h"
 #include "PiPoSlice.h"
+#define protected public // drill a hole: make internal members of Essentia ConstantQ visible for pipo here
 #include "constantq.h" // from essentia
 
 #ifdef __cplusplus
@@ -60,6 +61,16 @@ extern "C" {
 #endif
 
 
+/* this would be the best way to extend essentia, but then we'd have to go through all steps of registering it as an algorithm...
+class ConstantQPlus : public ConstantQ
+{
+public:
+  ConstantQPlus() = default;
+
+  std::vector &getWindowFactors();
+};
+*/
+
 // calculate constant Q transform on a slice of audio input
 class PiPoCQT : public PiPo
 {
@@ -68,11 +79,13 @@ public:
 
 private:
   essentia::standard::ConstantQ    *constantq_; // essentia class
+  std::vector<double>               weights2_;  // kernel window factor: 1 / square of sum of kernels per output bin
   std::vector<PiPoValue>            cqt_in_;    // input frame to by used by constantq_
   std::vector<std::complex<float> > cqt_out_;   // output frame to by used by constantq_
   double input_samplerate_;
   enum OutputMode output_mode_;
-  int num_bins_;
+  int input_size_;      // input frame size == fft size
+  int num_bins_;        // number of output frequency bins
 
 public:
   PiPoScalarAttr<PiPo::Enumerate> mode_attr_;
@@ -135,17 +148,47 @@ public:
   PiPoCQT (const PiPoCQT &other) = delete;
   PiPoCQT &operator= (const PiPoCQT &other) = delete;
 
+
+  // for each output bin, calculate sum of weights (window values) for normalization
+  void getWindowFactors (std::vector<double> &weights)
+  {
+    essentia::standard::ConstantQ::SparseKernel &sparseKernel = constantq_->_sparseKernel;
+    weights.assign(num_bins_, 0);
+
+    for (unsigned i = 0; i < sparseKernel.real.size(); i++)
+    {
+      const unsigned row = sparseKernel.j[i];
+      const unsigned col = sparseKernel.i[i];
+      const double & r1  = sparseKernel.real[i];
+      const double & i1  = sparseKernel.imag[i];
+
+      weights[row] += r1*r1 + i1*i1;      // sum square magnitude of kernels (= window functions)
+    }
+
+    // include window and fft factors
+    const double fftfactor = 1. / (double) input_size_;
+    for (int i = 0; i < weights.size(); i++)
+      weights[i] = fftfactor * fftfactor / (weights[i] * weights[i]); // square of complex output bins will be multiplied by weights
+
+//    for (int i = 0; i < weights.size(); i++)
+//      printf("weight %2d = %f\n", i, weights[i]);
+//    printf("weights %g..%g  N %d  fftfactor %g  fftfactor^2 %g\n", weights[0], weights[weights.size() - 1], input_size_, fftfactor, fftfactor * fftfactor);
+  }
+
+  
   int streamAttributes(bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     try {
 
     //bool		norm		   = norm_attr_.get();
     enum OutputMode     new_output_mode    = (enum OutputMode) mode_attr_.get();
-    double              new_samplerate     = (double) height / domain; // retrieve input audio sampling rate
-    int			input_size	   = width * height; // number of samples in slice (width is #channels)
+    double              new_samplerate     = (double) height / domain; // retrieve input audio sampling rate from slice duration
     int                 outwidth;
     const char	       *outcolnames[2];
 
+    printf("new_samplerate %f\n", new_samplerate);
+    
+    input_size_	   = width * height; // number of samples in slice (width is #channels)
     if (new_output_mode >= NumOutputMode)
       new_output_mode = (enum OutputMode) (NumOutputMode - 1);
     
@@ -181,7 +224,7 @@ public:
       }
     }
 
-    // set all essentia cqt parameters from pipo attrs
+    // set all essentia cqt and internal parameters from pipo attrs
     essentia::ParameterMap params;
     params.add("sampleRate",        essentia::Parameter(input_samplerate_ = new_samplerate));
     params.add("numberBins",        essentia::Parameter(num_bins_         = numberBins_attr_.get()));
@@ -192,25 +235,20 @@ public:
     params.add("windowType",        essentia::Parameter(windowType_attr_.getStr()));
     params.add("minimumKernelSize", essentia::Parameter(minimumKernelSize_attr_.getInt()));
     params.add("zeroPhase",         essentia::Parameter(zeroPhase_attr_.get()));
+    output_mode_ = new_output_mode;
 
     constantq_->setParameters(params);
     constantq_->configure();
 
+    // get factors for scaling (after everything is initialized)
+    getWindowFactors(weights2_);
+
     // resize and set input/output vectors for cqt
-    cqt_in_.reserve(input_size);
+    cqt_in_.reserve(input_size_);
     cqt_out_.reserve(num_bins_);
     constantq_->input("frame").set(cqt_in_);
     constantq_->output("constantq").set(cqt_out_);
 
-    /*todo: check if maybe configure can be skipped for most params??? then attrs can actually set false for changesStream param
-    if (new_samplerate != input_samplerate_  ||  num_bins_ != numberBins_attr_.get())
-    { // structure-changing parameters have changed, setup cqt
-      constantq_.configure();
-    }
-    */
-    
-    output_mode_ = new_output_mode;
-    
     return propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, num_bins_, outcolnames, 0, 0.5 * new_samplerate, 1);
 
     } catch(std::exception &e) {
@@ -259,7 +297,7 @@ public:
           {
             re = cqt_frame[i * 2];
             im = cqt_frame[i * 2 + 1];
-            out_frame[i] = 2 * sqrtf(re * re + im * im);
+            out_frame[i] = 2 * sqrtf((re * re + im * im) * weights2_[i]);
           }
         }
         break;
@@ -275,7 +313,7 @@ public:
           {
             re = cqt_frame[i * 2];
             im = cqt_frame[i * 2 + 1];
-            out_frame[i] = 4 * (re * re + im * im);
+            out_frame[i] = 4 * (re * re + im * im) * weights2_[i];
           }
         }
         break;
@@ -293,7 +331,7 @@ public:
           {
             re = cqt_frame[i * 2];
             im = cqt_frame[i * 2 + 1];
-            pow = re * re + im * im;
+            pow = (re * re + im * im) * weights2_[i];
             out_frame[i] = pow > minLogValue  ?  10.0f * log10f(pow)  :  minLog;
           }
         }
