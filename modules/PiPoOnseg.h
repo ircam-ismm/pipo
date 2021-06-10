@@ -272,7 +272,7 @@ public:
     if (numcols <= 0)
       numcols = size;
     
-    if (colindex + numcols > size)
+    if (colindex + numcols > (int) size)
       numcols = size - colindex;
     
     for(unsigned int i = 0; i < num; i++)
@@ -419,7 +419,7 @@ public:
     return 0;
   }
   
-  int finalize(double inputEnd)
+  int finalize(double inputEnd) override
   {
     double durationThreshold = this->durthresh.get();
     double duration = inputEnd - this->onsetTime;

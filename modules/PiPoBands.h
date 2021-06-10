@@ -123,10 +123,10 @@ public:
   {
     enum BandsModeE bandsMode = static_cast<BandsModeE>(this->mode.get());
     enum EqualLoudnessModeE eqlMode = static_cast<EqualLoudnessModeE>(this->eqlmode.get());
-    int numBands = bandsMode == UserBands
+    unsigned int numBands = bandsMode == UserBands
       ?  std::max((unsigned) 0, band_limits.getSize() / 2)    // user given bands override numBands
       :  std::max(1, this->num.get());
-    int specSize = size;
+    unsigned int specSize = size;
     float sampleRate = 2.0 * domain;
 
     if (width >= 2)
@@ -140,14 +140,11 @@ public:
     else if (bandsMode >= BandsModeEMax)
       bandsMode = HtkMelBands;
 
-    if (specSize < 0)
-      specSize = 0;
-
     if (bandsMode != this->bandsMode || eqlMode != this->eqlMode ||
         numBands != this->bands.size() || specSize != this->specSize ||
         sampleRate != this->sampleRate)
     {
-      this->num.set(0, numBands, true); // copy back to attr (silently)
+      this->num.set(0, (int) numBands, true); // copy back to attr (silently)
       this->bands.resize(numBands);
       this->eqlcurve.resize(numBands);
       this->weights.resize(specSize * numBands);
@@ -170,7 +167,7 @@ public:
                                             rta_hz_to_mel_slaney, rta_mel_to_hz_slaney, rta_mel_slaney);
 
           // calculate band centre freqs (TODO: pass up from rta_spectrum_to_mel_bands_weights)
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           {
             double b = (bounds[2 * i] + bounds[2 * i + 1]) / 2.; // take mean as band centre freq
             bandfreq[i] = b / (double) specSize * sampleRate / 2. ; // in Hz
@@ -185,7 +182,7 @@ public:
                                             rta_hz_to_mel_htk, rta_mel_to_hz_htk, rta_mel_htk);
 
           // calculate band centre freqs (TODO: pass up from rta_spectrum_to_mel_bands_weights)
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           {
             double b = (bounds[2 * i] + bounds[2 * i + 1]) / 2.; // take mean as band centre freq
             bandfreq[i] = b / (double) specSize * sampleRate / 2. ; // in Hz
@@ -202,7 +199,7 @@ public:
         case UserBands:
 	{
 	  // check and copy band limits from attr
-	    for (int i = 0; i < numBands; i++)
+	    for (unsigned int i = 0; i < numBands; i++)
 	    {
 	      limits[2 * i]     = band_limits.getDbl(i*2);
 	      limits[2 * i + 1] = band_limits.getDbl(i*2 + 1);
@@ -220,7 +217,7 @@ public:
       {
         case Hynek:
 
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           { // Hynek's equal-loudness-curve formula
             double fsq  = bandfreq[i] * bandfreq[i];
             double ftmp = fsq / (fsq + 1.6e5);

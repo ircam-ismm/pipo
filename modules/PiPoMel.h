@@ -51,10 +51,10 @@ public:
   PiPoFft fft;
   PiPoBands bands;  
   
-  PiPoMel(Parent *parent, PiPo *receiver = NULL) :
-  PiPoSlice(parent, &this->fft),
-  fft(parent, &this->bands),
-  bands(parent, receiver)
+  PiPoMel(Parent *parent, PiPo *receiver = NULL)
+  : PiPoSlice(parent, &this->fft),
+    fft(parent, &this->bands),
+    bands(parent, receiver)
   {
     /* steal attributes from member PiPos */
     this->addAttr(this, "windsize", "FFT Window Size", &this->size, true);

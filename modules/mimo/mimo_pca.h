@@ -593,7 +593,7 @@ public:
         {
 	    case Forward:
             {
-                if (size < n_)
+                if ((long) size < n_)
                 {
                     signalWarning("Vector too short, input should be a vector with length n");
                     return propagateFrames(time, weight, nullptr, 0, 0);
@@ -603,7 +603,7 @@ public:
 		std::vector<float> centered(n_ * num);
 		float *cenptr = centered.data();
 
-		for (int k = 0; k < num; k++)
+		for (unsigned int k = 0; k < num; k++)
 		{
 		    for (int i = 0; i < n_; ++i)
 			cenptr[i] = values[i] - means_[i];
@@ -620,7 +620,7 @@ public:
 
 	    case Backward:
             {
-                if (size < rank_)
+                if ((long) size < rank_)
                 {
                     signalWarning("Vector too short, input should be a vector with length rank");
                     return propagateFrames(time, weight, nullptr, 0, 0);
@@ -628,7 +628,7 @@ public:
                 
                 auto resynthesized = xMul(values, decomposition_.VT.data(), num, rank_, n_);
 
-		for (int k = 0; k < num; k++)
+		for (unsigned int k = 0; k < num; k++)
 		{
 		    for (int i = 0; i < n_; ++i)
 			resynthesized[k * n_ + i] += means_[i];

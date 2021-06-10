@@ -186,9 +186,9 @@ private:
   }
 
   // create array and set as obj.name
-  jerry_value_t create_array (jerry_value_t obj, const char *name, int size) throw()
+  jerry_value_t create_array (jerry_value_t obj, const char *name, size_t size) throw()
   {
-    jerry_value_t a_arr = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, size);
+    jerry_value_t a_arr = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, (unsigned int) size);
     set_property(obj, name, a_arr);
     return a_arr;
   }
@@ -229,7 +229,7 @@ private:
     jerry_value_t strval = jerry_value_to_string(errval);
     size_t errlen = jerry_get_string_size(strval); // including terminating 0
     errmsg.resize(errlen);
-    jerry_string_to_char_buffer(strval, (jerry_char_t*) &errmsg[0], errlen);
+    jerry_string_to_char_buffer(strval, (jerry_char_t*) &errmsg[0], (unsigned int) errlen);
     jerry_release_value(strval);
     return errmsg;
   }
@@ -238,7 +238,7 @@ private:
   {
     if (jerry_value_is_error(value))
     {
-      jerry_error_t errtype = jerry_get_error_type(value);
+      //jerry_error_t errtype = jerry_get_error_type(value);
       jerry_value_t errval  = jerry_get_value_from_error(value, false);
       const std::string errmsg = value_to_string(errval, "(no message)");
       jerry_release_value(errval);
@@ -254,8 +254,8 @@ private:
  */
 
 public:
-  static double mtof(double x) { double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
-  static double ftom(double x) { double ref = 440; return 69.0 + 17.3123404906676 * log(x / ref); }
+  static double mtof(double x) { const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
+  static double ftom(double x) { const double ref = 440; return 69.0 + 17.3123404906676 * log(x / ref); }
   static double atodb(double x) { return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
   static double dbtoa(double x) { return exp(0.11512925465 * x); }
 
@@ -294,12 +294,12 @@ public:
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-/* printf("PiPoJs %p streamAttributes:\n", this); /* %s\n", this,
+    /* printf("PiPoJs %p streamAttributes:\n", this); // %s\n", this,
 	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
 	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
     inframesize_ = width * height; // we need to store the max frame size in case hasVarSize is true
-    int outwidth = width, outheight = height;
+    unsigned int outwidth = width, outheight = height;
     bool outlabels_given = false;       // default: pass labels through
     std::vector<const char *> outlabelarr; // output labels pointer array, if changed
     std::vector<std::string>  outlabelstr; // stores output of label expression
@@ -319,7 +319,7 @@ public:
       labels_obj_ = jerry_create_object();
       set_property(global_object_, "c", labels_obj_);
       if (labels != NULL)
-	for (int i = 0; i < width; i++)
+	for (unsigned int i = 0; i < width; i++)
 	{
 	  if (labels[i] != NULL  &&  *labels[i] != 0) // todo: check if valid js identifier
 	  {
@@ -342,7 +342,7 @@ public:
 	jerry_value_t labels_array = jerry_create_array(labels != NULL  ?  width  :  0);
 	set_property(global_object_, "l", labels_array);
 	if (labels != NULL)
-	  for (int i = 0; i < width; i++)
+	  for (unsigned int i = 0; i < width; i++)
 	  {
 	    jerry_value_t labval     = jerry_create_string((const jerry_char_t *) (labels[i] != NULL  ?  labels[i]  :  ""));
 	    jerry_value_t set_result = jerry_set_property_by_index(labels_array, i, labval);
@@ -395,7 +395,7 @@ public:
 
 	// copy to string array
 	outlabelarr.resize(outlabelstr.size());
-	for (int i = 0; i < outlabelstr.size(); i++)
+	for (unsigned int i = 0; i < outlabelstr.size(); i++)
 	  outlabelarr[i] = outlabelstr[i].c_str();
 
 	outlabels_given = true;

@@ -125,13 +125,13 @@ public:
   protected:
     // template that generates a function to apply scalefunc to each element of a frame to be scaled
     template<typename ScaleFuncType>
-    void scale_frame (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows, ScaleFuncType scalefunc)
+    void scale_frame (bool clip, PiPoValue *values, PiPoValue *buffer, unsigned int numframes, unsigned int numrows, ScaleFuncType scalefunc)
     {
       if (!clip)
       {
 	for (unsigned int i = 0; i < numframes * numrows; i++)
 	{
-	  for (unsigned int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+	  for (int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
 	  {
 	    buffer[k] = scalefunc(values[k], j);
 	  }
@@ -144,7 +144,7 @@ public:
       { // clipped
 	for (unsigned int i = 0; i < numframes * numrows; i++)
 	{
-	  for (unsigned int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+	  for (int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
 	  {
 	    double f = values[k];
 	    
@@ -178,7 +178,7 @@ public:
       inScale.resize(framesize);
       inOffset.resize(framesize);
 
-      for (unsigned int i = 0; i < framesize; i++)
+      for (int i = 0; i < framesize; i++)
       {
 	inScale[i]  = ((pipo_->extOutMax[i] - pipo_->extOutMin[i]) / (pipo_->extInMax[i] - pipo_->extInMin[i]));
 	inOffset[i] =  (pipo_->extOutMin[i] - pipo_->extInMin[i] * inScale[i]);
@@ -208,7 +208,7 @@ public:
       outScale.resize(framesize);
       outOffset.resize(framesize);
 
-      for (unsigned int i = 0; i < framesize; i++)
+      for (int i = 0; i < framesize; i++)
       {
 	inScale[i]   = (pipo_->funcBase - 1.) / (pipo_->extInMax[i] - pipo_->extInMin[i]);
 	inOffset[i]  = 1.0 - pipo_->extInMin[i] * inScale[i];
@@ -251,7 +251,7 @@ public:
       outScale.resize(framesize);
       outOffset.resize(framesize);
 
-      for (unsigned int i = 0; i < framesize; i++)
+      for (int i = 0; i < framesize; i++)
       {
 	inScale[i]   = log(pipo_->funcBase) / (pipo_->extInMax[i] - pipo_->extInMin[i]);
 	inOffset[i]  = -pipo_->extInMin[i] * inScale[i];
@@ -287,7 +287,7 @@ public:
 									\
     virtual void setup (int framesize) override				\
     {									\
-      for (unsigned int j = 0; j < framesize; j++)			\
+      for (int j = 0; j < framesize; j++)			\
       { /* override extended output range */				\
 	pipo_->extOutMin[j] = _FUNC_(pipo_->extInMin[j], j);		\
 	pipo_->extOutMax[j] = _FUNC_(pipo_->extInMax[j], j);		\
@@ -300,10 +300,15 @@ public:
     }									\
   } // end class ScalerWithFunc
 
-# define m2f  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
-# define f2m  [] (PiPoValue x, int j) -> PiPoValue { const double ref = 440; return (x) <= 0.0000000001  ? -999. :  69.0 + 17.3123404906676 * log(x / ref); }
-# define a2db [] (PiPoValue x, int j) -> PiPoValue { return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
-# define db2a [] (PiPoValue x, int j) -> PiPoValue { return exp(0.11512925465 * x); }
+  
+# define m2f  [] (PiPoValue x, int j) -> PiPoValue { \
+    const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
+# define f2m  [] (PiPoValue x, int j) -> PiPoValue { \
+    const double ref = 440; return (x) <= 0.0000000001  ? -999. :  69.0 + 17.3123404906676 * log(x / ref); }
+# define a2db [] (PiPoValue x, int j) -> PiPoValue { \
+    return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
+# define db2a [] (PiPoValue x, int j) -> PiPoValue { \
+    return exp(0.11512925465 * x); }
 
   make_scaler_class_with_func(ScalerM2F,  m2f);
   make_scaler_class_with_func(ScalerF2M,  f2m);
@@ -421,6 +426,8 @@ public:
     if (!order_ok)
       printf("enum order not good"),
       throw(std::logic_error("enum order not good")); // assure that order of add corresponds to enum indices
+#else
+    (void) order_ok;
 #endif
   }
 

@@ -141,7 +141,7 @@ public:
     }
 
     const Json::Value _num = root["num"];
-    int n = _num.size();
+    unsigned int n = _num.size();
     num.resize(n);
     for (unsigned int i = 0; i < n; ++i)
       num[i] = _num[i].asInt();
@@ -157,7 +157,7 @@ public:
     {
       std::cout << "mimo.stats model dimension mismatch error in\n" << std::endl
 		<< json_string << std::endl;
-      printf("%lu =? %d =? %d =? %d =? %d =? %d\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
+      printf("%lu =? %lu =? %lu =? %lu =? %lu =? %u\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
       return -1;
     }    
   }
@@ -342,7 +342,7 @@ public:
   /** return trained model parameters */
   stats_model_data *getmodel () override  { return &stats_;  }
 
-  bool converged (double *metric)  { return false; }
+  bool converged (double *metric) override { return false; }
 
   int maxiter () override { return 3; }
   
