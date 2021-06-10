@@ -41,13 +41,12 @@
 #ifndef _PIPO_CQT_
 #define _PIPO_CQT_
 
-#define MOCKUP 1 /////////
-
 #include <vector>
 #include "PiPo.h"
 #include "PiPoSlice.h"
 #define protected public // drill a hole: make internal members of Essentia ConstantQ visible for pipo here
-#include "constantq.h" // from essentia
+#include "constantq.h"   // from essentia
+#undef protected         // plug hole for subsequent includes
 
 #ifdef __cplusplus
 extern "C" {

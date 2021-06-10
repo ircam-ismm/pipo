@@ -67,7 +67,6 @@ class ConstantQ : public Algorithm {
 
   SparseKernel _sparseKernel;
 
-
  public:
   ConstantQ() {
     declareInput(_frame, "frame", "the windowed input audio frame");

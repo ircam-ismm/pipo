@@ -1054,7 +1054,6 @@
 				3164882E1FC226210086FEDF /* rta_correlation.c in Sources */,
 				3164882F1FC226210086FEDF /* rta_cubic.c in Sources */,
 				3164882A1FC225E60086FEDF /* rta_dct.c in Sources */,
-				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
 				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
 				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
 				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
@@ -1079,6 +1078,7 @@
 				2123C9BA24EFFD68005044F8 /* json_reader.cpp in Sources */,
 				216E1EC624FE95B90033FAD2 /* jerryscript.c in Sources */,
 				216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */,
+				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
