@@ -163,7 +163,7 @@ int main(int argc,char ** argv)
         if (c==-1) break;
         switch (c) {
             case 'n':
-                ndims = get_dims(optarg,dims);
+                ndims = get_dims((char *)optarg,dims);
                 break;
             case 'i':isinverse=1;break;
             case 'R':isreal=1;break;
