@@ -104,7 +104,9 @@ class ESSENTIA_API Configurable {
    */
   const Parameter& parameter(const std::string& key) const { return _params[key]; }
 
+#ifndef WIN32
  protected:
+#endif
 
   /**
    * Use this method to declare the list of parameters that this algorithm in
