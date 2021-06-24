@@ -189,7 +189,7 @@ class ESSENTIA_API Algorithm : public Configurable {
    * all of its inputs. This is most often called when the algorithm has received
    * an STOP_WHEN_DONE signal (at the end of the stream).
    */
-  virtual void shouldStop(bool stop);
+  virtual void shouldStop(bool stop) {}
 
   /**
    * Returns whether the algorithm should stop, ie: it has received an
@@ -220,7 +220,7 @@ class ESSENTIA_API Algorithm : public Configurable {
    * should not be called directly. Use resetNetwork instead to reset a network
    * of connected Algorithms.
    */
-  virtual void reset();
+  virtual void reset() {}
 
  protected:
   /** Declare a Sink for this algorithm. The sink uses its default acquire/release size. */
