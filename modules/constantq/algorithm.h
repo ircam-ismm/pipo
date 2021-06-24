@@ -92,8 +92,9 @@ class ESSENTIA_API Algorithm : public Configurable {
   std::vector<const std::type_info*> inputTypes() const;
   std::vector<const std::type_info*> outputTypes() const;
 
-
+#ifndef WIN32 
  protected:
+#endif
 
   void declareInput(InputBase& input, const std::string& name, const std::string& desc);
   void declareOutput(OutputBase& output, const std::string& name, const std::string& desc);
