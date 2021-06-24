@@ -57,7 +57,7 @@ class RogueVector : public std::vector<T> {
 };
 
 // Clang/LLVM implementation
-#if defined(__clang__) || defined(__EMSCRIPTEN__)
+#if defined(__clang__) || defined(__EMSCRIPTEN__) || defined(OS_WIN32)
 
 // TODO: this is a big hack that relies on clang/libcpp not changing the memory
 //       layout of the std::vector (very dangerous, but works for now...)
@@ -85,7 +85,7 @@ void RogueVector<T>::setSize(size_t size) {
 }
 
 // Windows implementation
-#elif defined(OS_WIN32)
+  /*#elif defined(OS_WIN32)
 
 template <typename T>
 void RogueVector<T>::setData(T* data) {
@@ -96,7 +96,7 @@ template <typename T>
 void RogueVector<T>::setSize(size_t size) {
   this->_Mylast() = this->_Myfirst() + size;
   this->_Myend() = this->_Myfirst() + size;
-}
+}*/
 
 #endif
 
