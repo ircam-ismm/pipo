@@ -1,7 +1,7 @@
 /** -*- mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
  *
  * @file PiPoConstantQ.h
- * @author Diemo Schwarz, Tristan Carsault
+ * @author Diemo Schwarz
  * 
  * @brief Constant Q Transform PiPo using Essentia's implementation
  * 
