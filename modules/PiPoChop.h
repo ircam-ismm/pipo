@@ -1,4 +1,4 @@
-/**
+/** 
  * @file PiPoChop.h
  * @author Norbert.Schnell@ircam.fr
  *
@@ -73,75 +73,106 @@ private:
   TempModArray tempMod;
   std::vector<PiPoValue> outValues;
 
-  // managed by reset/advanceNextTime():
-  double lastTime;  // last segmentation time
-  double nextTime;  // next segmentation time
-  int    nextIndex; // next external segmentation time list index, 
-  struct Segment
+  class Segmenter
   {
-    double time;	// NEXT segment start
-    double duration;	// LAST(!!!) segment duration
-  };
+  private:
+    PiPoChop &chop;	// reference to containing chop module
 
-  // return first chop time or infinity when not chopping
-  double resetNextTime ()
-  {
-    double next;
-    nextIndex = 1; // we return index 0, next will be 1
-    lastTime = offsetA.get();
+    // managed by reset/advanceNextTime():
+    double last_time_;     // LAST segmentation time
+    double next_time_;     // NEXT segmentation time
+    int    next_index_;    // next external segmentation time list index, 
+
+    double segment_start_;    // LAST segmentation time
+    double segment_duration_; // LAST segment duration
+
+  public:
+    Segmenter (PiPoChop &chop) : chop(chop) { reset(); }
     
-    if (chopTimesA.size() == 0)
+    double getSegmentStart()	{ return segment_start_; }
+    double getSegmentDuration() { return segment_duration_; }
+    double getLastTime()	{ return last_time_; } // debug only
+    double getNextTime()	{ return next_time_; } // debug only
+
+    // return first chop time or infinity when not chopping
+    void reset ()
     {
-      if (chopSizeA.get() > 0)
-	next = lastTime + chopSizeA.get(); // first segment ends at chop.offset + chop.size
-      else
-	next = DBL_MAX;
-    }
-    else
-      next = chopTimesA.getDbl(0);
-
-    return next;
-  }
-  
-  // return next chop time or infinity when not chopping, and the last segment's duration
-  struct Segment advanceNextTime (double curtime)
-  {
-    double next;
-    double duration;
-    int    numtimes = chopTimesA.size();
-
-    if (numtimes == 0)
-    { // chop.at list is empty, use chop.size
-      double chopsize = chopSizeA.get();
-      if (chopsize > 0)
-	next = (nextTime < DBL_MAX  ?  nextTime  :  curtime) + chopsize;
-      else
-	next = DBL_MAX;
-      
-      duration = nextTime - lastTime; // chop size can change dynamically, so we return actual last duration!
-    }
-    else
-    { // use chop.at list
-      // we have passed index 0
-      if (nextIndex < numtimes)
+      next_index_ = 1; // we return index 0, next will be 1
+      last_time_  = chop.offsetA.get();
+    
+      if (chop.chopTimesA.size() == 0)
       {
-	next = chopTimesA.getDbl(nextIndex);
-
-	if (chopDurationA.size() < nextIndex)
-	  duration = chopDurationA.getDbl(nextIndex);
+	if (chop.chopSizeA.get() > 0)
+	  next_time_ = last_time_ + chop.chopSizeA.get(); // first segment ends at chop.offset + chop.size
 	else
-	  duration = next - chopTimesA.getDbl(nextIndex - 1);
+	  next_time_ = DBL_MAX;
+      }
+      else
+	next_time_ = chop.chopTimesA.getDbl(0);
+    }
+  
+    bool isSegment (double time)
+    {
+      if (time >= next_time_)
+      {
+        while (time >= next_time_) // catch up with current time
+          advance(time);
 
-	nextIndex++;
+        return true;
+      }
+      else
+      {
+	// when chop.size was 0, we need to check if it was reset
+	// TODO: add a changed flag to pipo::attr, or a callback
+	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0)
+	  reset();
+	
+	return false;
       }
     }
-    return {next, duration};
-  }
 
+  private:
+    // advance to next chop time or infinity when not chopping, and the last segment's duration
+    void advance (double curtime)
+    {
+      segment_start_ = last_time_;  // store current segment start for querying
+      last_time_     = next_time_;
+
+      int numtimes = chop.chopTimesA.size();
+      if (numtimes == 0)
+      { // chop.at list is empty, use chop.size
+	segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
+
+	double chopsize = chop.chopSizeA.get();
+	if (chopsize > 0)
+	  // at first crossing of offset, nextTime == offset + duration
+	  next_time_ = (next_time_ < DBL_MAX  ?  next_time_  :  curtime) + chopsize;
+	else
+	  next_time_ = DBL_MAX;
+      }
+      else
+      { // use chop.at list
+	// we have passed index 0
+	if (next_index_ < numtimes)
+	{
+	  next_time_ = chop.chopTimesA.getDbl(next_index_);
+
+	  if (chop.chopDurationA.size() < next_index_)
+	    segment_duration_ = chop.chopDurationA.getDbl(next_index_);
+	  else
+	    segment_duration_ = next_time_ - chop.chopTimesA.getDbl(next_index_ - 1);
+
+	  next_index_++;
+	}
+      }
+    }
+  } seg; // the Segmenter object does all the handling of segmentation times
+
+  
 public:
   PiPoChop (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    tempMod(),
+    tempMod(), seg(*this),
     offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
     chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
     chopTimesA(this, "at",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
@@ -154,7 +185,7 @@ public:
     maxDescrNameLength(64),
     reportDuration(0)
   {
-    nextTime = resetNextTime();
+    seg.reset();
   }
 
   ~PiPoChop (void)
@@ -172,7 +203,7 @@ public:
 	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
 
-    nextTime = resetNextTime();
+    seg.reset();
     reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
 
     /* resize temporal models */
@@ -214,11 +245,11 @@ public:
 
   int reset (void)
   {
-    nextTime = resetNextTime();
+    seg.reset();
     tempMod.reset();
 
 #if DEBUG_CHOP
-    printf("PiPoChop reset: lastTime %f nextTime %f\n", lastTime, nextTime);
+    printf("PiPoChop reset: lastTime %f nextTime %f\n", seg.getLastTime(), seg.getNextTime());
 #endif
 
     return this->propagateReset();
@@ -228,38 +259,33 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
 #if DEBUG_CHOP
-    printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, lastTime, nextTime, size, num);
+    printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, seg.getLastTime(), seg.getNextTime(), size, num);
 #endif
 
     int ret = 0;
 
-    // at first crossing of offset, nextTime == offset + duration
-    if (time >= nextTime)
+    // check for crossing of segment time, store cur. segment data, advance to next segment time
+    if (seg.isSegment(time))
     {
       int outsize = (int) outValues.size();
 
-      // advance to next segment time, get cur. segment's duration
-      struct Segment next = advanceNextTime(time);
+#if DEBUG_CHOP
+      printf("   segment! time %f duration %f at input time %f  nextTime %f outsize %d\n",
+	     seg.getSegmentStart(), seg.getSegmentDuration(), time, seg.getNextTime(), outsize);
+#endif
 
       if (reportDuration != 0)
-	//TBD: calculate actual duration quantised to frame hops?
-	outValues[0] = next.duration;
+	// store requested chop size, not actual duration quantised to frame hops
+	outValues[0] = seg.getSegmentDuration();
 
       /* get temporal modelling */
       tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
 	
-#if DEBUG_CHOP
-      printf("   segment! time %f duration %f at input time %f  nextTime %f outsize %d\n",
-	     lastTime, next.duration, time, nextTime, outsize);
-#endif
       /* report segment at precise last chop time */
-      ret = this->propagateFrames(lastTime, weight, &outValues[0], outsize, 1);
+      ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
 
       if (ret != 0)
 	return ret;
-
-      lastTime = nextTime;
-      nextTime = next.time;	// never called when not chopping
     }
 
     /* feed temporal modelling */
@@ -276,7 +302,7 @@ public:
   int finalize (double inputEnd)
   {
     double duration = chopSizeA.get() > 0
-                    ? inputEnd - (nextTime - chopSizeA.get())
+                    ? inputEnd - (seg.getNextTime() - chopSizeA.get())
                     : inputEnd - offsetA.get();
 
 #if DEBUG_CHOP
