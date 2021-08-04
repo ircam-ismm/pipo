@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP 0
+#define DEBUG_CHOP 1
 
 
 class PiPoChop : public PiPo
@@ -59,6 +59,8 @@ class PiPoChop : public PiPo
 public:
   PiPoScalarAttr<double> offsetA;
   PiPoScalarAttr<double> chopSizeA;
+  PiPoVarSizeAttr<double> chopTimesA;
+  PiPoVarSizeAttr<double> chopDurationA;
   PiPoScalarAttr<bool> enDurationA;
   PiPoScalarAttr<bool> enMinA;
   PiPoScalarAttr<bool> enMaxA;
@@ -68,14 +70,72 @@ public:
 private:
   int maxDescrNameLength;
   int reportDuration; // caches enDurationA as index offset, mustn't change while running
-  double nextTime;
   TempModArray tempMod;
   std::vector<PiPoValue> outValues;
 
-  // return next chop time or infinity when not chopping
-  double getNextTime ()
+  // managed by reset/advanceNextTime():
+  double lastTime;  // last segmentation time
+  double nextTime;  // next segmentation time
+  int    nextIndex; // next external segmentation time list index, 
+  struct Segment
   {
-    return chopSizeA.get() > 0 ? offsetA.get() + chopSizeA.get() : DBL_MAX;
+    double time;	// NEXT segment start
+    double duration;	// LAST(!!!) segment duration
+  };
+
+  // return first chop time or infinity when not chopping
+  double resetNextTime ()
+  {
+    double next;
+    nextIndex = 1; // we return index 0, next will be 1
+    lastTime = offsetA.get();
+    
+    if (chopTimesA.size() == 0)
+    {
+      if (chopSizeA.get() > 0)
+	next = lastTime + chopSizeA.get(); // first segment ends at chop.offset + chop.size
+      else
+	next = DBL_MAX;
+    }
+    else
+      next = chopTimesA.getDbl(0);
+
+    return next;
+  }
+  
+  // return next chop time or infinity when not chopping, and the last segment's duration
+  struct Segment advanceNextTime (double curtime)
+  {
+    double next;
+    double duration;
+    int    numtimes = chopTimesA.size();
+
+    if (numtimes == 0)
+    { // chop.at list is empty, use chop.size
+      double chopsize = chopSizeA.get();
+      if (chopsize > 0)
+	next = (nextTime < DBL_MAX  ?  nextTime  :  curtime) + chopsize;
+      else
+	next = DBL_MAX;
+      
+      duration = nextTime - lastTime; // chop size can change dynamically, so we return actual last duration!
+    }
+    else
+    { // use chop.at list
+      // we have passed index 0
+      if (nextIndex < numtimes)
+      {
+	next = chopTimesA.getDbl(nextIndex);
+
+	if (chopDurationA.size() < nextIndex)
+	  duration = chopDurationA.getDbl(nextIndex);
+	else
+	  duration = next - chopTimesA.getDbl(nextIndex - 1);
+
+	nextIndex++;
+      }
+    }
+    return {next, duration};
   }
 
 public:
@@ -83,7 +143,9 @@ public:
   : PiPo(parent, receiver),
     tempMod(),
     offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
-    chopSizeA(this, "size",	"Chop Size [ms] (0 = chop at end)", false, 242),
+    chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
+    chopTimesA(this, "at",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
+    chopDurationA(this, "atduration",  "Fixed Segment Durations [ms], used with chop.at", false),
     enDurationA(this, "duration", "Output Segment Duration", true, false),
     enMinA(this, "min", "Calculate Segment Min", true, false),
     enMaxA(this, "max", "Calculate Segment Max", true, false),
@@ -92,7 +154,7 @@ public:
     maxDescrNameLength(64),
     reportDuration(0)
   {
-    nextTime = getNextTime();
+    nextTime = resetNextTime();
   }
 
   ~PiPoChop (void)
@@ -110,7 +172,7 @@ public:
 	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
 
-    nextTime = getNextTime();
+    nextTime = resetNextTime();
     reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
 
     /* resize temporal models */
@@ -152,8 +214,12 @@ public:
 
   int reset (void)
   {
-    nextTime = getNextTime();
+    nextTime = resetNextTime();
     tempMod.reset();
+
+#if DEBUG_CHOP
+    printf("PiPoChop reset: lastTime %f nextTime %f\n", lastTime, nextTime);
+#endif
 
     return this->propagateReset();
   };
@@ -162,47 +228,46 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
 #if DEBUG_CHOP
-    //printf("PiPoChop frames time %f (next %f)  size %d  num %d\n", time, nextTime, size, num);
+    printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, lastTime, nextTime, size, num);
 #endif
-
-    double chopSize = std::max(0., chopSizeA.get());
 
     int ret = 0;
 
-    if (time >= offsetA.get())
+    // at first crossing of offset, nextTime == offset + duration
+    if (time >= nextTime)
     {
-      // at first crossing of offset, nextTime == offset + duration
-      if (time >= nextTime)
-      {
-        int outsize = (int) outValues.size();
+      int outsize = (int) outValues.size();
 
-        if (reportDuration != 0)
-          //TBD: calculate actual duration quantised to frame hops?
-          outValues[0] = chopSize;
+      // advance to next segment time, get cur. segment's duration
+      struct Segment next = advanceNextTime(time);
 
-        /* get temporal modelling */
-        tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+      if (reportDuration != 0)
+	//TBD: calculate actual duration quantised to frame hops?
+	outValues[0] = next.duration;
 
+      /* get temporal modelling */
+      tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+	
 #if DEBUG_CHOP
-        printf("   segment! time %f at input time %f  nextTime %f outsize %d\n",
-               nextTime - chopSize, time, nextTime, outsize);
+      printf("   segment! time %f duration %f at input time %f  nextTime %f outsize %d\n",
+	     lastTime, next.duration, time, nextTime, outsize);
 #endif
-        /* report segment at precise last chop time */
-        ret = this->propagateFrames(nextTime - chopSize, weight, &outValues[0], outsize, 1);
+      /* report segment at precise last chop time */
+      ret = this->propagateFrames(lastTime, weight, &outValues[0], outsize, 1);
 
-        if (ret != 0)
-          return ret;
+      if (ret != 0)
+	return ret;
 
-        nextTime += chopSize;	// never called when not chopping
-      }
+      lastTime = nextTime;
+      nextTime = next.time;	// never called when not chopping
+    }
 
-      /* feed temporal modelling */
-      /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
-      for (unsigned int i = 0; i < num; i++)
-      {
-        tempMod.input(values, size);
-        values += size;
-      }
+    /* feed temporal modelling */
+    /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
+    for (unsigned int i = 0; i < num; i++)
+    {
+      tempMod.input(values, size);
+      values += size;
     }
 
     return 0;
