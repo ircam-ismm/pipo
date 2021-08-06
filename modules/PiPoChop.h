@@ -113,22 +113,20 @@ private:
   
     bool isSegment (double time)
     {
-      if (time >= next_time_)
-      {
-        while (time >= next_time_) // catch up with current time
-          advance(time);
-
-        return true;
-      }
-      else
-      {
-	// when chop.size was 0, we need to check if it was reset
-	// TODO: add a changed flag to pipo::attr, or a callback
+      if (time < next_time_)
+      { // segment time not yet reached
 	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0)
-	  reset();
-	
-	return false;
+	  // BUT: when chop.size was 0, we need to check if it was reset
+	  // TODO: add a changed flag to pipo::attr, or a callback
+	  next_time_ = time;	// go to Segmenter::advance() immediately
+	else
+	  return false;
       }
+      
+      while (time >= next_time_) // catch up with current time
+	advance(time);
+
+      return true;
     }
 
   private:
