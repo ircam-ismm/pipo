@@ -52,7 +52,7 @@ extern "C" {
 
 // keep quiet!
 #define DEBUG_CHOP 1
-
+#define NEXT_TIME(seg) (seg.getNextTime() == DBL_MAX ? -1 : seg.getNextTime())
 
 class PiPoChop : public PiPo
 {
@@ -94,31 +94,39 @@ private:
     double getLastTime()	{ return last_time_; } // debug only
     double getNextTime()	{ return next_time_; } // debug only
 
-    // return first chop time or infinity when not chopping
+    // reset Segmenter: return first chop time or infinity when not chopping
     void reset ()
     {
-      next_index_ = 1; // we return index 0, next will be 1
-      last_time_  = chop.offsetA.get();
+      next_index_ = 1; // for chop list we return index 0, next will be 1
     
       if (chop.chopTimesA.size() == 0)
-      {
+      { // use regular chop size
+	last_time_  = chop.offsetA.get();
+	
 	if (chop.chopSizeA.get() > 0)
-	  next_time_ = last_time_ + chop.chopSizeA.get(); // first segment ends at chop.offset + chop.size
-	else
+	  next_time_ = chop.chopSizeA.get() + chop.offsetA.get(); // first segment ends at chop.offset + chop.size
+	else // size == 0: no segmentation (use whole file in offline mode)
 	  next_time_ = DBL_MAX;
       }
       else
-	next_time_ = chop.chopTimesA.getDbl(0);
+      { // use chop times list (is shifted by offset)
+	last_time_ = chop.chopTimesA.getDbl(0) + chop.offsetA.get(); // first segment start
+
+	if (chop.chopTimesA.size() > 1)
+	  next_time_ = chop.chopTimesA.getDbl(1) + chop.offsetA.get(); // first segment end
+	else
+	  next_time_ = DBL_MAX; // only one segment time given, segment at end
+      }
     }
   
     bool isSegment (double time)
     {
       if (time < next_time_)
       { // segment time not yet reached
-	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0)
+	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0  &&  chop.chopTimesA.size() == 0)
 	  // BUT: when chop.size was 0, we need to check if it was reset
 	  // TODO: add a changed flag to pipo::attr, or a callback
-	  next_time_ = time;	// go to Segmenter::advance() immediately
+	  next_time_ = time;	// go to Segmenter::advance() immediately and return true
 	else
 	  return false;
       }
@@ -150,22 +158,25 @@ private:
       }
       else
       { // use chop.at list
-	// we have passed index 0
+	// we have passed index 0 (start of first segment) and are waiting for the *end* of the next segment
+	if (next_index_ < chop.chopDurationA.size())
+	  segment_duration_ = chop.chopDurationA.getDbl(next_index_);
+	else
+	  segment_duration_ = last_time_ - (chop.chopTimesA.getDbl(next_index_ - 1) + chop.offsetA.get());
+
+	// we have passed index 0 and 1 (start and end of first segment) and are waiting for the *end* of the next segment
+	next_index_++;
+
 	if (next_index_ < numtimes)
-	{
-	  next_time_ = chop.chopTimesA.getDbl(next_index_);
-
-	  if (chop.chopDurationA.size() < next_index_)
-	    segment_duration_ = chop.chopDurationA.getDbl(next_index_);
-	  else
-	    segment_duration_ = next_time_ - chop.chopTimesA.getDbl(next_index_ - 1);
-
-	  next_index_++;
-	}
+	  next_time_ = chop.chopTimesA.getDbl(next_index_) + chop.offsetA.get(); // chop time list is shifted by offset
+        else // end of list, signal no more segmentation
+          next_time_ = DBL_MAX;
       }
-    }
-  } seg; // the Segmenter object does all the handling of segmentation times
+    } // end advance()
+    
+  }; // end class Segmenter
 
+  Segmenter seg; // the single Segmenter object does all the handling of segmentation times
   
 public:
   PiPoChop (Parent *parent, PiPo *receiver = NULL)
@@ -196,7 +207,7 @@ public:
 			                  unsigned int maxFrames)
   {
 #if DEBUG_CHOP
-  printf("PiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
+  printf("\nPiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
 	  "varsize %d  domain %f  maxframes %d\n",
 	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
@@ -247,7 +258,7 @@ public:
     tempMod.reset();
 
 #if DEBUG_CHOP
-    printf("PiPoChop reset: lastTime %f nextTime %f\n", seg.getLastTime(), seg.getNextTime());
+    printf("PiPoChop reset: lastTime %f nextTime %f\n", seg.getLastTime(), NEXT_TIME(seg));
 #endif
 
     return this->propagateReset();
@@ -257,7 +268,7 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
 #if DEBUG_CHOP
-    printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, seg.getLastTime(), seg.getNextTime(), size, num);
+    printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, seg.getLastTime(), NEXT_TIME(seg), size, num);
 #endif
 
     int ret = 0;
@@ -268,8 +279,8 @@ public:
       int outsize = (int) outValues.size();
 
 #if DEBUG_CHOP
-      printf("   segment! time %f duration %f at input time %f  nextTime %f outsize %d\n",
-	     seg.getSegmentStart(), seg.getSegmentDuration(), time, seg.getNextTime(), outsize);
+      printf("   segment! start %f duration %f at input time %f  nextTime %f outsize %d\n",
+	     seg.getSegmentStart(), seg.getSegmentDuration(), time, NEXT_TIME(seg), outsize);
 #endif
 
       if (reportDuration != 0)
