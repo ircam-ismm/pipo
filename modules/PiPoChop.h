@@ -118,7 +118,27 @@ private:
 	  next_time_ = DBL_MAX; // only one segment time given, segment at end
       }
     }
-  
+
+    double getLastDuration (double endtime)
+    {
+      double duration, offset = chop.offsetA.get();
+      
+      int numtimes = chop.chopTimesA.size();
+      if (numtimes == 0)
+      { // chop.at list is empty, use chop.size
+	duration = chop.chopSizeA.get() > 0
+	         ? endtime - (getNextTime() - chop.chopSizeA.get())
+	         : endtime - offset;
+      }
+      else
+      { // use chop time list's last used time
+	int lastindex = next_index_ - 1 < numtimes  ?  next_index_ - 1  :  numtimes - 1;
+	duration = endtime -(chop.chopTimesA.getDbl(lastindex)  + offset);
+      }
+
+      return duration;
+    }
+    
     bool isSegment (double time)
     {
       if (time < next_time_)
@@ -309,10 +329,8 @@ public:
   }
 
   int finalize (double inputEnd)
-  {
-    double duration = chopSizeA.get() > 0
-                    ? inputEnd - (seg.getNextTime() - chopSizeA.get())
-                    : inputEnd - offsetA.get();
+  { // inputEnd is the actual end of the sound file, can be after the last frame time
+    double duration = seg.getLastDuration(inputEnd);
 
 #if DEBUG_CHOP
     printf("PiPoChop finalize time %f  duration %f  size %ld\n", inputEnd, duration, outValues.size());
