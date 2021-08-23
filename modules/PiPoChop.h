@@ -78,6 +78,10 @@ private:
   private:
     PiPoChop &chop;	// reference to containing chop module
 
+    double		offset_;	// cached offsetA
+    std::vector<double> choptimes_;     // cleaned list of chop.at times
+    std::vector<double> chopduration_;  // duration list corresponding to cleaned chop.at times
+    
     // managed by reset/advanceNextTime():
     double last_time_;     // LAST segmentation time
     double next_time_;     // NEXT segmentation time
@@ -97,43 +101,79 @@ private:
     // reset Segmenter: return first chop time or infinity when not chopping
     void reset ()
     {
-      next_index_ = 1; // for chop list we return index 0, next will be 1
-    
-      if (chop.chopTimesA.size() == 0)
+      next_index_ = 1; // for chop list, we start with next index 1 (advance() looks at next_index_ - 1)
+      offset_     = std::max<double>(0, chop.offsetA.get());
+
+      settimes(chop.chopTimesA, chop.chopDurationA); // set and clean time/duration lists
+
+      if (choptimes_.size() == 0)
       { // use regular chop size
-	last_time_  = chop.offsetA.get();
+	last_time_  = offset_;
 	
 	if (chop.chopSizeA.get() > 0)
-	  next_time_ = chop.chopSizeA.get() + chop.offsetA.get(); // first segment ends at chop.offset + chop.size
+	  next_time_ = chop.chopSizeA.get() + offset_; // first segment ends at chop.offset + chop.size
 	else // size == 0: no segmentation (use whole file in offline mode)
 	  next_time_ = DBL_MAX;
       }
       else
       { // use chop times list (is shifted by offset)
-	last_time_ = chop.chopTimesA.getDbl(0) + chop.offsetA.get(); // first segment start
+	last_time_ = choptimes_[0] + offset_; // first segment start
 
-	if (chop.chopTimesA.size() > 1)
-	  next_time_ = chop.chopTimesA.getDbl(1) + chop.offsetA.get(); // first segment end
+	if (choptimes_.size() > 1)
+	  next_time_ = choptimes_[1] + offset_; // first segment end
 	else
 	  next_time_ = DBL_MAX; // only one segment time given, segment at end
       }
     }
 
+    // set and clean chop.at and chop.duration lists: remove repeating and non-monotonous elements
+    void settimes (PiPoVarSizeAttr<double> &times, PiPoVarSizeAttr<double> &durations)
+    {
+      size_t  tsize   = times.getSize();
+      double *tvalues = times.getPtr();
+      size_t  dsize   = durations.getSize();
+      double *dvalues = durations.getPtr();
+    
+      choptimes_.assign(tvalues, tvalues + tsize);
+      chopduration_.assign(dvalues, dvalues + dsize);
+
+      // check and clean
+      for (int i = 0; i < choptimes_.size(); i++)
+      {
+	// clip negative times to 0
+	if (choptimes_[i] < 0)
+	  choptimes_[i] = 0;
+
+	if (i < chopduration_.size()  &&  chopduration_[i] < 0)
+	  chopduration_[i] = 0;
+
+	// check strictly monotonous sequence
+	if (i > 0  &&  choptimes_.size() > 1)
+	  if (choptimes_[i] <= choptimes_[i - 1])
+	  { // remove times that don't advance (and corresponding duration entries)
+            choptimes_.erase(choptimes_.begin() + i);
+
+	    if (i < chopduration_.size())
+	      chopduration_.erase(chopduration_.begin() + i);
+	  }
+      }
+    }
+
     double getLastDuration (double endtime)
     {
-      double duration, offset = chop.offsetA.get();
+      double duration;
       
-      int numtimes = chop.chopTimesA.size();
+      int numtimes = choptimes_.size();
       if (numtimes == 0)
       { // chop.at list is empty, use chop.size
 	duration = chop.chopSizeA.get() > 0
 	         ? endtime - (getNextTime() - chop.chopSizeA.get())
-	         : endtime - offset;
+	         : endtime - offset_;
       }
       else
       { // use chop time list's last used time
 	int lastindex = next_index_ - 1 < numtimes  ?  next_index_ - 1  :  numtimes - 1;
-	duration = endtime -(chop.chopTimesA.getDbl(lastindex)  + offset);
+	duration = endtime -(choptimes_[lastindex] + offset_);
       }
 
       return duration;
@@ -143,7 +183,7 @@ private:
     {
       if (time < next_time_)
       { // segment time not yet reached
-	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0  &&  chop.chopTimesA.size() == 0)
+	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0  &&  choptimes_.size() == 0)
 	  // BUT: when chop.size was 0, we need to check if it was reset
 	  // TODO: add a changed flag to pipo::attr, or a callback
 	  next_time_ = time;	// go to Segmenter::advance() immediately and return true
@@ -164,8 +204,7 @@ private:
       segment_start_ = last_time_;  // store current segment start for querying
       last_time_     = next_time_;
 
-      int numtimes = chop.chopTimesA.size();
-      if (numtimes == 0)
+      if (choptimes_.size() == 0)
       { // chop.at list is empty, use chop.size
 	segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
 
@@ -178,17 +217,17 @@ private:
       }
       else
       { // use chop.at list
-	// we have passed index 0 (start of first segment) and are waiting for the *end* of the next segment
-	if (next_index_ < chop.chopDurationA.size())
-	  segment_duration_ = chop.chopDurationA.getDbl(next_index_);
+	// after reset, we have passed index 0 (start of first/current segment) and are waiting for the *end* of the next segment
+	if (next_index_ < chopduration_.size())
+	  segment_duration_ = chopduration_[next_index_];
 	else
-	  segment_duration_ = last_time_ - (chop.chopTimesA.getDbl(next_index_ - 1) + chop.offsetA.get());
+	  segment_duration_ = last_time_ - (choptimes_[next_index_ - 1] + offset_);
 
-	// we have passed index 0 and 1 (start and end of first segment) and are waiting for the *end* of the next segment
+	// we have passed index 0 and 1 (start and end of first/current segment) and are waiting for the *end* of the next segment
 	next_index_++;
 
-	if (next_index_ < numtimes)
-	  next_time_ = chop.chopTimesA.getDbl(next_index_) + chop.offsetA.get(); // chop time list is shifted by offset
+	if (next_index_ < choptimes_.size())
+	  next_time_ = choptimes_[next_index_] + offset_; // chop time list is shifted by offset
         else // end of list, signal no more segmentation
           next_time_ = DBL_MAX;
       }
@@ -293,6 +332,8 @@ public:
 
     int ret = 0;
 
+    //TODO: check if chopTimesA or chopDurationA have changed (for rt case)
+    
     // check for crossing of segment time, store cur. segment data, advance to next segment time
     if (seg.isSegment(time))
     {
