@@ -83,9 +83,9 @@ private:
     std::vector<double> chopduration_;  // duration list corresponding to cleaned chop.at times
     
     // managed by reset/advanceNextTime():
-    double last_time_;     // LAST segmentation time
+    double last_start_;     // LAST segmentation time
     double next_time_;     // NEXT segmentation time
-    int    next_index_;    // next external segmentation time list index, 
+    size_t next_index_;    // next external segmentation time list index, 
 
     double segment_start_;    // LAST segmentation time
     double segment_duration_; // LAST segment duration
@@ -95,7 +95,7 @@ private:
     
     double getSegmentStart()	{ return segment_start_; }
     double getSegmentDuration() { return segment_duration_; }
-    double getLastTime()	{ return last_time_; } // debug only
+    double getLastTime()	{ return last_start_; } // debug only
     double getNextTime()	{ return next_time_; } // debug only
 
     // reset Segmenter: return first chop time or infinity when not chopping
@@ -108,7 +108,7 @@ private:
 
       if (choptimes_.size() == 0)
       { // use regular chop size
-	last_time_  = offset_;
+	last_start_  = offset_;
 	
 	if (chop.chopSizeA.get() > 0)
 	  next_time_ = chop.chopSizeA.get() + offset_; // first segment ends at chop.offset + chop.size
@@ -117,7 +117,7 @@ private:
       }
       else
       { // use chop times list (is shifted by offset)
-	last_time_ = choptimes_[0] + offset_; // first segment start
+	last_start_ = choptimes_[0] + offset_; // first segment start
 
 	if (choptimes_.size() > 1)
 	  next_time_ = choptimes_[1] + offset_; // first segment end
@@ -129,21 +129,17 @@ private:
     // set and clean chop.at and chop.duration lists: remove repeating and non-monotonous elements
     void settimes (PiPoVarSizeAttr<double> &times, PiPoVarSizeAttr<double> &durations)
     {
-      size_t  tsize   = times.getSize();
-      double *tvalues = times.getPtr();
-      size_t  dsize   = durations.getSize();
-      double *dvalues = durations.getPtr();
-    
-      choptimes_.assign(tvalues, tvalues + tsize);
-      chopduration_.assign(dvalues, dvalues + dsize);
+      choptimes_.assign   (times.getPtr(),     times.getPtr()     + times.getSize());
+      chopduration_.assign(durations.getPtr(), durations.getPtr() + durations.getSize());
 
       // check and clean
-      for (int i = 0; i < choptimes_.size(); i++)
+      for (size_t i = 0; i < choptimes_.size(); i++)
       {
 	// clip negative times to 0
 	if (choptimes_[i] < 0)
 	  choptimes_[i] = 0;
 
+	// clip duration to 0
 	if (i < chopduration_.size()  &&  chopduration_[i] < 0)
 	  chopduration_[i] = 0;
 
@@ -153,17 +149,19 @@ private:
 	  { // remove times that don't advance (and corresponding duration entries)
             choptimes_.erase(choptimes_.begin() + i);
 
+	    // remove corresponding entry in duration list
 	    if (i < chopduration_.size())
 	      chopduration_.erase(chopduration_.begin() + i);
 	  }
       }
     }
 
+    // called in offline mode by finalize to determine duration of last segment until endtime of file
     double getLastDuration (double endtime)
     {
       double duration;
       
-      int numtimes = choptimes_.size();
+      size_t numtimes = choptimes_.size();
       if (numtimes == 0)
       { // chop.at list is empty, use chop.size
 	duration = chop.chopSizeA.get() > 0
@@ -171,9 +169,16 @@ private:
 	         : endtime - offset_;
       }
       else
-      { // use chop time list's last used time
-	int lastindex = next_index_ - 1 < numtimes  ?  next_index_ - 1  :  numtimes - 1;
-	duration = endtime -(choptimes_[lastindex] + offset_);
+      { // use chop time list
+	if (next_index_ - 1 < chopduration_.size())
+	{ // use last duration from list
+	  duration = chopduration_[next_index_ - 1];
+	}
+	else
+	{ // use chop time list's last used segment start time until endtime of file
+	  int lastindex = next_index_ - 1 < numtimes  ?  next_index_ - 1  :  numtimes - 1;
+	  duration = endtime - (choptimes_[lastindex] + offset_);
+	}
       }
 
       return duration;
@@ -201,12 +206,11 @@ private:
     // advance to next chop time or infinity when not chopping, and the last segment's duration
     void advance (double curtime)
     {
-      segment_start_ = last_time_;  // store current segment start for querying
-      last_time_     = next_time_;
-
       if (choptimes_.size() == 0)
       { // chop.at list is empty, use chop.size
+	segment_start_    = last_start_;  // store current segment start for querying
 	segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
+	last_start_       = next_time_;
 
 	double chopsize = chop.chopSizeA.get();
 	if (chopsize > 0)
@@ -217,19 +221,37 @@ private:
       }
       else
       { // use chop.at list
-	// after reset, we have passed index 0 (start of first/current segment) and are waiting for the *end* of the next segment
-	if (next_index_ < chopduration_.size())
-	  segment_duration_ = chopduration_[next_index_];
+	if (next_index_ - 1 < choptimes_.size())
+	{
+	  last_start_    = segment_start_;
+	  segment_start_ = choptimes_[next_index_ - 1] + offset_;  // store current segment start for querying
+	}
+	else 
+	{
+	  segment_start_ = last_start_;  // store current segment start for querying
+	  last_start_    = next_time_;
+	}
+	
+	// after reset, we have passed index 0 (start of first/current segment) and are waiting for the *end* of the next segment at next_index_
+	if (next_index_ - 1 < chopduration_.size())
+	  segment_duration_ = chopduration_[next_index_ - 1];
 	else
-	  segment_duration_ = last_time_ - (choptimes_[next_index_ - 1] + offset_);
+	  segment_duration_ = last_start_ - (choptimes_[next_index_ - 1] + offset_);
 
 	// we have passed index 0 and 1 (start and end of first/current segment) and are waiting for the *end* of the next segment
-	next_index_++;
+	if (next_index_ < chopduration_.size())
+	{ // durations are given: next time is end of next segment
+	  next_time_ = segment_start_ + chopduration_[next_index_];
+	}
+	else
+	  if (next_index_ + 1 < choptimes_.size())
+	  { // no durations: next time is start of 2nd next segment
+	    next_time_ = choptimes_[next_index_ + 1] + offset_; // chop time list is shifted by offset
+	  }
+	  else // end of list, signal no more segmentation
+	    next_time_ = DBL_MAX;
 
-	if (next_index_ < choptimes_.size())
-	  next_time_ = choptimes_[next_index_] + offset_; // chop time list is shifted by offset
-        else // end of list, signal no more segmentation
-          next_time_ = DBL_MAX;
+	next_index_++;
       }
     } // end advance()
     
@@ -362,6 +384,7 @@ public:
     /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
     for (unsigned int i = 0; i < num; i++)
     {
+      //TODO: if (seg.isOn()) // only count frames in active part of segment (after 1st one)
       tempMod.input(values, size);
       values += size;
     }
