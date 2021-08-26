@@ -98,13 +98,15 @@ private:
 #if DEBUG_CHOP
     double getLastTime()	{ return last_start_; } // debug only
     double getNextTime()	{ return next_time_; } // debug only
-    double getSegmentIndex()	{ return segment_index_; } // debug only
+    int    getSegmentIndex()	{ return segment_index_; } // debug only
 #endif
     
     // reset Segmenter: return first chop time or infinity when not chopping
     void reset ()
     {
       segment_index_ = 0; // for chop list
+      segment_start_ = DBL_MAX;
+      segment_duration_ = 0;
       offset_        = std::max<double>(0, chop.offsetA.get());
 
       settimes(chop.chopTimesA, chop.chopDurationA); // set and clean time/duration lists
@@ -173,7 +175,7 @@ private:
 
 #if DEBUG_CHOP
       for (size_t i = 0; i < choptimes_.size(); i++)
-	printf("%s\t%d: %6f %6f\n", i == 0 ? "settimes" : "\t", i, choptimes_[i], chopduration_[i]);
+	printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, choptimes_[i], chopduration_[i]);
 #endif
     }
 
@@ -221,6 +223,13 @@ private:
 	advance(time);
 
       return true;
+    }
+
+    // return true if time is within the duration of a segment
+    // (time is always before the end time of the currently awaited segment)
+    bool isOn (double time)
+    {
+      return time >= last_start_; // start time of pending segment
     }
 
   private:
@@ -298,8 +307,9 @@ public:
     seg.reset();
     reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
 
-    /* resize temporal models */
+    /* resize and clear temporal models */
     tempMod.resize(width);
+    tempMod.reset();
 
     /* enable temporal models */ //TODO: switch at least one on
     tempMod.enable(enMinA.get(), enMaxA.get(), enMeanA.get(), enStddevA.get());
@@ -384,10 +394,12 @@ public:
 
     /* feed temporal modelling */
     /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
-    for (unsigned int i = 0; i < num; i++)
+    for (unsigned int i = 0; i < num; i++) //TODO: put loop around everything, advance time according to frame period
     {
-      //TODO: if (seg.isOn()) // only count frames in active part of segment (after 1st one)
-      tempMod.input(values, size);
+      if (seg.isOn(time))
+      { // only count frames in active part of segment (after 1st one)
+	tempMod.input(values, size);
+      }
       values += size;
     }
 
