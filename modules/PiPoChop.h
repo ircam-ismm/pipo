@@ -256,9 +256,10 @@ private:
 	segment_duration_ = chopduration_[segment_index_];
 
 	// we have passed segment_index_ (end of current segment) and are waiting for the *end* of the next segment
-	if (segment_index_ + 1 < choptimes_.size())
+	segment_index_++;
+
+	if (segment_index_ < choptimes_.size())
 	{ // next time is end of next segment
-	  segment_index_++;
 	  next_time_ = choptimes_[segment_index_] + offset_ + chopduration_[segment_index_]; // chop time list is shifted by offset
 	}
 	else // end of list, signal no more segmentation
