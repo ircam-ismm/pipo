@@ -52,7 +52,8 @@ extern "C" {
 
 // keep quiet!
 #define DEBUG_CHOP 1
-#define NEXT_TIME(seg) (seg.getNextTime() == DBL_MAX ? -1 : seg.getNextTime())
+#define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  -1  :  (t))
+#define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
 
 class PiPoChop : public PiPo
 {
@@ -72,7 +73,8 @@ private:
   int reportDuration; // caches enDurationA as index offset, mustn't change while running
   TempModArray tempMod;
   std::vector<PiPoValue> outValues;
-
+  double frame_period_;
+  
   class Segmenter
   {
   private:
@@ -175,7 +177,7 @@ private:
 
 #if DEBUG_CHOP
       for (size_t i = 0; i < choptimes_.size(); i++)
-	printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, choptimes_[i], chopduration_[i]);
+	printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
 #endif
     }
 
@@ -295,9 +297,9 @@ public:
   }
 
   int streamAttributes (bool hasTimeTags, double rate, double offset,
-			                  unsigned int width, unsigned int height,
-			                  const char **labels, bool hasVarSize, double domain,
-			                  unsigned int maxFrames)
+			unsigned int width, unsigned int height,
+			const char **labels, bool hasVarSize, double domain,
+			unsigned int maxFrames)
   {
 #if DEBUG_CHOP
   printf("\nPiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
@@ -307,6 +309,7 @@ public:
 
     seg.reset();
     reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
+    frame_period_ = 1000. / rate;
 
     /* resize and clear temporal models */
     tempMod.resize(width);
@@ -365,43 +368,45 @@ public:
     printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, seg.getLastTime(), NEXT_TIME(seg), size, num);
 #endif
 
+    //TODO: check if chopTimesA or chopDurationA have changed (for rt case)
     int ret = 0;
 
-    //TODO: check if chopTimesA or chopDurationA have changed (for rt case)
-    
-    // check for crossing of segment time, store cur. segment data, advance to next segment time
-    if (seg.isSegment(time))
+    // loop over input frames, advance time according to frame period
+    for (unsigned int i = 0; i < num; i++) 
     {
-      int outsize = (int) outValues.size();
+      // check for crossing of segment time, store cur. segment data, advance to next segment time
+      if (seg.isSegment(time))
+      {
+	int outsize = (int) outValues.size();
 
 #if DEBUG_CHOP
-      printf("   segment! start %f duration %f at input time %f  nextTime %f outsize %d\n",
-	     seg.getSegmentStart(), seg.getSegmentDuration(), time, NEXT_TIME(seg), outsize);
+	printf("   segment! start %f duration %f at input time %f  nextTime %f outsize %d\n",
+	       seg.getSegmentStart(), seg.getSegmentDuration(), time, NEXT_TIME(seg), outsize);
 #endif
 
-      if (reportDuration != 0)
-	// store requested chop size, not actual duration quantised to frame hops
-	outValues[0] = seg.getSegmentDuration();
+	if (reportDuration != 0)
+	  // store requested chop size, not actual duration quantised to frame hops
+	  outValues[0] = seg.getSegmentDuration();
 
-      /* get temporal modelling */
-      tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+	/* get temporal modelling */
+	tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
 	
-      /* report segment at precise last chop time */
-      ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
+	/* report segment at precise last chop time */
+	ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
 
-      if (ret != 0)
-	return ret;
-    }
+	if (ret != 0)
+	  return ret; // error downstream
+      }
 
-    /* feed temporal modelling */
-    /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
-    for (unsigned int i = 0; i < num; i++) //TODO: put loop around everything, advance time according to frame period
-    {
+      /* feed temporal modelling */
       if (seg.isOn(time))
       { // only count frames in active part of segment (after 1st one)
+	/* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
 	tempMod.input(values, size);
       }
+      
       values += size;
+      time   += frame_period_;
     }
 
     return 0;
