@@ -1204,7 +1204,6 @@
 		5A5828FE08F513D9005EF882 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1244,7 +1243,6 @@
 				);
 				GCC_THREADSAFE_STATICS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
-				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1261,14 +1259,12 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
-				ONLY_ACTIVE_ARCH = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
 				);
 				PREBINDING = YES;
-				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1277,7 +1273,6 @@
 		5A5828FF08F513D9005EF882 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1314,7 +1309,6 @@
 				);
 				GCC_THREADSAFE_STATICS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
-				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1331,13 +1325,12 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
 				);
 				PREBINDING = YES;
-				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
