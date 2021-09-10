@@ -993,9 +993,6 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
-				Japanese,
-				French,
-				German,
 			);
 			mainGroup = 5A04AA9006D4DD3F0098230D;
 			productRefGroup = 5A04AAA006D4DD700098230D /* products */;
