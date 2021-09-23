@@ -52,10 +52,11 @@ public:
   enum UnitE { SamplesUnit = 0, MillisecondsUnit = 1 };
   enum WindowTypeE { UndefinedWindow = -1, NoWindow = 0, HannWindow, HammingWindow, BlackmanWindow, BlackmanHarrisWindow, SineWindow, NumWindows };
   enum NormModeE { UndefinedNorm = -1, NoNorm = 0, LinearNorm, PowerNorm };
+  std::vector<float> *outputVector = NULL;
   
 private:
-  std::vector<float> buffer;
-  std::vector<float> frame;
+  std::vector<float> buffer; // input buffer
+  std::vector<float> frame;  // output buffer when using windowing or normalisation
   std::vector<float> window;
   enum WindowTypeE windowType;
   enum NormModeE normMode;
@@ -176,14 +177,22 @@ public:
       }
     }
 
+    if (win_type == NoWindow  &&  norm_mode == NoNorm)
+      outputVector = &buffer;
+    else
+      outputVector = &frame;
+
 #if DEBUG
     //signalWarning(std::string("PiPoSlice streamAttributes: unit ") + std::to_string(unit.get()));
-    printf("PiPoSlice streamAttributes: unit %d size %f hop %f win %d norm %d --> scale %f size %d hop %d\n", unit.get(), this->size.get(), hop.get(), win_type, norm_mode, this->windScale, frameSize, hopSize);
+    printf("PiPoSlice streamAttributes: rate %f unit %d size %f hop %f win %d norm %d --> scale %f size %d hop %d rate %f\n",
+	   rate, unit.get(), this->size.get(), hop.get(), win_type, norm_mode,
+	   this->windScale, frameSize, hopSize, rate / (double)hopSize);
 #endif
     
-    // output slice as column vector of length frameSize
-    return this->propagateStreamAttributes(0, rate / (double)hopSize, offset, 1, frameSize, labels, 0, (double)frameSize / rate, 1);
-  }
+    // output interleaved(!) slice as column vector of width 1 and height frameSize,
+    // domain is frame duration, allows to retrieve audio sampling rate
+    return this->propagateStreamAttributes(false, rate / (double)hopSize, offset, 1, frameSize, labels, 0, (double)frameSize / rate, 1);
+  } // PiPoSlice::streamAttributes
   
   int reset(void)
   {
@@ -222,6 +231,7 @@ public:
         
         if(inputIndex == (int)outputSize)
         {
+	  // frame time to output is in the middle of the window
           int halfWindowSize = outputSize / 2;
           double frameTime = time + 1000.0 * (double)(frameIndex - halfWindowSize) / this->frameRate;
           int ret;
