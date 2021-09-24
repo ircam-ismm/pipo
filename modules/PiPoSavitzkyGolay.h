@@ -69,17 +69,17 @@ private:
   double                             input_frame_period_; // ms
 
 public:
-  PiPoScalarAttr<int>   window_size_attr_;             // Window size is 2*m+1
-  PiPoScalarAttr<int>   polynomial_order_attr_;        // n Polynomial Order
-  PiPoScalarAttr<int>   initial_point_smoothing_attr_; // t = m Initial Point Smoothing (ie evaluate polynomial at first point in the window), Points are defined in range [-m;m]
-  PiPoScalarAttr<int>   derivation_order_attr_;         // Derivation order? 0: no derivation, 1: first derivative, 2: second derivative...
+  PiPoScalarAttr<int>   window_size_attr_;      // Window size is 2*m+1
+  PiPoScalarAttr<int>   polynomial_order_attr_; // n Polynomial Order <! size
+  PiPoScalarAttr<int>   initial_point_attr_;    // evaluate polynomial at first point in the window, Points are defined in range [-m;m]
+  PiPoScalarAttr<int>   derivation_order_attr_; // Derivation order? 0: no derivation, 1: first derivative, 2: second derivative...
 
 public:
   PiPoSavitzkyGolay(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent), 
-    // declare pipo attributes, all essentia sg params need reconfiguring, thus changesstream = true
-    window_size_attr_            (this, "size",         "Window Size [frames] >= 3", true, 2),
-    polynomial_order_attr_       (this, "order",        "Polynomial Order", true, 2),
+    // declare pipo attributes, all sg params need reconfiguring, thus changesstream = true
+    window_size_attr_     (this, "size",         "Window Size [=2*m+1 frames, >= 3]", true, 2),
+    polynomial_order_attr_(this, "order",        "Polynomial Order [< size]", true, 2),
 
     /* Time at which the filter is applied
      * - `t=m` for real-time filtering.
@@ -88,9 +88,8 @@ public:
      *   accuracy as no future information is available.
      * - `t=0` for smoothing. Uses both past and future information to determine the optimal
      *   filtered value*/
-    initial_point_smoothing_attr_(this, "ips",          "Initial Point Smoothing", true, 0),
-    
-    derivation_order_attr_       (this, "derivation",   "Number of Derivations", true, 0)
+    initial_point_attr_   (this, "position",     "Evaluation Position in Window [-m, m]", true, 0),
+    derivation_order_attr_(this, "derivation",   "Which Derivative to Calculate [<= order]", true, 0)
   { }
 
   ~PiPoSavitzkyGolay(void)
@@ -103,14 +102,45 @@ public:
 
   int streamAttributes (bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    // checks:
-    // if (window_size_attr_.get() < 3) // and odd
-      
     config_.m = std::max(1, (window_size_attr_.get() - 1) / 2);
-    config_.t = std::min(config_.m, (unsigned) initial_point_smoothing_attr_.get());
-    config_.n = std::max(0, polynomial_order_attr_.get());
-    config_.s = std::max(0, derivation_order_attr_.get());
+    config_.t = std::min(config_.m, (unsigned) initial_point_attr_.get());
+    int n = polynomial_order_attr_.get();
+    int s = derivation_order_attr_.get();
     // todo: dt from frame period
+
+    // checks:
+    if (window_size_attr_.get() < 3  ||  (window_size_attr_.get() & 1) != 1)
+    { // must be >= 3 and odd, already enforced above
+      signalWarning("Window size must be >= 3 and odd, changed to: " + std::to_string(config_.m * 2 + 1));
+    }
+
+    if (n < 1)
+    {
+      config_.n = 1;
+      signalWarning("Polynomial Order must be >= 1");
+    }
+    else if (n >= config_.window_size())
+    {
+      config_.n = config_.window_size() - 1;
+      signalWarning("Polynomial Order must be < window size, changed to: " + std::to_string(config_.n));
+    }
+    else
+      config_.n = n;
+    
+    if (s < 0)
+    {
+      config_.s = 0;
+      signalWarning("Derivative must be >= 0");
+    }
+    else if (s > config_.n)
+    {
+      config_.s = config_.n;
+      signalWarning("Polynomial Order must be <= polynomial order, changed to: " + std::to_string(config_.n));
+    }
+    else
+      config_.s = s;
+
+    // calculate filter weights
     filter_.configure(config_);
 
     input_frame_period_ = 1000. / framerate;
