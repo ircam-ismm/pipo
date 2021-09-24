@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+//#include <Eigen/Core>
 #include <gram_savitzky_golay/api.h>
 #include <sstream>
 #include <vector>

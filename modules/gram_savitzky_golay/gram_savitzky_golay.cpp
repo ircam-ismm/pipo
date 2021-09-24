@@ -5,6 +5,7 @@
 
 #include <gram_savitzky_golay/gram_savitzky_golay.h>
 #include <iostream>
+#include <cmath>
 
 namespace gram_sg
 {
