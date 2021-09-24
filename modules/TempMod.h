@@ -4,6 +4,8 @@
  *
  * @brief Temporal modeling util
  *
+ * @ingroup utilities
+ *
  * @copyright
  * Copyright (C) 2013 by IMTR IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.

@@ -41,6 +41,7 @@
 #define _PIPO_MEDIAN_
 
 #include "PiPo.h"
+#include "RingBuffer.h"
 
 extern "C" {
 #include "rta_configuration.h"
@@ -52,95 +53,6 @@ extern "C" {
 
 class PiPoMedian : public PiPo
 {
-  template <class T>
-  class Ring
-  {
-  public:
-    std::vector<double> time;
-    std::vector<T> vector;
-    unsigned int width;
-    unsigned int capacity;
-    unsigned int size;
-    unsigned int index;
-    
-  public:
-    Ring(void) : vector()
-    {
-      this->width = 1;
-      this->capacity = 0;
-      this->size = 0;
-      this->index = 0;
-    };
-    
-    void resize(int width, int size)
-    {
-      this->time.resize(size);
-      this->vector.resize(width * size);
-      this->width = width;
-      this->capacity = size;
-      this->size = 0;
-      this->index = 0;
-    };
-    
-    void reset(void)
-    {
-      this->size = 0;
-      this->index = 0;
-    };
-    
-    int input(double time, T *values, unsigned int num, double &outputTime)
-    {
-      float *ringValues = &this->vector[this->index * this->width];
-      
-      this->time[this->index] = time;
-      
-      if(num > this->width)
-        num = this->width;
-      
-      /* copy frame */
-      std::copy(values, values + num, ringValues);
-
-      /* zero pad this values */
-      if(num < this->width)
-        std::fill(ringValues + num, ringValues + width, 0.);
-      
-      this->index++;
-      
-      if(this->index >= this->capacity)
-      {
-        this->size = this->capacity;
-        this->index = 0;
-      }
-      else if(this->size < this->index)
-        this->size = this->index;
-      
-      if(this->size & 1)
-      {
-        int timeIndex = this->index - ((this->size + 1) >> 1);
-        
-        if(timeIndex < 0)
-          timeIndex += this->capacity;
-        
-        outputTime = this->time[timeIndex];
-      }
-      else
-      {
-        int timeIndexB = this->index - (this->size >> 1) - 1;
-        int timeIndexA = this->index - (this->size >> 1);
-        
-        if(timeIndexB < 0)
-          timeIndexB += this->capacity;
-        
-        if(timeIndexA < 0)
-          timeIndexA += this->capacity;
-        
-        outputTime = 0.5 * (this->time[timeIndexB] + this->time[timeIndexA]);
-      }
-      
-      return this->size;
-    };
-  };
-  
   Ring<float> buffer;
   std::vector<float> temp;
   std::vector<float> frame;
