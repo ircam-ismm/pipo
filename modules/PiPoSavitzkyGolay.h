@@ -161,26 +161,18 @@ public:
 
     for (unsigned int i = 0; i < num; i++)
     {
-      sg_in_.input(values, size);
+      sg_in_.input(values, size); // feed one frame of width size into ringbuffer
 
       if (sg_in_.filled)
       {
-        if (sg_in_.width == 1)
-        {
-          //later: sg_out_[outindex++][j] = filter_.filter(sg_in_);
-          sg_out_[0] = filter_.filter(sg_in_.vector);
-        }
-        else
-        { 
-          std::vector<PiPoValue> column(config_.window_size());
+        std::vector<PiPoValue> column(config_.window_size());
           
-          for (unsigned int j = 0; j < sg_in_.width; j++)
-          { // deinterleave input ring buffer
-            for (unsigned int k = 0; k < config_.window_size(); k++)
-              column[k] = sg_in_.vector[k * sg_in_.width + j];
-
-            sg_out_[j] = filter_.filter(column);
-          }
+        for (unsigned int j = 0; j < sg_in_.width; j++)
+        { // deinterleave and unroll input ring buffer
+          for (unsigned int k = 0; k < config_.window_size(); k++)
+            column[k] = sg_in_.vector[(k * sg_in_.width + j + sg_in_.index) % sg_in_.size];
+          
+          sg_out_[j] = filter_.filter(column);
         }
       
         // timeoffset = config_.t * input_frame_period_
@@ -190,7 +182,7 @@ public:
       if (ret != 0)
         return ret;
       
-      values += size;
+      values += size; //TODO: this only works for fixed-size frames
       time   += input_frame_period_;
     }
     
