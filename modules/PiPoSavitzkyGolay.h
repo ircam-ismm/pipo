@@ -103,47 +103,51 @@ public:
 
   int streamAttributes (bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    config_.m = std::max(1, (window_size_attr_.get() - 1) / 2);
-    config_.t = std::min(config_.m, (unsigned) initial_point_attr_.get());
+    int m = window_size_attr_.get();
     int n = polynomial_order_attr_.get();
+    int t = initial_point_attr_.get();
     int s = derivation_order_attr_.get();
     // todo: dt from frame period
 
     // checks:
-    if (window_size_attr_.get() < 3  ||  (window_size_attr_.get() & 1) != 1)
-    { // must be >= 3 and odd, already enforced above
-      signalWarning("Window size must be >= 3 and odd, changed to: " + std::to_string(config_.m * 2 + 1));
+    if (m < 3  ||  (m & 1) != 1)
+    { // must be >= 3 and odd
+      m = std::max(1, (m - 1) / 2);
+      signalWarning("Window size must be >= 3 and odd, changed to: " + std::to_string(m * 2 + 1));
     }
 
     if (n < 1)
     {
-      config_.n = 1;
+      n = 1;
       signalWarning("Polynomial Order must be >= 1");
     }
-    else if (n >= config_.window_size())
+    else if (n >= 2 * m + 1)
     {
-      config_.n = config_.window_size() - 1;
-      signalWarning("Polynomial Order must be < window size, changed to: " + std::to_string(config_.n));
+      n = 2 * m;
+      signalWarning("Polynomial Order must be < window size, changed to: " + std::to_string(n));
     }
-    else
-      config_.n = n;
     
     if (s < 0)
     { // calculate dervis from 0 up to and including -s
-      num_derivs_ = std::min((unsigned) -s, config_.n) + 1;
+      num_derivs_ = std::min(-s, n) + 1;
       s = 0; // base deriv
       signalWarning("Will output derivatives 0 to " + std::to_string(num_derivs_ - 1));
-    }
-    else if (s > config_.n)
-    {
-      s = config_.n;
-      num_derivs_ = 1;
-      signalWarning("Polynomial Order must be <= polynomial order, changed to: " + std::to_string(config_.n));
     }
     else
       num_derivs_ = 1;
 
-    // calculate filter weights
+    if (s > n)
+    {
+      s = n;
+      signalWarning("Derivative to calculate must be <= polynomial order, changed to: " + std::to_string(s));
+    }
+
+
+    // config and calculate filter weights
+    config_.m = m;
+    config_.n = n;
+    config_.t = std::min((int) m, std::max(-m, t));
+
     filter_.resize(num_derivs_);
     for (int i = 0; i < num_derivs_; i++)
     {
