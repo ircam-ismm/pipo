@@ -62,11 +62,12 @@ extern "C" {
 class PiPoSavitzkyGolay : public PiPo
 {
 private:
-  gram_sg::SavitzkyGolayFilter       filter_;
-  gram_sg::SavitzkyGolayFilterConfig config_;
-  RingBuffer<PiPoValue>              sg_in_;    // input frame to be used by sg filter_
-  std::vector<PiPoValue>             sg_out_;   // output frame 
-  double                             input_frame_period_; // ms
+  std::vector<gram_sg::SavitzkyGolayFilter> filter_;
+  gram_sg::SavitzkyGolayFilterConfig        config_;
+  unsigned int                              num_derivs_; // how many derivatives to calculate
+  RingBuffer<PiPoValue>                     sg_in_;    // input frame to be used by sg filter_
+  std::vector<PiPoValue>                    sg_out_;   // output frame 
+  double                                    input_frame_period_; // ms
 
 public:
   PiPoScalarAttr<int>   window_size_attr_;      // Window size is 2*m+1
@@ -76,7 +77,7 @@ public:
 
 public:
   PiPoSavitzkyGolay(Parent *parent, PiPo *receiver = NULL)
-  : PiPo(parent), 
+  : PiPo(parent), filter_(1),
     // declare pipo attributes, all sg params need reconfiguring, thus changesstream = true
     window_size_attr_     (this, "size",         "Window Size [=2*m+1 frames, >= 3]", true, 2),
     polynomial_order_attr_(this, "order",        "Polynomial Order [< size]", true, 2),
@@ -89,7 +90,7 @@ public:
      * - `t=0` for smoothing. Uses both past and future information to determine the optimal
      *   filtered value*/
     initial_point_attr_   (this, "position",     "Evaluation Position in Window [-m, m]", true, 0),
-    derivation_order_attr_(this, "derivation",   "Which Derivative to Calculate [<= order]", true, 0)
+    derivation_order_attr_(this, "derivation",   "Which Derivative d to output [d <= order], if negative, calculate up to -d", true, 0)
   { }
 
   ~PiPoSavitzkyGolay(void)
@@ -128,29 +129,53 @@ public:
       config_.n = n;
     
     if (s < 0)
-    {
-      config_.s = 0;
-      signalWarning("Derivative must be >= 0");
+    { // calculate dervis from 0 up to and including -s
+      num_derivs_ = std::min((unsigned) -s, config_.n) + 1;
+      s = 0; // base deriv
+      signalWarning("Will output derivatives 0 to " + std::to_string(num_derivs_ - 1));
     }
     else if (s > config_.n)
     {
-      config_.s = config_.n;
+      s = config_.n;
+      num_derivs_ = 1;
       signalWarning("Polynomial Order must be <= polynomial order, changed to: " + std::to_string(config_.n));
     }
     else
-      config_.s = s;
+      num_derivs_ = 1;
 
     // calculate filter weights
-    filter_.configure(config_);
+    filter_.resize(num_derivs_);
+    for (int i = 0; i < num_derivs_; i++)
+    {
+      config_.s = s + i;
+      filter_[i].configure(config_);
+    }
 
     input_frame_period_ = 1000. / framerate;
+    size_t outwidth = width * num_derivs_;
 
     // resize input/output vectors for sg
     sg_in_.resize(width, config_.window_size());
-    sg_out_.resize(width);
-    // later: sg_out_.reserve(input_size_ - 2 * config_.m);
+    sg_out_.resize(outwidth);
 
-    return propagateStreamAttributes(hasTimeTags, framerate, offset, width, 1, labels, hasVarSize, domain, 1);
+    std::vector<std::string>  outlabels(outwidth);
+    std::vector<const char *> outlabelstr(outwidth);
+
+    if (num_derivs_ > 1)
+    { // each input column will give 1 output column per requested derivative: need to invent column names
+      for (int i = 0; i < width; i++)
+        for (int d = 0; d < num_derivs_; d++)
+        {
+          int ii = i * num_derivs_ + d;
+          outlabels[ii] = (labels != NULL  &&  labels[i] != NULL  ?  std::string(labels[i])  :  "Col" + std::to_string(i))
+                        + "Deriv" + std::to_string(d);
+          outlabelstr[ii] = outlabels[ii].c_str();
+        }
+
+      labels = &(outlabelstr[0]);
+    }
+    
+    int ret = propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, 1, labels, hasVarSize, domain, 1);
   } // streamAttributes
 
   
@@ -169,14 +194,17 @@ public:
           
         for (unsigned int j = 0; j < sg_in_.width; j++)
         { // deinterleave and unroll input ring buffer
+          // TODO: add unrolled weights with stride to gram_sg
           for (unsigned int k = 0; k < config_.window_size(); k++)
             column[k] = sg_in_.vector[(k * sg_in_.width + j + sg_in_.index) % sg_in_.size];
-          
-          sg_out_[j] = filter_.filter(column);
+
+          // calculate filter for all requested derivatives (usually 1)
+          for (unsigned int d = 0; d < num_derivs_; d++)
+            sg_out_[j * num_derivs_ + d] = filter_[d].filter(column);
         }
       
         // timeoffset = config_.t * input_frame_period_
-        ret = this->propagateFrames(time, weight, &sg_out_[0], sg_in_.width, 1);
+        ret = this->propagateFrames(time, weight, &sg_out_[0], sg_out_.size(), 1);
       }
 
       if (ret != 0)
