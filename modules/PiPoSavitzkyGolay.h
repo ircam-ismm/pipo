@@ -79,7 +79,7 @@ public:
   PiPoSavitzkyGolay(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent), filter_(1),
     // declare pipo attributes, all sg params need reconfiguring, thus changesstream = true
-    window_size_attr_     (this, "size",         "Window Size [=2*m+1 frames, >= 3]", true, 2),
+    window_size_attr_     (this, "size",         "Window Size [=2*m+1 frames, >= 3]", true, 3),
     polynomial_order_attr_(this, "order",        "Polynomial Order [< size]", true, 2),
 
     /* Time at which the filter is applied
@@ -111,13 +111,14 @@ public:
     // todo: dt from frame period
 
     // checks:
-    if (ws < 3) {
-      // must be >= 3
+    if (ws < 3)
+    { // must be >= 3
       ws = 3;
       signalWarning("Window size must be >= 3, changed to: " + std::to_string(ws));
     }
-    if ((ws & 1) != 1) {
-      // must be odd
+
+    if ((ws & 1) != 1)
+    { // must be odd
       ws += 1;
       signalWarning("Window size must be odd, changed to: " + std::to_string(ws));
     }
@@ -204,19 +205,17 @@ public:
       if (sg_in_.filled)
       {
         std::vector<PiPoValue> column(config_.window_size());
+        unsigned int numelems = sg_in_.size * sg_in_.width; // number of elems in ringbuffer
           
-        for (unsigned int j = 0; j < sg_in_.width; j++)
+        for (unsigned int colind = 0; colind < sg_in_.width; colind++)
         { // deinterleave and unroll input ring buffer
           // TODO: add unrolled weights with stride to gram_sg
-            for (unsigned int k = 0; k < config_.window_size(); k++) {
-              unsigned int index = (sg_in_.index + k) * sg_in_.width + j;
-              index =  index % (sg_in_.size * sg_in_.width);
-              column[k] = sg_in_.vector[index];
-            }
+          for (unsigned int rowind = 0; rowind < config_.window_size(); rowind++)
+            column[rowind] = sg_in_.vector[((rowind + sg_in_.index) * sg_in_.width + colind) % numelems];
 
           // calculate filter for all requested derivatives (usually 1)
           for (unsigned int d = 0; d < num_derivs_; d++)
-            sg_out_[j * num_derivs_ + d] = filter_[d].filter(column);
+            sg_out_[colind * num_derivs_ + d] = filter_[d].filter(column);
         }
       
         // timeoffset = config_.t * input_frame_period_
