@@ -103,18 +103,25 @@ public:
 
   int streamAttributes (bool hasTimeTags, double framerate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    int m = window_size_attr_.get();
+    int ws = window_size_attr_.get();
+    int m = 0; // ws = 2*m+1
     int n = polynomial_order_attr_.get();
     int t = initial_point_attr_.get();
     int s = derivation_order_attr_.get();
     // todo: dt from frame period
 
     // checks:
-    if (m < 3  ||  (m & 1) != 1)
-    { // must be >= 3 and odd
-      m = std::max(1, (m - 1) / 2);
-      signalWarning("Window size must be >= 3 and odd, changed to: " + std::to_string(m * 2 + 1));
+    if (ws < 3) {
+      // must be >= 3
+      ws = 3;
+      signalWarning("Window size must be >= 3, changed to: " + std::to_string(ws));
     }
+    if ((ws & 1) != 1) {
+      // must be odd
+      ws += 1;
+      signalWarning("Window size must be odd, changed to: " + std::to_string(ws));
+    }
+    m = std::max(1, (ws - 1) / 2);
 
     if (n < 1)
     {
@@ -128,7 +135,7 @@ public:
     }
     
     if (s < 0)
-    { // calculate dervis from 0 up to and including -s
+    { // calculate derivs from 0 up to and including -s
       num_derivs_ = std::min(-s, n) + 1;
       s = 0; // base deriv
       signalWarning("Will output derivatives 0 to " + std::to_string(num_derivs_ - 1));
@@ -188,6 +195,8 @@ public:
     int ret = 0;
     //int outindex = 0;
 
+    printf("THISISATEST\n");
+      
     for (unsigned int i = 0; i < num; i++)
     {
       sg_in_.input(values, size); // feed one frame of width size into ringbuffer
@@ -199,8 +208,11 @@ public:
         for (unsigned int j = 0; j < sg_in_.width; j++)
         { // deinterleave and unroll input ring buffer
           // TODO: add unrolled weights with stride to gram_sg
-          for (unsigned int k = 0; k < config_.window_size(); k++)
-            column[k] = sg_in_.vector[(k * sg_in_.width + j + sg_in_.index) % sg_in_.size];
+            for (unsigned int k = 0; k < config_.window_size(); k++) {
+              unsigned int index = (sg_in_.index + k) * sg_in_.width + j;
+              index =  index % (sg_in_.size * sg_in_.width);
+              column[k] = sg_in_.vector[index];
+            }
 
           // calculate filter for all requested derivatives (usually 1)
           for (unsigned int d = 0; d < num_derivs_; d++)
