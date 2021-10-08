@@ -196,8 +196,6 @@ public:
     int ret = 0;
     //int outindex = 0;
 
-    printf("THISISATEST\n");
-      
     for (unsigned int i = 0; i < num; i++)
     {
       sg_in_.input(values, size); // feed one frame of width size into ringbuffer
