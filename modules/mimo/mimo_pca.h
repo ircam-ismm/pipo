@@ -1,4 +1,5 @@
-/**
+/** -*-mode:c++; c-basic-offset: 2; eval: (subword-mode) -*-
+ *
  * @file mimo_pca.h
  * @author Ward Nijman
  *
@@ -201,8 +202,8 @@ public:
     enum Direction { Forward = 0, Backward = 1 };
     int numbuffers_, numtracks_, numframestotal_;
     std::vector<int> bufsizes_; // num frames for each buffer
-    int fb_ = Forward;
-    float threshold_ = 1e-6;
+    int   fb_        = Forward;
+    float threshold_ = 1e-5;
     
     std::vector<PiPoValue> U_, S_, V_, Vt_;
     std::vector<PiPoValue> means_;	// means of n_ input columns
@@ -226,9 +227,9 @@ public:
     
     MiMoPca(Parent *parent, Mimo *receiver = nullptr)
     :   Mimo(parent, receiver)
-    ,   forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, Forward)
+    ,   forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_)
     ,   rank_attr_(this, "rank", "Matrix rank, -1 for automatic", true, -1)
-    ,   threshold_attr_(this, "threshold", "cutoff value for autorank", true, 1e-6)
+    ,   threshold_attr_(this, "threshold", "cutoff value for autorank", true, threshold_)
     ,   model_attr_(this, "model", "The model for processing", true, "")
     {
         forwardbackward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
@@ -645,12 +646,5 @@ public:
         }
     } // end frames
 };
-    
-/** EMACS **
- * Local variables:
- * mode: c++
- * c-basic-offset:2
- * End:
- */
 
 #endif /* MIMO_PCA_H */
