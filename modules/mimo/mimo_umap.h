@@ -151,11 +151,23 @@ private:
 };
 
 
+typedef std::array<unsigned, 2> mubu_id; // id of a mubu frame, must be hashable
+
+// specialize template class std::hash<> for mubu_id
+namespace std {
+  template<>
+  class hash<mubu_id> {
+  public:
+    size_t operator()(const mubu_id &p) const
+    { // hash calculation code
+      return static_cast<size_t>(((unsigned long) p[0] << 32) + p[1]);
+    }
+  };
+}
+
 class MimoUMAP: public Mimo
 {
 public:
-  typedef std::pair<unsigned, unsigned> mubu_id;
-
   const PiPoStreamAttributes* attr_;
   enum Direction { Forward = 0, Backward = 1 };
   int numbuffers_, numtracks_, numframestotal_;
@@ -189,7 +201,8 @@ public:
       numtracks_  = numtracks;
       bufsizes_.assign(tracksize, tracksize + numbuffers);
       m_ = 1; // we treat matrix data as an unrolled vector
-      n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+      n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1]; // input dimension
+      int out_dims = 2;
       numframestotal_ = 0;	// total number of frames over all buffers
       for (int i = 0; i < numbuffers_; i++)
 	numframestotal_ += bufsizes_[i];
@@ -200,15 +213,15 @@ public:
       for (int i = 0; i < numbuffers_; ++i)
       {
 	outattr[i] = new PiPoStreamAttributes(**streamattr);
-	outattr[i]->dims[0] = n_;
+	outattr[i]->dims[0] = out_dims;
 	outattr[i]->dims[1] = 1;
 
 	// create labels
-	outattr[i]->labels = new const char*[n_];
-	outattr[i]->numLabels = n_;
-	outattr[i]->labels_alloc = n_;
+	outattr[i]->labels = new const char*[out_dims];
+	outattr[i]->numLabels = out_dims;
+	outattr[i]->labels_alloc = out_dims;
 	
-	for (int j = 0; j < n_; j++)
+	for (int j = 0; j < out_dims; j++)
 	{
 	  char *lab = (char *) malloc(8); //todo: memleak!
 	  snprintf(lab, 8, "UMAP%d", j);
@@ -223,7 +236,8 @@ public:
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
       // convert input data into flucoma dataset
-      fluid::FluidDataSet<mubu_id, PiPoValue, 1> dataset_in;
+      //fluid::FluidDataSet<mubu_id, PiPoValue, 1> dataset_in;
+      fluid::FluidDataSet<std::string, double, 1> dataset_in(n_);
       
       // not one single contiguous block, go point by point
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
@@ -235,8 +249,12 @@ public:
 	// append to traindata
 	for (int i = 0; i < numframes; i++, bufferptr += n_)
 	{
-          fluid::FluidTensorView<PiPoValue, 1> this_vector(bufferptr, n_);
-          dataset_in.add(std::make_pair(bufferindex, i), this_vector);
+          //const mubu_id id{bufferindex, i};
+	  std::string id = std::to_string(((unsigned long) bufferindex << 32) + i); // cram 2 ints into a string
+	  // convert and copy to umap-needed double data
+	  std::vector<double> vec(n_);
+	  std::copy(bufferptr, bufferptr + n_, vec.begin());
+          dataset_in.add(id, fluid::FluidTensorView<double, 1>(vec.data(), 0, n_));
 	}
       }
 
@@ -246,13 +264,15 @@ public:
       const int out_dims = 2;
       const float min_dist = 1.;
       // train(DataSet& in, index k = 15, index dims = 2, double minDist = 0.1, index maxIter = 200, double learningRate = 1.0)
-      fluid::FluidDataSet<mubu_id, PiPoValue> embedding = myUMAP.train(dataset_in, k, out_dims, min_dist);
+      // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>,
+      // but umap works on
+      fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, out_dims, min_dist);
 
       if (1) 
       { // ok
       // copy back to output track, point by point 
-        fluid::FluidTensorView<PiPoValue, out_dims> out_points = embedding.getData();
-        fluid::FluidTensorView<mubu_id, 1>          out_ids    = embedding.getIDs(); //ids should match, but IIRC ordering isn’t guaranteed, so better to grab again
+        fluid::FluidTensorView<double, out_dims> out_points = embedding.getData();
+        fluid::FluidTensorView<std::string, 1>   out_ids    = embedding.getIds(); //ids should match, but IIRC ordering isn’t guaranteed, so better to grab again
 
       // split and copy transformed input data (embedding) to output buffers
       std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
@@ -264,20 +284,20 @@ public:
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
 	int numframes = buffers[bufferindex].numframes;
-	outdata[bufferindex].reserve(numframes * n_);
+	outdata[bufferindex].reserve(numframes * out_dims);
 	outbufs[bufferindex].numframes = numframes;
 	outbufs[bufferindex].data      = outdata[bufferindex].data();
       }
 
       // copy transformed data pointer to output buffers via id (index pair)
-      for (auto i = 0; i < out_points.size(); i++) 
+      for (auto i = 0; i < embedding.size(); i++)
       {
-	mubu_id    id   = out_ids.row(i);
-	PiPoValue *vec  = out_points.row(i);
+        unsigned long  id  = std::stoul(out_ids.row(i));
+	double        *vec = out_points.row(i).data();
 
-	int bufferindex = id.first();
-	int elemindex   = id.second();
-	std::copy(vec, vec + n_, &(outdata[bufferindex][elemindex * n_]));
+	int bufferindex = id >> 32;
+	int elemindex   = id & 0xffffffff;
+	std::copy(vec, vec + out_dims, &(outdata[bufferindex][elemindex * out_dims]));
       }
 #else // trust ids are stable, return pointers to blocks, no outdata[] needed
       for (int bufferindex = 0, bufstart = 0; bufferindex < numbuffers; bufferindex++)
