@@ -36,27 +36,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- This is a compact SVD. The rank is automatically determined when
- -1, by removing dimensions with a low singular value (< 1e-06)
- 
- In V and VT only the the diagonal vector of S is represented
- 
- The training stage propagates the input projected onto it's feature space.
- 
- This is formulated as follows:
- 
- output = M * V
- 
- The decoding step provides a forward transformation - into feature space - and a
- backward transformation - from feature space back to input space.
- 
- These are formulated as follows:
- 
- features = vec[1:n] * V
- resynthesized = vec[1:rank] * VT
-**/
-
 #ifndef MIMO_UMAP_H
 #define MIMO_UMAP_H
 
@@ -173,22 +152,33 @@ public:
   int numbuffers_, numtracks_, numframestotal_;
   std::vector<int> bufsizes_; // num frames for each buffer
   int fb_        = Forward;
-  int m_ = 0, n_ = 0; // data vector size (1, n_)
+  int m_ = 0, n_ = 0;	// input data vector size (1, n_)
+  int out_dims_  = 2;	// output data vector size
   std::vector<std::string> labelstore_;
         
 public:
-    PiPoScalarAttr<PiPo::Enumerate> forwardbackward_attr_;
-    PiPoDictionaryAttr model_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> forward_backward_attr_;
+  PiPoScalarAttr<int>		  num_neighbours_attr_;
+  PiPoScalarAttr<int>		  out_dims_attr_;
+  PiPoScalarAttr<double>	  min_dist_attr_;
+  PiPoScalarAttr<int>		  num_iter_attr_;
+  PiPoScalarAttr<double>	  learn_rate_attr_;
+  PiPoDictionaryAttr		  model_attr_;
 
-    UMAP_model_data decomposition_;
+  UMAP_model_data decomposition_;
     
     MimoUMAP(Parent *parent, Mimo *receiver = nullptr)
     : Mimo(parent, receiver),
-      forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_),
-      model_attr_(this, "model", "The model for processing", true, "")
+      forward_backward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_),
+      out_dims_attr_        (this, "dims", "Number of Output Dimensions", true, out_dims_),
+      num_neighbours_attr_  (this, "k", "Number of Nearest Neighbours", false, 15),
+      min_dist_attr_	    (this, "mindist", "Minimum Distance", false, 0.1),
+      num_iter_attr_	    (this, "numiter", "Number of Iterations", false, 200),
+      learn_rate_attr_      (this, "learnrate", "Learning Rate", false, 0.1),
+      model_attr_           (this, "model", "The model for processing", true, "")
     {
-      forwardbackward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
-      forwardbackward_attr_.addEnumItem("backward", "Backward transformation from principal component space to input space");
+      forward_backward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
+      forward_backward_attr_.addEnumItem("backward", "Backward transformation from principal component space to input space");
     }
     
     ~MimoUMAP(void)
@@ -237,7 +227,7 @@ public:
     {
       // convert input data into flucoma dataset
       //fluid::FluidDataSet<mubu_id, PiPoValue, 1> dataset_in;
-      fluid::FluidDataSet<std::string, double, 1> dataset_in(n_);
+      fluid::FluidDataSet<std::string, double, 1> dataset_in(n_); // todo: set capacity to numframestotal_ rows
       
       // not one single contiguous block, go point by point
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
@@ -250,7 +240,7 @@ public:
 	for (int i = 0; i < numframes; i++, bufferptr += n_)
 	{
           //const mubu_id id{bufferindex, i};
-	  std::string id = std::to_string(((unsigned long) bufferindex << 32) + i); // cram 2 ints into a string
+	  std::string id = std::to_string(((unsigned long) bufferindex << 32) + i); // cram 2 ints into a string, todo: use hex or base64
 	  // convert and copy to umap-needed double data
 	  std::vector<double> vec(n_);
 	  std::copy(bufferptr, bufferptr + n_, vec.begin());
@@ -260,23 +250,27 @@ public:
 
       // actually do the UMAP
       fluid::algorithm::UMAP myUMAP;	      // make a UMAP object
-      const int k = 5;
-      const int out_dims = 2;
-      const float min_dist = 1.;
-      // train(DataSet& in, index k = 15, index dims = 2, double minDist = 0.1, index maxIter = 200, double learningRate = 1.0)
-      // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>,
-      // but umap works on
-      fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, out_dims, min_dist);
+      const int    k         = std::max<int>(num_neighbours_attr_.get(), 1);
+      const double mindist   = std::max<double>(min_dist_attr_.get(), 0);
+      const int    numiter   = std::max<int>(num_iter_attr_.get(), 1);
+      const double learnrate = std::max<double>(std::min<double>(learn_rate_attr_.get(), 1), 0);
+      
+
+      //if (k > src.size())
+      //  return Error("Number of Neighbours is larger than dataset");
+
+      // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>, but umap only works on
+      fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, out_dims_, mindist, numiter, learnrate);
 
       if (1) 
       { // ok
-      // copy back to output track, point by point 
-        fluid::FluidTensorView<double, out_dims> out_points = embedding.getData();
-        fluid::FluidTensorView<std::string, 1>   out_ids    = embedding.getIds(); //ids should match, but IIRC ordering isn’t guaranteed, so better to grab again
+        // copy back to output track, point by point 
+        fluid::FluidTensorView<double, 2>      out_points = embedding.getData();
+        fluid::FluidTensorView<std::string, 1> out_ids    = embedding.getIds(); //ids should match, but IIRC ordering isn’t guaranteed, so better to grab again
 
       // split and copy transformed input data (embedding) to output buffers
-      std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
-      std::vector<mimo_buffer> outbufs(numbuffers);
+      std::vector<std::vector<PiPoValue>> outdata(numbuffers); // temp space for output data, will be deallocated at end of function
+      std::vector<mimo_buffer>            outbufs(numbuffers);
       outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
 
 #if 1 // elem-by-elem copy
@@ -284,7 +278,7 @@ public:
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
 	int numframes = buffers[bufferindex].numframes;
-	outdata[bufferindex].reserve(numframes * out_dims);
+	outdata[bufferindex].reserve(numframes * out_dims_);
 	outbufs[bufferindex].numframes = numframes;
 	outbufs[bufferindex].data      = outdata[bufferindex].data();
       }
@@ -292,12 +286,12 @@ public:
       // copy transformed data pointer to output buffers via id (index pair)
       for (auto i = 0; i < embedding.size(); i++)
       {
-        unsigned long  id  = std::stoul(out_ids.row(i));
+        unsigned long  id  = std::stoul(out_ids.row(i)); // parse imposed silly string id
 	double        *vec = out_points.row(i).data();
 
 	int bufferindex = id >> 32;
 	int elemindex   = id & 0xffffffff;
-	std::copy(vec, vec + out_dims, &(outdata[bufferindex][elemindex * out_dims]));
+	std::copy(vec, vec + out_dims_, &(outdata[bufferindex][elemindex * out_dims_]));
       }
 #else // trust ids are stable, return pointers to blocks, no outdata[] needed
       for (int bufferindex = 0, bufstart = 0; bufferindex < numbuffers; bufferindex++)
@@ -310,7 +304,6 @@ public:
 	outbufs[bufferindex].data      = &out_points.row(bufstart);
 	bufstart += numframes;
       }
-
 #endif
 	
 	return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
@@ -338,7 +331,7 @@ public:
 	    signalWarning("UMAP not configured yet.");
 	}
         
-        fb_ = forwardbackward_attr_.get();
+        fb_ = forward_backward_attr_.get();
         
         unsigned int outn = 0, outm = 0;	// todo: check rank_attr_ if different outn requested
         
