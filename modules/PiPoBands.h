@@ -124,8 +124,8 @@ public:
     enum BandsModeE bandsMode = static_cast<BandsModeE>(this->mode.get());
     enum EqualLoudnessModeE eqlMode = static_cast<EqualLoudnessModeE>(this->eqlmode.get());
     unsigned int numBands = bandsMode == UserBands
-      ?  std::max((unsigned) 0, band_limits.getSize() / 2)    // user given bands override numBands
-      :  std::max(1, this->num.get());
+      ?  std::max<int>((unsigned) 0, band_limits.getSize() / 2)    // user given bands override numBands
+      :  std::max<int>(1, this->num.get());
     unsigned int specSize = size;
     float sampleRate = 2.0 * domain;
 
