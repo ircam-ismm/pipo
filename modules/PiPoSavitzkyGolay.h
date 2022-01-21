@@ -190,6 +190,12 @@ public:
     int ret = propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, 1, labels, hasVarSize, domain, 1);
   } // streamAttributes
 
+  // reset: clear input buffer
+  int reset ()
+  {
+    printf("reset\n");
+    sg_in_.reset();
+  }
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
@@ -202,15 +208,18 @@ public:
 
       if (sg_in_.filled)
       {
-        std::vector<PiPoValue> column(config_.window_size());
-        unsigned int numelems = sg_in_.size * sg_in_.width; // number of elems in ringbuffer
+        const int winsize = config_.window_size();
+        std::vector<PiPoValue> column(winsize); 
           
         for (unsigned int colind = 0; colind < sg_in_.width; colind++)
         { // deinterleave and unroll input ring buffer
           // TODO: add unrolled weights with stride to gram_sg
-          for (unsigned int rowind = 0; rowind < config_.window_size(); rowind++)
-            column[rowind] = sg_in_.vector[((rowind + sg_in_.index) * sg_in_.width + colind) % numelems];
-
+          for (unsigned int rowind = 0; rowind < winsize; rowind++)
+          {
+            const unsigned int ring_row_index = (rowind + sg_in_.index) % sg_in_.size; // wrap row index in ring buffer
+            column[rowind] = sg_in_.vector[ring_row_index * sg_in_.width + colind];
+          }
+          
           // calculate filter for all requested derivatives (usually 1)
           for (unsigned int d = 0; d < num_derivs_; d++)
             sg_out_[colind * num_derivs_ + d] = filter_[d].filter(column);
