@@ -1,15 +1,15 @@
 /**
  * @file PiPoOrientation.h
  * @author ISMM Team @IRCAM
- * 
+ *
  * @brief PiPo for Orientation and angles from RIoT data stream
- * 
+ *
  * @ingroup pipomodules
  *
  * @copyright
  * Copyright (C) 2020 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,14 +53,24 @@ const double toRad = M_PI / 180.;
 class PiPoOrientation : public PiPo
 {
   enum OutputUnitE { DegreeUnit = 0, RadiansUnit = 1, NormUnit = 2};
+  enum GyroUnitE { DegreePerMillisecondUnit = 0, DegreePerSecondUnit = 1};
   enum RotationNumE { None = 0, One = 1, Two = 2 };
 private:
   bool normSum;
   double lastTime;
   bool firstSample;
-  float accEstimate[3];
-  float gyroEstimate[3];
+  // compute on double precision, to minimize accumulation of errors
+  double accVector[3];
+  // normalize gyro order and direction according to R-ioT
+  double gyroVector[3];
+  // filtered vector
+  double accEstimate[3];
+  // same as before as a projection vector
+  double gyroEstimate[3];
+  
   float outVector[6];
+  double lastGyroWeight;
+  double lastGyroWeightLinear;
   
 public:
   PiPoScalarAttr<double> gyroweight;
@@ -68,14 +78,16 @@ public:
   PiPoScalarAttr<double> regularisation;
   PiPoScalarAttr<PiPo::Enumerate> rotation;
   PiPoScalarAttr<PiPo::Enumerate> outputunit;
+  PiPoScalarAttr<PiPo::Enumerate> gyrounit;
   
   PiPoOrientation(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  gyroweight(this, "gyroweight", "Gyroscope Wheight", false, 15.0),
-  gyroweightlin(this, "gyroweightlin", "Linear Gyroscope Wheight", false, 0.9375),
+  gyroweight(this, "gyroweight", "Gyroscope Wheight", true, 15.0),
+  gyroweightlin(this, "gyroweightlin", "Linear Gyroscope Wheight", true, 0.9375),
   regularisation(this, "regularisation", "Limit Instability", false, 0.01),
   rotation(this, "rotation", "Axys rotation", false, None),
-  outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit)
+  outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit),
+  gyrounit(this, "gyrounit", "Gyro input unit", false, DegreePerMillisecondUnit)
   {
     this->rotation.addEnumItem("0", "no rotation");
     this->rotation.addEnumItem("1", "single rotation");
@@ -85,8 +97,13 @@ public:
     this->outputunit.addEnumItem("radians", "Radians angle unit");
     this->outputunit.addEnumItem("normalise", "normalise 0-1");
     
+    this->gyrounit.addEnumItem("degree/msec", "Degree per millisecond");
+    this->gyrounit.addEnumItem("degree/sec", "Degree per second");
+    
     lastTime = 0.0;
     firstSample = true;
+    lastGyroWeight = 15.0;
+    lastGyroWeightLinear = 0.9375;
   }
   
   ~PiPoOrientation(void)
@@ -94,39 +111,52 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
+    double newGyroWeight = this->gyroweight.get();
+    double newGyroWeightLinear = this->gyroweightlin.get();
+    if(newGyroWeight != lastGyroWeight)
+      setGyroWeight(newGyroWeight);
+    else if(newGyroWeightLinear != lastGyroWeightLinear)
+      setGyroWeightLinear(newGyroWeightLinear);
+    
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, labels, 0, domain, maxFrames);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    float input[3];
-    float inputGyro[3];
-
     for(unsigned int i = 0; i < num; i++)
     {
       if(size >= 3)
       {
-        input[0] = values[0];
-        input[1] = values[1];
-        input[2] = values[2];
+        accVector[0] = values[0];
+        accVector[1] = values[1];
+        accVector[2] = values[2];
         if(size >= 6)
         {
-          inputGyro[0] = -1000. * values[3];
-          inputGyro[1] = -1000. * values[4];
-          inputGyro[2] = -1000. * values[5];
+          double inputGyro0 = values[3];
+          double inputGyro1 = values[4];
+          double inputGyro2 = values[5];
+          
+          PiPoOrientation::GyroUnitE gyunit = (PiPoOrientation::GyroUnitE)this->gyrounit.get();
+          double gyrounitparm = (gyunit == DegreePerMillisecondUnit) ? 1000. : 1.;
+          
+          // match R-IoT output
+          gyroVector[0] = -gyrounitparm * inputGyro1; // deg / ms
+          gyroVector[1] =  gyrounitparm * inputGyro0; // deg / ms
+          gyroVector[2] =  gyrounitparm * inputGyro2; // (unused) deg / ms
         }
       }
     
-      double deltaTime = lastTime-time;
+      double deltaTime = (time-lastTime)/1000.0;
       lastTime = time;
-      
-      normalize(input);
+            
+      normalize(accVector);
       
       if(firstSample)
       {
         firstSample = false;
         for(int i = 0; i < 3; i++)
-          accEstimate[i] = input[i];
+          accEstimate[i] = accVector[i];
+        return 0;
       }
       else
       {
@@ -136,10 +166,10 @@ public:
         // get angles between projection of R on ZX/ZY plane and Z axis, based on last accEstimate
         
         // gyroVector in deg/s, delta and angle in rad
-        double rollDelta = inputGyro[0] * deltaTime * toRad;
+        double rollDelta = gyroVector[0] * deltaTime * toRad;
         double rollAngle = atan2(accEstimate[0], accEstimate[2]) + rollDelta;
         
-        double pitchDelta =  inputGyro[1] * deltaTime * toRad;
+        double pitchDelta =  gyroVector[1] * deltaTime * toRad;
         double pitchAngle = atan2(accEstimate[1], accEstimate[2]) + pitchDelta;
         
         // calculate projection vector from angle estimates
@@ -161,7 +191,7 @@ public:
         // interpolate between estimated values and raw values
         for (int i = 0; i < 3; i++) {
           accEstimate[i] = gyroEstimate[i] * gyroWeightLinear
-          + input[i] * (1. - gyroWeightLinear);
+          + accVector[i] * (1. - gyroWeightLinear);
         }
         
         normalize(accEstimate);
@@ -173,33 +203,38 @@ public:
           // use input instead of estimation
           // self->accVector is already normalized
           for(int i = 0; i< 3; i++) {
-            accEstimate[i] = input[i];
+            accEstimate[i] = accVector[i];
           }
         }
       }
       
       // calculate angles
+      double anglesInput[3];
+      anglesInput[0] = accEstimate[0];
+      anglesInput[1] = accEstimate[1];
+      anglesInput[2] = accEstimate[2];
+            
       PiPoOrientation::RotationNumE rot = (PiPoOrientation::RotationNumE)this->rotation.get();
-      rotateInput(input, rot);
+      rotateInput(anglesInput, rot);
       
       //1) pitch
       double pitch = 0.0;
-      double divPitch = input[1]*input[1] + input[2]*input[2];
+      double divPitch = pow(anglesInput[1], 2.) + pow(anglesInput[2], 2.);
       if(divPitch > 0)
-        pitch = atan(-input[0]/(sqrt(divPitch)));
+        pitch = atan(-anglesInput[0]/(sqrt(divPitch)));
       
       //2) roll
       double roll = 0.0;
       double regularisation = this->regularisation.get();
-      double divRoll = regularisation*input[0]*input[0] + input[2]*input[2];
+      double divRoll = regularisation*pow(anglesInput[0], 2.) + pow(anglesInput[2], 2.);
       if(divRoll > 0)
-        roll = atan2(input[1], copysign(1.0, input[2])*sqrt(divRoll));
+        roll = atan2(anglesInput[1], copysign(1.0, anglesInput[2])*sqrt(divRoll));
       
       //3) tilt
       double tilt = 0.0;
-      double divTilt = input[0]*input[0] + input[1]*input[1] + input[2]*input[2];
+      double divTilt = pow(anglesInput[0], 2.) + pow(anglesInput[1], 2.) + pow(anglesInput[2], 2.);
       if(divTilt > 0)
-        tilt = acos(input[2]/sqrt(divTilt));
+        tilt = acos(anglesInput[2]/sqrt(divTilt));
       
       // output convertion if needed
       PiPoOrientation::OutputUnitE outUnit = (PiPoOrientation::OutputUnitE)this->outputunit.get();
@@ -210,20 +245,23 @@ public:
           pitch = pitch*toDeg;
           roll = roll*toDeg;
           tilt = tilt*toDeg;
+          break;
         }
         case NormUnit:
         {
           pitch = pitch/M_PI;
           roll = roll/M_PI;
           tilt = tilt/M_PI;
+          break;
         }
         default:
         case RadiansUnit:
           break;
       }
-      outVector[0] = input[0];
-      outVector[1] = input[1];
-      outVector[2] = input[2];
+            
+      outVector[0] = accEstimate[0];
+      outVector[1] = accEstimate[1];
+      outVector[2] = accEstimate[2];
       outVector[3] = pitch;
       outVector[4] = roll;
       outVector[5] = tilt;
@@ -237,7 +275,7 @@ public:
     return 0;
   }
   
-  void rotateInput(float *input, PiPoOrientation::RotationNumE rot)
+  void rotateInput(double *input, PiPoOrientation::RotationNumE rot)
   {
     switch(rot)
     {
@@ -246,34 +284,57 @@ public:
         break;
       case 1:
       {
-        float val1 = input[0];
-        float val2 = input[1];
-        float val3 = input[2];
+        double val1 = input[0];
+        double val2 = input[1];
+        double val3 = input[2];
         input[0]  = val3;
         input[1]  = val1;
         input[2]  = val2;
+        break;
       }
       case 2:
       {
-        float val1 = input[0];
-        float val2 = input[1];
-        float val3 = input[2];
+        double val1 = input[0];
+        double val2 = input[1];
+        double val3 = input[2];
         input[0]  = val2;
         input[1]  = val3;
         input[2]  = val1;
+        break;
       }
     }
   }
   
-  void normalize(float * v)
+  void normalize(double * v)
   {
-    const float mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    const double mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 
     if (mag > 0) {
       v[0] /= mag;
       v[1] /= mag;
       v[2] /= mag;
     }
+  }
+  
+  void setGyroWeight(double gyroWeight)
+  {
+    lastGyroWeight = gyroWeight;
+    lastGyroWeightLinear = lastGyroWeight / (1. + lastGyroWeight);
+    this->gyroweightlin.set(lastGyroWeightLinear);
+  }
+
+  void setGyroWeightLinear(double gyroWeightLinear)
+  {
+    lastGyroWeightLinear = gyroWeightLinear;
+    if(lastGyroWeightLinear != 1.)
+    {
+      lastGyroWeight = -lastGyroWeightLinear / (lastGyroWeightLinear - 1.);
+    }
+    else
+    {
+      lastGyroWeight = 1.f / FLT_EPSILON;
+    }
+    this->gyroweight.set(lastGyroWeight);
   }
 };
 
