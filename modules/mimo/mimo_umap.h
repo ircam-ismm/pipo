@@ -138,12 +138,14 @@ public:
   std::vector<int> bufsizes_; // num frames for each buffer
   int fb_        = Forward;
   int m_ = 0, n_ = 0;	// input data vector size (1, n_)
-  int out_dims_  = 2;	// output data vector size
+  std::vector<int> incolumns_; // indims_ used column indices (or empty for all columns)
+  int indims_    = 0;	// training data vector size (used columns)
+  int outdims_   = 2;	// output data vector size
   std::vector<std::string> labelstore_;
         
 public:
   PiPoScalarAttr<PiPo::Enumerate> forward_backward_attr_;
-  PiPoVarSizeAttr<const std::string> columns_attr_;
+  PiPoVarSizeAttr<PiPo::Atom>     columns_attr_;
   PiPoScalarAttr<int>		  num_neighbours_attr_;
   PiPoScalarAttr<int>		  out_dims_attr_;
   PiPoScalarAttr<double>	  min_dist_attr_;
@@ -156,10 +158,11 @@ public:
   MimoUMAP(Parent *parent, Mimo *receiver = nullptr)
   : Mimo(parent, receiver),
     forward_backward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_),
-    out_dims_attr_        (this, "dims", "Number of Output Dimensions", true, out_dims_),
+    columns_attr_	  (this, "columns", "Column Names or Indices to include", true),
+    out_dims_attr_        (this, "dims", "Number of Output Dimensions", true, outdims_),
     num_neighbours_attr_  (this, "k", "Number of Nearest Neighbours", false, 15),
-    min_dist_attr_	    (this, "mindist", "Minimum Distance", false, 0.1),
-    num_iter_attr_	    (this, "numiter", "Number of Iterations", false, 200),
+    min_dist_attr_	  (this, "mindist", "Minimum Distance", false, 0.1),
+    num_iter_attr_	  (this, "numiter", "Number of Iterations", false, 200),
     learn_rate_attr_      (this, "learnrate", "Learning Rate", false, 0.1),
     model_attr_           (this, "model", "The model for processing", true, "")
   {
@@ -177,27 +180,54 @@ public:
     numtracks_  = numtracks;
     bufsizes_.assign(tracksize, tracksize + numbuffers);
     m_ = 1; // we treat matrix data as an unrolled vector
-    n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1]; // input dimension
-    int out_dims = 2;
+    n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1]; // input dimensions
+    indims_  = n_;
+    outdims_ = std::max(out_dims_attr_.get(), 1); // output dimensions
+    
     numframestotal_ = 0;	// total number of frames over all buffers
     for (int i = 0; i < numbuffers_; i++)
       numframestotal_ += bufsizes_[i];
 
+    // look up list of input columns
+    incolumns_.resize(0);
+    PiPo::Atom *incols = columns_attr_.getPtr();
+    for (int i = 0; i < columns_attr_.size(); i++)
+    {
+      if (incols[i].isNumber())
+      {
+	int colind = incols[i].getInt();
+
+	if (colind >= 0)
+	  incolumns_.push_back(colind);
+	// else: count from back
+      }
+      else if (incols[i].isString())
+      { // look up column index by name
+	const char *colname = incols[i].getString();
+
+	int colind = streamattr[0]->lookup_label(colname);
+	if (colind >= 0)
+	  incolumns_.push_back(colind);
+      } // else: unknown type, just ignore
+    }
+    if (incolumns_.size() > 0)
+      indims_ = incolumns_.size();
+    
     // set output stream attributes
     PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[numbuffers_];
 
     for (int i = 0; i < numbuffers_; ++i)
     {
       outattr[i] = new PiPoStreamAttributes(**streamattr);
-      outattr[i]->dims[0] = out_dims;
+      outattr[i]->dims[0] = outdims_;
       outattr[i]->dims[1] = 1;
 
       // create labels
-      outattr[i]->labels = new const char*[out_dims];
-      outattr[i]->numLabels = out_dims;
-      outattr[i]->labels_alloc = out_dims;
+      outattr[i]->labels = new const char*[outdims_];
+      outattr[i]->numLabels = outdims_;
+      outattr[i]->labels_alloc = outdims_;
 	
-      for (int j = 0; j < out_dims; j++)
+      for (int j = 0; j < outdims_; j++)
       {
 	char *lab = (char *) malloc(8); //todo: memleak!
 	snprintf(lab, 8, "UMAP%d", j);
@@ -212,8 +242,8 @@ public:
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
   {
     // convert input data into flucoma dataset
-    //fluid::FluidDataSet<mubu_id, PiPoValue, 1> dataset_in;
-    fluid::FluidDataSet<std::string, double, 1> dataset_in(n_); // todo: set capacity to numframestotal_ rows
+    // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1> dataset_in;
+    fluid::FluidDataSet<std::string, double, 1> dataset_in(indims_); // todo: set capacity to numframestotal_ rows
       
     // not one single contiguous block, go point by point
     for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
@@ -227,10 +257,19 @@ public:
       {
 	//const mubu_id id{bufferindex, i};
 	std::string id = std::to_string(((unsigned long) bufferindex << 32) + i); // cram 2 ints into a string, todo: use hex or base64
-	// convert and copy to umap-needed double data
-	std::vector<double> vec(n_);
-	std::copy(bufferptr, bufferptr + n_, vec.begin());
-	dataset_in.add(id, fluid::FluidTensorView<double, 1>(vec.data(), 0, n_));
+	
+	// convert one row and copy to umap-needed double data
+	std::vector<double> vec(indims_);
+
+	if (incolumns_.size() == 0)
+	  // use full input vector
+	  std::copy(bufferptr, bufferptr + n_, vec.begin());
+	else
+	  // use selected columns
+	  for (int i = 0; i < indims_; i++)
+	    vec[i] = bufferptr[incolumns_[i]];
+	
+	dataset_in.add(id, fluid::FluidTensorView<double, 1>(vec.data(), 0, indims_)); //todo: FluidTensorView should be able to use vec directly...
       }
     }
 
@@ -246,7 +285,7 @@ public:
     //  return Error("Number of Neighbours is larger than dataset");
 
     // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>, but umap only works on
-    fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, out_dims_, mindist, numiter, learnrate);
+    fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, outdims_, mindist, numiter, learnrate);
 
     if (1) 
     { // ok
@@ -264,7 +303,7 @@ public:
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
 	int numframes = buffers[bufferindex].numframes;
-	outdata[bufferindex].reserve(numframes * out_dims_);
+	outdata[bufferindex].reserve(numframes * outdims_);
 	outbufs[bufferindex].numframes = numframes;
 	outbufs[bufferindex].data      = outdata[bufferindex].data();
       }
@@ -277,7 +316,7 @@ public:
 
 	int bufferindex = id >> 32;
 	int elemindex   = id & 0xffffffff;
-	std::copy(vec, vec + out_dims_, &(outdata[bufferindex][elemindex * out_dims_]));
+	std::copy(vec, vec + outdims_, &(outdata[bufferindex][elemindex * outdims_]));
       }
 #else // trust ids are stable, return pointers to blocks, no outdata[] needed
       for (int bufferindex = 0, bufstart = 0; bufferindex < numbuffers; bufferindex++)
