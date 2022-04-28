@@ -1,12 +1,12 @@
 /** -*-mode:c++; c-basic-offset: 2; eval: (subword-mode) -*-
  *
  * @file mimo_UMAP.h
- * @author Ward Nijman
+ * @author Diemo Schwarz
  *
  * @brief mimo UMAP using flucoma implementation based on Eigen and Spectra
  *
  * @copyright
- * Copyright (C) 2016 - 2019 by ISMM IRCAM - Centre Pompidou, Paris, France
+ * Copyright (C) 2016 - 2022 by ISMM IRCAM - Centre Pompidou, Paris, France
  * All rights reserved.
  *
  * License (BSD 3-clause)
