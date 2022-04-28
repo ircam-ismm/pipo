@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP 1
+#define DEBUG_CHOP 0
 #define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  -1  :  (t))
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
 
