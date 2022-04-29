@@ -43,6 +43,7 @@
 #include "PiPo.h"
 #include "PiPoSequence.h"
 #include "PiPoDelta.h"
+#include "PiPoScale.h"
 
 #include <math.h>
 #include <vector>
@@ -63,29 +64,29 @@ private:
   
   float outVector[4];
   
-  double inputScaleFactor;
-  double inputScaleOffset;
+  //double inputScaleFactor;
+  //double inputScaleOffset;
 public:
   enum IntensityModeE { AbsMode = 0, PosMode = 1, NegMode = 2};
 
-  PiPoScalarAttr<bool> clip;
+  /*PiPoScalarAttr<bool> clip;
   PiPoScalarAttr<double> scaleinmin;
   PiPoScalarAttr<double> scaleinmax;
   PiPoScalarAttr<double> scaleoutmin;
   PiPoScalarAttr<double> scaleoutmax;
-  PiPoScalarAttr<double> power;
+  PiPoScalarAttr<double> power;*/
   PiPoScalarAttr<double> gain;
   PiPoScalarAttr<double> feedback;
   PiPoScalarAttr<PiPo::Enumerate> mode;
   
   PiPoInnerIntensity(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  clip(this, "clip", "Clip Values", true, false),
+  /*clip(this, "clip", "Clip Values", true, false),
   scaleinmin(this, "scaleinmin", "Scale input minimun", true, 0.),
   scaleinmax(this, "scaleinmax", "Scale input maximum", true, 1.),
   scaleoutmin(this, "scaleoutmin", "Scale output minimum", true, 0.),
   scaleoutmax(this, "scaleoutmax", "Scale output maxmimum", true, 1.),
-  power(this, "pow", "Power exponent on values", false, 1.),
+  power(this, "pow", "Power exponent on values", false, 1.),*/
   gain(this, "gain", "Overall gain", false, 0.1),
   feedback(this, "feedback", "Feedback (integration)", false, 0.9),
   mode(this, "mode", "Input values mode", false, AbsMode)
@@ -94,9 +95,9 @@ public:
     this->mode.addEnumItem("pos", "positive part of value");
     this->mode.addEnumItem("neg", "negative part of value");
         
-    this->inputScaleFactor = 1.0;
-    this->inputScaleOffset = 0.0;
-    setupScale();
+    //this->inputScaleFactor = 1.0;
+    //this->inputScaleOffset = 0.0;
+    //setupScale();
     
     // delta.size
     //this->filter_size_param.set(3);
@@ -110,7 +111,7 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    setupScale();
+    //setupScale();
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 4, 1, labels, 0, domain, maxFrames);
   }
@@ -120,8 +121,8 @@ public:
     double feedBack = this->feedback.get();
     double gainVal = this->gain.get();
     double norm = 0;
-    bool clipValues = this->clip.get();
-    double powVal = this->power.get();
+    //bool clipValues = this->clip.get();
+    //double powVal = this->power.get();
     
     for(unsigned int i = 0; i < num; i++)
     {
@@ -145,7 +146,7 @@ public:
           norm += value;
           
           //clip value
-          if(clipValues)
+          /*if(clipValues)
           {
             if(value < 0.0) value = 0.0;
             else if(value > 1.0) value = 1.0;
@@ -154,21 +155,21 @@ public:
           value = pow(value, powVal);
           
           // scale value
-          value = scaleValue(value);
+          value = scaleValue(value);*/
           
           outVector[i + 1] = value;
         }
         
         //clip norm
-        if(clipValues)
+        /*if(clipValues)
         {
           if(norm < 0.0) norm = 0.0;
           else if(norm > 1.0) norm = 1.0;
-        }
+        }*/
         // pow of norm
-        norm = pow(norm, powVal);
+        //norm = pow(norm, powVal);
         // scale norm
-        norm = scaleValue(norm);
+        //norm = scaleValue(norm);
         
         outVector[0] = norm;
       
@@ -202,7 +203,7 @@ public:
     return retValue;
   }
   
-  void setupScale()
+  /*void setupScale()
   {
     double scaleOutMax = this->scaleoutmax.get();
     double scaleOutMin = this->scaleoutmin.get();
@@ -223,7 +224,7 @@ public:
     
     retValue = (retValue * inputScaleFactor + inputScaleOffset);
     return retValue;
-  }
+  }*/
 };
 
 class PiPoIntensity : public PiPoSequence
@@ -231,35 +232,61 @@ class PiPoIntensity : public PiPoSequence
 public:
   PiPoDelta delta;
   PiPoInnerIntensity intensity;
+  PiPoScale scale;
  
   PiPoIntensity(PiPo::Parent *parent, PiPo *receiver = NULL)
   : PiPoSequence(parent),
-    delta(parent), intensity(parent)
+    delta(parent), intensity(parent), scale(parent)
   {
     this->add(delta);
     this->add(intensity);
+    this->add(scale);
     this->setReceiver(receiver);
 
     // propagate attributes from member PiPos
-    this->addAttr(this, "clip", "Clip values", &intensity.clip);
-    this->addAttr(this, "scaleinmin", "Scale input minimun", &intensity.scaleinmin);
-    this->addAttr(this, "scaleinmax", "Scale input maximum", &intensity.scaleinmax);
-    this->addAttr(this, "scaleoutmin", "Scale output minimum", &intensity.scaleoutmin);
-    this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &intensity.scaleoutmax);
-    this->addAttr(this, "pow", "Power exponent on values", &intensity.power);
+    //this->addAttr(this, "clip", "Clip values", &intensity.clip);
+    //this->addAttr(this, "scaleinmin", "Scale input minimun", &intensity.scaleinmin);
+    //this->addAttr(this, "scaleinmax", "Scale input maximum", &intensity.scaleinmax);
+    //this->addAttr(this, "scaleoutmin", "Scale output minimum", &intensity.scaleoutmin);
+    //this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &intensity.scaleoutmax);
+    //this->addAttr(this, "pow", "Power exponent on values", &intensity.power);
+    
     this->addAttr(this, "gain", "Overall gain", &intensity.gain);
     this->addAttr(this, "feedback", "Feedback (integration)", &intensity.feedback);
     this->addAttr(this, "mode", "Input values mode", &intensity.mode);
-
+    
+    this->addAttr(this, "clip", "Clip values", &scale.clip);
+    this->addAttr(this, "scaleinmin", "Scale input minimun", &scale.inMin);
+    this->addAttr(this, "scaleinmax", "Scale input maximum", &scale.inMax);
+    this->addAttr(this, "scaleoutmin", "Scale output minimum", &scale.outMin);
+    this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &scale.outMax);
+    this->addAttr(this, "powerexp", "Power exponent on values", &scale.powerexp);
+    this->addAttr(this, "scalefunc", "Scaling function", &scale.func);
+    
     // init attributes
     delta.filter_size_param.set(3);
     
-    intensity.clip.set(0);
+    scale.func.set(PiPoScale::ScalePow);
+    scale.inMin.setSize(4);
+    scale.inMax.setSize(4);
+    scale.outMin.setSize(4);
+    scale.inMax.setSize(4);
+    for(int i = 0; i < 4; i++)
+    {
+      scale.inMin.set(i, 0.0);
+      scale.inMax.set(i, 1.0);
+      scale.outMin.set(i, 0.0);
+      scale.outMax.set(i, 1.0);
+    }
+    scale.clip.set(0);
+    scale.powerexp.set(1.0);
+    
+    /*intensity.clip.set(0);
     intensity.scaleinmin.set(0.);
     intensity.scaleinmax.set(1.);
     intensity.scaleoutmin.set(0.);
     intensity.scaleoutmax.set(1.); // adapt to slice size and sr
-    intensity.power.set(1.);
+    intensity.power.set(1.);*/
     intensity.gain.set(0.1);
     intensity.feedback.set(0.9);
     intensity.mode.set(PiPoInnerIntensity::AbsMode);
@@ -274,7 +301,7 @@ public:
 private:
   PiPoIntensity (const PiPoIntensity &other)
   : PiPoSequence(other.parent),
-    delta(other.parent), intensity(other.parent)
+    delta(other.parent), intensity(other.parent), scale(other.parent)
   {
     //printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
   }
