@@ -80,7 +80,7 @@ private:
 inline PiPoIndex::PiPoIndex (Parent *parent, PiPo *receiver)
 : PiPo(parent, receiver),
   start_attr_(this, "start", "start value", false, default_startvalue),
-  incr_attr_(this, "name",  "list of names of added columns", true, default_inrcement),
+  incr_attr_(this, "incr",  "index increment", true, default_inrcement),
   numoutcols_(1), index_value(default_startvalue)
 {}
 

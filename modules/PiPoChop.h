@@ -67,7 +67,7 @@ public:
   PiPoScalarAttr<bool> enMaxA;
   PiPoScalarAttr<bool> enMeanA;
   PiPoScalarAttr<bool> enStddevA;
-
+  
 private:
   int maxDescrNameLength;
   int reportDuration; // caches enDurationA as index offset, mustn't change while running
@@ -79,7 +79,7 @@ private:
   {
   private:
     PiPoChop &chop;	// reference to containing chop module
-
+    
     double		offset_;	// cached offsetA
     std::vector<double> choptimes_;     // cleaned list of chop.at times
     std::vector<double> chopduration_;  // duration list corresponding to cleaned chop.at times
@@ -87,11 +87,11 @@ private:
     // managed by reset/advanceNextTime():
     double last_start_;     // LAST segmentation time
     double next_time_;     // NEXT segmentation time
-    size_t segment_index_;    // next external segmentation time list index, 
-
+    size_t segment_index_;    // next external segmentation time list index,
+    
     double segment_start_;    // LAST segmentation time
     double segment_duration_; // LAST segment duration
-
+    
   public:
     Segmenter (PiPoChop &chop) : chop(chop) { reset(); }
     
@@ -110,25 +110,25 @@ private:
       segment_start_ = DBL_MAX;
       segment_duration_ = 0;
       offset_        = std::max<double>(0, chop.offsetA.get());
-
+      
       settimes(chop.chopTimesA, chop.chopDurationA); // set and clean time/duration lists
-
+      
       if (choptimes_.size() == 0)
       { // use regular chop size
-	last_start_  = offset_;
-	
-	if (chop.chopSizeA.get() > 0)
-	  next_time_ = chop.chopSizeA.get() + offset_; // first segment ends at chop.offset + chop.size
-	else // size == 0: no segmentation (use whole file in offline mode)
-	  next_time_ = DBL_MAX;
+        last_start_  = offset_;
+        
+        if (chop.chopSizeA.get() > 0)
+          next_time_ = chop.chopSizeA.get() + offset_; // first segment ends at chop.offset + chop.size
+        else // size == 0: no segmentation (use whole file in offline mode)
+          next_time_ = DBL_MAX;
       }
       else
       { // use chop times list (is shifted by offset)
-	last_start_ = choptimes_[0] + offset_; // first segment start
-	next_time_  = last_start_ + chopduration_[0]; // first segment end
+        last_start_ = choptimes_[0] + offset_; // first segment start
+        next_time_  = last_start_ + chopduration_[0]; // first segment end
       }
     }
-
+    
     // set, clean, and normalize chop.at and chop.duration lists:
     // remove repeating and non-monotonous elements from times, generate normalized durations even when empty
     void settimes (PiPoVarSizeAttr<double> &times, PiPoVarSizeAttr<double> &durations)
@@ -136,51 +136,51 @@ private:
       chopduration_.reserve(times.getSize());
       chopduration_.assign (durations.getPtr(), durations.getPtr() + durations.getSize());
       choptimes_.assign    (times.getPtr(),     times.getPtr()     + times.getSize());
-
+      
       // check and clean times
       for (size_t i = 0; i < choptimes_.size(); i++)
       {
-	// clip negative times to 0
-	if (choptimes_[i] < 0)
-	  choptimes_[i] = 0;
-
-	// check strictly monotonous sequence
-	if (i > 0  &&  choptimes_.size() > 1)
-	  if (choptimes_[i] <= choptimes_[i - 1])
-	  { // remove times that don't advance (and corresponding duration entries)
+        // clip negative times to 0
+        if (choptimes_[i] < 0)
+          choptimes_[i] = 0;
+        
+        // check strictly monotonous sequence
+        if (i > 0  &&  choptimes_.size() > 1)
+          if (choptimes_[i] <= choptimes_[i - 1])
+          { // remove times that don't advance (and corresponding duration entries)
             choptimes_.erase(choptimes_.begin() + i);
-
-	    // remove corresponding entry in duration list
-	    if (i < chopduration_.size())
-	      chopduration_.erase(chopduration_.begin() + i);
-	  }
+            
+            // remove corresponding entry in duration list
+            if (i < chopduration_.size())
+              chopduration_.erase(chopduration_.begin() + i);
+          }
       }
-
+      
       // generate normalized durations: clip and fill up to end
       for (size_t i = 0; i < choptimes_.size(); i++)
       {
-	// inter-segment-onset time, "inf" end time for last segment (will be clipped to file length)
-	double segduration = (i + 1 < choptimes_.size()  ?  choptimes_[i + 1]  :  DBL_MAX) - choptimes_[i];
-	
-	if (i < chopduration_.size())
-	{ // clip duration between 0 and next segment start
-	  if (chopduration_[i] < 0)
-	    chopduration_[i] = 0;
-	  else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
-	    chopduration_[i] = segduration; 
-	}
-	else
-	{ // duration list shorter than times list, fill with segment duration
-	  chopduration_.push_back(segduration);
-	}
+        // inter-segment-onset time, "inf" end time for last segment (will be clipped to file length)
+        double segduration = (i + 1 < choptimes_.size()  ?  choptimes_[i + 1]  :  DBL_MAX) - choptimes_[i];
+        
+        if (i < chopduration_.size())
+        { // clip duration between 0 and next segment start
+          if (chopduration_[i] < 0)
+            chopduration_[i] = 0;
+          else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
+            chopduration_[i] = segduration;
+        }
+        else
+        { // duration list shorter than times list, fill with segment duration
+          chopduration_.push_back(segduration);
+        }
       }
-
+      
 #if DEBUG_CHOP
       for (size_t i = 0; i < choptimes_.size(); i++)
-	printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
+        printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
 #endif
     }
-
+    
     // called in offline mode by finalize to determine duration of last pending segment until endtime of file
     // (and start of last segment as endtime - duration)
     double getLastDuration (double endtime)
@@ -190,22 +190,22 @@ private:
       size_t numtimes = choptimes_.size();
       if (numtimes == 0)
       { // chop.at list is empty, use chop.size
-	duration = chop.chopSizeA.get() > 0
-	         ? endtime - (next_time_ - chop.chopSizeA.get())
-	         : endtime - offset_;
+        duration = chop.chopSizeA.get() > 0
+        ? endtime - (next_time_ - chop.chopSizeA.get())
+        : endtime - offset_;
       }
       else
       { // use chop time list
-	if (segment_index_ < choptimes_.size())
-	{ // we're still waiting for the end of a segment
-	  if (endtime > choptimes_[segment_index_] + offset_)
-	  { // segment has started: return passed duration
-	    duration = endtime - (choptimes_[segment_index_] + offset_);
-	  }
-	  // else: segment has not started: signal no pending segment
-	}
+        if (segment_index_ < choptimes_.size())
+        { // we're still waiting for the end of a segment
+          if (endtime > choptimes_[segment_index_] + offset_)
+          { // segment has started: return passed duration
+            duration = endtime - (choptimes_[segment_index_] + offset_);
+          }
+          // else: segment has not started: signal no pending segment
+        }
       }
-
+      
       return duration;
     }
     
@@ -213,230 +213,230 @@ private:
     {
       if (time < next_time_)
       { // segment time not yet reached
-	if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0  &&  choptimes_.size() == 0)
-	  // BUT: when chop.size was 0, we need to check if it was reset
-	  // TODO: add a changed flag to pipo::attr, or a callback
-	  next_time_ = time;	// go to Segmenter::advance() immediately and return true
-	else
-	  return false;
+        if (next_time_ == DBL_MAX  &&  chop.chopSizeA.get() > 0  &&  choptimes_.size() == 0)
+          // BUT: when chop.size was 0, we need to check if it was reset
+          // TODO: add a changed flag to pipo::attr, or a callback
+          next_time_ = time;	// go to Segmenter::advance() immediately and return true
+        else
+          return false;
       }
       
       while (time >= next_time_) // catch up with current time
-	advance(time);
-
+        advance(time);
+      
       return true;
     }
-
+    
     // return true if time is within the duration of a segment
     // (time is always before the end time of the currently awaited segment)
     bool isOn (double time)
     {
       return time >= last_start_; // start time of pending segment
     }
-
+    
   private:
     // advance to next chop time or infinity when not chopping, and the last segment's duration
     void advance (double curtime)
     {
       if (choptimes_.size() == 0)
       { // chop.at list is empty, use chop.size
-	segment_start_    = last_start_;  // store current segment start for querying
-	segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
-	last_start_       = next_time_;
-
-	double chopsize = chop.chopSizeA.get();
-	if (chopsize > 0)
-	  // at first crossing of offset, nextTime == offset + duration
-	  next_time_ = (next_time_ < DBL_MAX  ?  next_time_  :  curtime) + chopsize;
-	else
-	  next_time_ = DBL_MAX;
+        segment_start_    = last_start_;  // store current segment start for querying
+        segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
+        last_start_       = next_time_;
+        
+        double chopsize = chop.chopSizeA.get();
+        if (chopsize > 0)
+          // at first crossing of offset, nextTime == offset + duration
+          next_time_ = (next_time_ < DBL_MAX  ?  next_time_  :  curtime) + chopsize;
+        else
+          next_time_ = DBL_MAX;
       }
       else
       { // use chop.at list
-	last_start_       = next_time_;
-	segment_start_    = choptimes_[segment_index_] + offset_;  // store current segment start for querying
-	segment_duration_ = chopduration_[segment_index_];
-
-	// we have passed segment_index_ (end of current segment) and are waiting for the *end* of the next segment
-	segment_index_++;
-
-	if (segment_index_ < choptimes_.size())
-	{ // next time is end of next segment
-	  next_time_ = choptimes_[segment_index_] + offset_ + chopduration_[segment_index_]; // chop time list is shifted by offset
-	}
-	else // end of list, signal no more segmentation
-	  next_time_ = DBL_MAX;
+        last_start_       = next_time_;
+        segment_start_    = choptimes_[segment_index_] + offset_;  // store current segment start for querying
+        segment_duration_ = chopduration_[segment_index_];
+        
+        // we have passed segment_index_ (end of current segment) and are waiting for the *end* of the next segment
+        segment_index_++;
+        
+        if (segment_index_ < choptimes_.size())
+        { // next time is end of next segment
+          next_time_ = choptimes_[segment_index_] + offset_ + chopduration_[segment_index_]; // chop time list is shifted by offset
+        }
+        else // end of list, signal no more segmentation
+          next_time_ = DBL_MAX;
       }
     } // end advance()
     
   }; // end class Segmenter
-
+  
   Segmenter seg; // the single Segmenter object does all the handling of segmentation times
   
 public:
   PiPoChop (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    tempMod(), seg(*this),
-    offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
-    chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
-    chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
-    chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false),
-    enDurationA(this, "duration", "Output Segment Duration", true, false),
-    enMinA(this, "min", "Calculate Segment Min", true, false),
-    enMaxA(this, "max", "Calculate Segment Max", true, false),
-    enMeanA(this, "mean", "Calculate Segment Mean", true, true),	// at least one tempmod on
-    enStddevA(this, "stddev", "Calculate Segment StdDev", true, false),
-    maxDescrNameLength(64),
-    reportDuration(0)
+  tempMod(), seg(*this),
+  offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
+  chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
+  chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
+  chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false),
+  enDurationA(this, "duration", "Output Segment Duration", true, false),
+  enMinA(this, "min", "Calculate Segment Min", true, false),
+  enMaxA(this, "max", "Calculate Segment Max", true, false),
+  enMeanA(this, "mean", "Calculate Segment Mean", true, true),	// at least one tempmod on
+  enStddevA(this, "stddev", "Calculate Segment StdDev", true, false),
+  maxDescrNameLength(64),
+  reportDuration(0)
   {
     seg.reset();
   }
-
+  
   ~PiPoChop (void)
   {
   }
-
+  
   int streamAttributes (bool hasTimeTags, double rate, double offset,
-			unsigned int width, unsigned int height,
-			const char **labels, bool hasVarSize, double domain,
-			unsigned int maxFrames)
+                        unsigned int width, unsigned int height,
+                        const char **labels, bool hasVarSize, double domain,
+                        unsigned int maxFrames)
   {
 #if DEBUG_CHOP
-  printf("\nPiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
-	  "varsize %d  domain %f  maxframes %d\n",
-	  hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
+    printf("\nPiPoChop streamAttributes timetags %d  rate %.0f  offset %f  width %d  height %d  labels %s  "
+           "varsize %d  domain %f  maxframes %d\n",
+           hasTimeTags, rate, offset, (int) width, (int) height, labels ? labels[0] : "n/a", (int) hasVarSize, domain, (int) maxFrames);
 #endif
-
+    
     seg.reset();
     reportDuration = (static_cast<int>(enDurationA.get()) > 0) ? 1 : 0;
     frame_period_ = 1000. / rate;
-
+    
     /* resize and clear temporal models */
     tempMod.resize(width);
     tempMod.reset();
-
+    
     /* enable temporal models */ //TODO: switch at least one on
     tempMod.enable(enMinA.get(), enMaxA.get(), enMeanA.get(), enStddevA.get());
-
+    
     /* get output size */
     unsigned int outputSize = tempMod.getNumValues();
-
+    
     /* alloc output vector for duration and temporal modelling output */
     outValues.resize(outputSize + reportDuration);
-
+    
     /* get labels */
     unsigned int totalOutputSize = outputSize + reportDuration;
     char ** outLabels = new char * [totalOutputSize];
-
+    
     for (unsigned int i = 0; i < totalOutputSize; i++)
       outLabels[i] = new char[this->maxDescrNameLength];
-
+    
     if (reportDuration != 0)
       std::strcpy(outLabels[0], "Duration");
-
+    
     tempMod.getLabels(labels, width, outLabels + reportDuration, this->maxDescrNameLength, outputSize);
-
+    
     int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1,
                                               const_cast<const char **>(outLabels),
                                               false, 0.0, 1);
-
+    
     for (unsigned int i = 0; i < totalOutputSize; ++i)
     {
       delete[] outLabels[i];
     }
     delete[] outLabels;
-
+    
     return ret;
   }
-
+  
   int reset (void)
   {
     seg.reset();
     tempMod.reset();
-
+    
 #if DEBUG_CHOP
     printf("PiPoChop reset: lastTime %f nextTime %f\n", seg.getLastTime(), NEXT_TIME(seg));
 #endif
-
+    
     return this->propagateReset();
   };
-
-
+  
+  
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
 #if DEBUG_CHOP
     printf("PiPoChop frames time %f (last %f, next %f)  size %d  num %d\n", time, seg.getLastTime(), NEXT_TIME(seg), size, num);
 #endif
-
+    
     //TODO: check if chopTimesA or chopDurationA have changed (for rt case)
     int ret = 0;
-
+    
     // loop over input frames, advance time according to frame period
-    for (unsigned int i = 0; i < num; i++) 
+    for (unsigned int i = 0; i < num; i++)
     {
       // check for crossing of segment time, store cur. segment data, advance to next segment time
       if (seg.isSegment(time))
       {
-	int outsize = (int) outValues.size();
-
+        int outsize = (int) outValues.size();
+        
 #if DEBUG_CHOP
-	printf("   segment! start %f duration %f at input time %f  nextTime %f outsize %d\n",
-	       seg.getSegmentStart(), seg.getSegmentDuration(), time, NEXT_TIME(seg), outsize);
+        printf("   segment! start %f duration %f at input time %f  nextTime %f outsize %d\n",
+               seg.getSegmentStart(), seg.getSegmentDuration(), time, NEXT_TIME(seg), outsize);
 #endif
-
-	if (reportDuration != 0)
-	  // store requested chop size, not actual duration quantised to frame hops
-	  outValues[0] = seg.getSegmentDuration();
-
-	/* get temporal modelling */
-	tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
-	
-	/* report segment at precise last chop time */
-	ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
-
-	if (ret != 0)
-	  return ret; // error downstream
+        
+        if (reportDuration != 0)
+          // store requested chop size, not actual duration quantised to frame hops
+          outValues[0] = seg.getSegmentDuration();
+        
+        /* get temporal modelling */
+        tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+        
+        /* report segment at precise last chop time */
+        ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
+        
+        if (ret != 0)
+          return ret; // error downstream
       }
-
+      
       /* feed temporal modelling */
       if (seg.isOn(time))
       { // only count frames in active part of segment (after 1st one)
-	/* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
-	tempMod.input(values, size);
+        /* TODO: split frame statistics between segments proportionally wrt to exact segmentation time */
+        tempMod.input(values, size);
       }
       
       values += size;
       time   += frame_period_;
     }
-
+    
     return 0;
   }
-
+  
   int finalize (double inputEnd)
   { // inputEnd is the actual end of the sound file, can be after the last frame time
     double duration = seg.getLastDuration(inputEnd);
-
+    
 #if DEBUG_CHOP
     printf("PiPoChop finalize endtime %f  duration %f  size %ld  segment_index_ %d\n", inputEnd, duration, outValues.size(), seg.getSegmentIndex());
 #endif
-
+    
     if (duration < DBL_MAX) // there is a pending segment (TODO: want last smaller segment? duration >= chopSizeA.get())
     {
       /* end of segment (new onset or below off threshold) */
       int outsize = (int) outValues.size();
-
+      
       if (reportDuration != 0)
         // calculate actual duration of last chop
         outValues[0] = duration;
-
+      
       /* get temporal modelling */
       if (outsize > 1)
         tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
-
+      
       /* report segment */
       return this->propagateFrames(inputEnd - duration, 0.0, &outValues[0], outsize, 1);
     }
-
+    
     return 0;
   }
 };
@@ -453,8 +453,8 @@ public:
 #if CHOP_TEST
 int main (int argc, char *argv[])
 {
-
-
-    return 0;
+  
+  
+  return 0;
 }
 #endif

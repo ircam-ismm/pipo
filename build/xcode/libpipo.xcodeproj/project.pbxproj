@@ -979,7 +979,7 @@
 		5A04AA9406D4DD3F0098230D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0940;
+				LastUpgradeCheck = 1310;
 				TargetAttributes = {
 					31D2EE7B1ED72503002E9F6A = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -989,10 +989,11 @@
 			};
 			buildConfigurationList = 5A5828FD08F513D9005EF882 /* Build configuration list for PBXProject "libpipo" */;
 			compatibilityVersion = "Xcode 6.3";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 1;
 			knownRegions = (
-				English,
+				en,
+				Base,
 			);
 			mainGroup = 5A04AA9006D4DD3F0098230D;
 			productRefGroup = 5A04AAA006D4DD700098230D /* products */;
@@ -1216,6 +1217,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1257,11 +1259,11 @@
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
 				);
-				PREBINDING = YES;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1285,6 +1287,7 @@
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1327,7 +1330,6 @@
 					"-framework",
 					vecLib,
 				);
-				PREBINDING = YES;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1350,7 +1352,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				PRODUCT_NAME = doc;
 				ZERO_LINK = NO;
@@ -1374,7 +1375,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				PRODUCT_NAME = all;
 				ZERO_LINK = NO;
