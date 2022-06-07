@@ -74,6 +74,7 @@ public:
   PiPoScalarAttr<double>	minFreq;
   PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double>	yinThreshold;
+  PiPoScalarAttr<double>  yinQualityGate;
   
   // constructor
   PiPoYin2 (Parent *parent, PiPo *receiver = NULL)
@@ -81,6 +82,7 @@ public:
     minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
     downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
     yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+    yinQualityGate(this, "qualitygate", "Yin Quality Gate", true, 0.),
     yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
@@ -239,7 +241,11 @@ public:
     
     energy = sqrt(corr_[0] / (downsize - ac_size_));
     
-    outvalues[0] = (float) sr_ / period;
+    float out_0 = (float) sr_ / period;
+    if(out_0 < yinQualityGate.get())
+      out_0 = 0;
+    
+    outvalues[0] = out_0;
     outvalues[1] = (float) energy;
     outvalues[2] = (float) periodicity;
     outvalues[3] = (float) ac1_over_ac0;
