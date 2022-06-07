@@ -117,6 +117,12 @@ public:
     int    downsize = height / down;		// downsampled input frame size
     double minf = minFreq.get();
 
+    // clip quality gate value to (0., 1.)
+    if(yinQualityGate.get() < 0.)
+      yinQualityGate.set(0., true);
+    else if(yinQualityGate.get() > 1.)
+      yinQualityGate.set(1., true);
+    
     sr_ = sampleRate / down;			// effective sample rate
 
     // downsize / 2 >= ac_size for good results
