@@ -154,7 +154,7 @@ public:
       map[name] = creator;
   }
 
-  PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
+  PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module, PiPo::Parent *parent)
   {
       pipoMap::iterator it = map.find(pipoName);
       if (it == map.end()) return NULL;
