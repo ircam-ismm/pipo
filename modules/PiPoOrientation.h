@@ -89,9 +89,9 @@ public:
   outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit),
   gyrounit(this, "gyrounit", "Gyro input unit", false, DegreePerMillisecondUnit)
   {
-    this->rotation.addEnumItem("0", "no rotation");
-    this->rotation.addEnumItem("1", "single rotation");
-    this->rotation.addEnumItem("2", "double rotation");
+    this->rotation.addEnumItem("none", "no rotation");
+    this->rotation.addEnumItem("one", "single rotation");
+    this->rotation.addEnumItem("two", "double rotation");
     
     this->outputunit.addEnumItem("degree", "Degree angle unit");
     this->outputunit.addEnumItem("radians", "Radians angle unit");
