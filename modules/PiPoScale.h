@@ -220,15 +220,15 @@ public:
     virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
     {
       Scaler::scale_frame(clip, values, buffer, numframes, numrows,
-                          [=] (PiPoValue x, int j) -> PiPoValue
-                          {
-        double inVal = x * inScale[j] + inOffset[j]; //TODO: why double?
+        [=] (PiPoValue x, int j) -> PiPoValue
+	{
+	  double inVal = x * inScale[j] + inOffset[j]; //TODO: why double?
         
-        if (inVal < pipo_->minLogVal)
-          inVal = pipo_->minLogVal;
+	  if (inVal < pipo_->minLogVal)
+	    inVal = pipo_->minLogVal;
         
-        return outScale[j] * logf(inVal) + outOffset[j];
-      });
+	  return outScale[j] * logf(inVal) + outOffset[j];
+	});
     }
     
   private:
@@ -263,10 +263,10 @@ public:
     virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
     {
       Scaler::scale_frame(clip, values, buffer, numframes, numrows,
-                          [=] (PiPoValue x, int j) -> PiPoValue
-                          {
-        return outScale[j] * expf(x * inScale[j] + inOffset[j]) + outOffset[j];
-      });
+        [=] (PiPoValue x, int j) -> PiPoValue
+	{
+	  return outScale[j] * expf(x * inScale[j] + inOffset[j]) + outOffset[j];
+	});
     }
     
   private:
@@ -301,10 +301,10 @@ public:
     {
       double powexp = pipo_->powerexp.get();
       Scaler::scale_frame(clip, values, buffer, numframes, numrows,
-                          [=] (PiPoValue x, int j) -> PiPoValue
-                          {
-        return outScale[j] * powf(x * inScale[j] + inOffset[j], powexp) + outOffset[j];
-      });
+        [=] (PiPoValue x, int j) -> PiPoValue
+        {
+          return outScale[j] * powf(x * inScale[j] + inOffset[j], powexp) + outOffset[j];
+        });
     }
     
   private:
@@ -318,35 +318,35 @@ public:
   // scaler classes that clip on input range (mapped to output values of FUNC(x, j) -> PiPoValue)
   //TODO: this macro should use some template magic
 # define make_scaler_class_with_func(_NAME_, _FUNC_)			\
-class _NAME_ : public Scaler						\
-{									\
-public:								\
-_NAME_ (PiPoScale *pipo) : Scaler(pipo) {}				\
-\
-virtual void setup (int framesize) override				\
-{									\
-for (int j = 0; j < framesize; j++)			\
-{ /* override extended output range */				\
-pipo_->extOutMin[j] = _FUNC_(pipo_->extInMin[j], j);		\
-pipo_->extOutMax[j] = _FUNC_(pipo_->extInMax[j], j);		\
-}									\
-}									\
-\
-virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override \
-{									\
-Scaler::scale_frame(clip, values, buffer, numframes, numrows, _FUNC_); \
-}									\
-} // end class ScalerWithFunc
-  
+  class _NAME_ : public Scaler						\
+  {									\
+  public:								\
+    _NAME_ (PiPoScale *pipo) : Scaler(pipo) {}				\
+									\
+    virtual void setup (int framesize) override				\
+    {									\
+      for (int j = 0; j < framesize; j++)				\
+      { /* override extended output range */				\
+	pipo_->extOutMin[j] = _FUNC_(pipo_->extInMin[j], j);		\
+	pipo_->extOutMax[j] = _FUNC_(pipo_->extInMax[j], j);		\
+      }									\
+    }									\
+    									\
+    virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override \
+    {									\
+      Scaler::scale_frame(clip, values, buffer, numframes, numrows, _FUNC_); \
+    }									\
+  } // end class ScalerWithFunc
+
   
 # define m2f  [] (PiPoValue x, int j) -> PiPoValue { \
-const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
+  const double ref = 440; return ref * exp(0.0577622650467 * (x - 69.0)); }
 # define f2m  [] (PiPoValue x, int j) -> PiPoValue { \
-const double ref = 440; return (x) <= 0.0000000001  ? -999. :  69.0 + 17.3123404906676 * log(x / ref); }
+  const double ref = 440; return (x) <= 0.0000000001  ? -999. :  69.0 + 17.3123404906676 * log(x / ref); }
 # define a2db [] (PiPoValue x, int j) -> PiPoValue { \
-return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
+  return (x) <= 0.000000000001  ?   -240.0  :  8.68588963807 * log(x); }
 # define db2a [] (PiPoValue x, int j) -> PiPoValue { \
-return exp(0.11512925465 * x); }
+  return exp(0.11512925465 * x); }
   
   make_scaler_class_with_func(ScalerM2F,  m2f);
   make_scaler_class_with_func(ScalerF2M,  f2m);
@@ -370,11 +370,11 @@ return exp(0.11512925465 * x); }
      template <typename T, typename FUNC>
      size_t add_scaler (const char *name, const char *description, FUNC scalefunc)
      {
-     pipo_->func.addEnumItem(name, description);
-     scalers_.push_back(&ScalerFactory::create<T>);
-     return(scalers_.size());
+       pipo_->func.addEnumItem(name, description);
+       scalers_.push_back(&ScalerFactory::create<T>);
+       return(scalers_.size());
      }
-     */
+    */
     Scaler *create_scaler (int index)
     {
       return ((*this).*(scalers_[index]))(pipo_);	// call indexed creation function *(scalers_[index]) as method on ScalerFactory object (*this)
@@ -387,7 +387,6 @@ return exp(0.11512925465 * x); }
     
     template <typename T>
     Scaler *create (PiPoScale *pipo) { return new T(pipo); }
-    
     
   }; // end class ScalerFactory
   
@@ -428,20 +427,20 @@ public:
   
   PiPoScale(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer(),
-  fac(this),
-  scaler_(NULL),
-  inMin(this, "inmin", "Input Minimum", true),
-  inMax(this, "inmax", "Input Maximum", true),
-  outMin(this, "outmin", "Output Minimum", true),
-  outMax(this, "outmax", "Output Maximum", true),
-  clip(this, "clip", "Clip Values", false, false),
-  func(this, "func", "Scaling Function", true, ScaleLin),
-  base(this, "base", "Scaling Base", true, 1.0),
-  powerexp(this, "powerexp", "Scaling Power Exponent", false, 2.0),
-  minlog(this, "minlog", "Minimum Log Value", true, defMinLogVal),
-  complete(this, "complete", "Complete Min/Max Lists", true, CompleteRepeatLast),
-  colIndex(this, "colindex", "Index of First Column to Scale (negative values count from end)", true, 0),
-  numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0)
+    fac(this),
+    scaler_(NULL),
+    inMin(this, "inmin", "Input Minimum", true),
+    inMax(this, "inmax", "Input Maximum", true),
+    outMin(this, "outmin", "Output Minimum", true),
+    outMax(this, "outmax", "Output Maximum", true),
+    clip(this, "clip", "Clip Values", false, false),
+    func(this, "func", "Scaling Function", true, ScaleLin),
+    base(this, "base", "Scaling Base", true, 1.0),
+    powerexp(this, "powerexp", "Scaling Power Exponent", false, 2.0),
+    minlog(this, "minlog", "Minimum Log Value", true, defMinLogVal),
+    complete(this, "complete", "Complete Min/Max Lists", true, CompleteRepeatLast),
+    colIndex(this, "colindex", "Index of First Column to Scale (negative values count from end)", true, 0),
+    numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0)
   {
     this->frameSize = 0;
     this->scaleFunc = (enum ScaleFun) this->func.get();
@@ -454,14 +453,14 @@ public:
     
     // register scaler classes, add to enum with func.addEnumItem
     bool order_ok =
-    fac.add_scaler<ScalerLin> ("lin",   "Linear scaling")      == ScaleLin   &&
-    fac.add_scaler<ScalerLog> ("log",   "Logarithmic scaling") == ScaleLog   &&
-    fac.add_scaler<ScalerExp> ("exp",   "Exponential scaling") == ScaleExp   &&
-    fac.add_scaler<ScalerM2F> ("mtof",  "MIDI to Hertz") 	 == ScaleM2F   &&
-    fac.add_scaler<ScalerF2M> ("ftom",  "Hertz to MIDI") 	 == ScaleF2M   &&
-    fac.add_scaler<ScalerA2DB>("atodb", "linear to dB")  	 == ScaleA2DB  &&
-    fac.add_scaler<ScalerDB2A>("dbtoa", "dB to linear")  	 == ScaleDB2A &&
-    fac.add_scaler<ScalerPow> ("pow",   "Power scaling") == ScalePow   ;
+      fac.add_scaler<ScalerLin> ("lin",   "Linear scaling")      == ScaleLin   &&
+      fac.add_scaler<ScalerLog> ("log",   "Logarithmic scaling") == ScaleLog   &&
+      fac.add_scaler<ScalerExp> ("exp",   "Exponential scaling") == ScaleExp   &&
+      fac.add_scaler<ScalerM2F> ("mtof",  "MIDI to Hertz") 	 == ScaleM2F   &&
+      fac.add_scaler<ScalerF2M> ("ftom",  "Hertz to MIDI") 	 == ScaleF2M   &&
+      fac.add_scaler<ScalerA2DB>("atodb", "linear to dB")  	 == ScaleA2DB  &&
+      fac.add_scaler<ScalerDB2A>("dbtoa", "dB to linear")  	 == ScaleDB2A  &&
+      fac.add_scaler<ScalerPow> ("pow",   "Power scaling")       == ScalePow;
     
 #if DEBUG
     if (!order_ok)
