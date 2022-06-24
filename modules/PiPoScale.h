@@ -336,7 +336,7 @@ public:
     {									\
       Scaler::scale_frame(clip, values, buffer, numframes, numrows, _FUNC_); \
     }									\
-  } // end class ScalerWithFunc
+  } // end class macro make_scaler_class_with_func
 
   
 # define m2f  [] (PiPoValue x, int j) -> PiPoValue { \
@@ -469,7 +469,7 @@ public:
 #else
     (void) order_ok;
 #endif
-  }
+  } // ctor
   
 private:
   // disable copy constructor and assignment operator
@@ -523,7 +523,7 @@ public:
           extVec[i] = attrVec[i % attrSize];
       }
     }
-  }
+  } // extendVector
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
@@ -578,7 +578,7 @@ public:
       if (scaleFunc >= NumScaleFunc)
         scaleFunc = (enum ScaleFun) (NumScaleFunc - 1);
       
-      if(funcBase == 1.0)
+      if (scaleFunc == ScaleExp  &&  funcBase == 1.0)
         scaleFunc = ScaleLin;
     }
     
@@ -601,7 +601,7 @@ public:
     scaler_->setup(frameSize);
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
-  }
+  } // streamAttributes
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int numframes)
   {
@@ -618,7 +618,7 @@ public:
     scaler_->scale(clip, values, buffer, numframes, numrows);
     
     return this->propagateFrames(time, weight, &this->buffer[0], size, numframes);
-  }
+  } // frames
 };
 
 /** EMACS **
