@@ -171,7 +171,8 @@ public:
         // scale norm
         //norm = scaleValue(norm);
         
-        outVector[0] = norm;
+        
+        outVector[0] = sqrt(norm);
       
         int ret = this->propagateFrames(time, weight, &this->outVector[0], 4, 1);
         if(ret != 0)
@@ -260,7 +261,7 @@ public:
     this->addAttr(this, "scaleinmax", "Scale input maximum", &scale.inMax);
     this->addAttr(this, "scaleoutmin", "Scale output minimum", &scale.outMin);
     this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &scale.outMax);
-    this->addAttr(this, "powerexp", "Power exponent on values", &scale.powerexp);
+    this->addAttr(this, "powerexp", "Power exponent on values", &scale.base);
     this->addAttr(this, "scalefunc", "Scaling function", &scale.func);
     
     // init attributes
@@ -279,7 +280,7 @@ public:
       scale.outMax.set(i, 1.0);
     }
     scale.clip.set(0);
-    scale.powerexp.set(1.0);
+    scale.base.set(1.0);
     
     /*intensity.clip.set(0);
     intensity.scaleinmin.set(0.);

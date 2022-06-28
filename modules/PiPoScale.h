@@ -299,7 +299,7 @@ public:
     
     virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) override
     {
-      double powexp = pipo_->powerexp.get();
+      double powexp = pipo_->base.get();
       Scaler::scale_frame(clip, values, buffer, numframes, numrows,
         [=] (PiPoValue x, int j) -> PiPoValue
         {
@@ -419,7 +419,6 @@ public:
   PiPoScalarAttr<bool> clip;
   PiPoScalarAttr<PiPo::Enumerate> func;
   PiPoScalarAttr<double> base;
-  PiPoScalarAttr<double> powerexp;
   PiPoScalarAttr<double> minlog;
   PiPoScalarAttr<PiPo::Enumerate> complete;
   PiPoScalarAttr<int> colIndex;
@@ -435,8 +434,7 @@ public:
     outMax(this, "outmax", "Output Maximum", true),
     clip(this, "clip", "Clip Values", false, false),
     func(this, "func", "Scaling Function", true, ScaleLin),
-    base(this, "base", "Scaling Base", true, 1.0),
-    powerexp(this, "powerexp", "Scaling Power Exponent", false, 2.0),
+    base(this, "base", "Base for log/exp or exponent for pow scaling function", true, 1.0),
     minlog(this, "minlog", "Minimum Log Value", true, defMinLogVal),
     complete(this, "complete", "Complete Min/Max Lists", true, CompleteRepeatLast),
     colIndex(this, "colindex", "Index of First Column to Scale (negative values count from end)", true, 0),
