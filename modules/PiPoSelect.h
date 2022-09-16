@@ -54,21 +54,14 @@ extern "C"
 class PiPoSelect : public PiPo
 {
 private:
-  // cached attrs
-  std::vector<PiPo::Atom> colnames_;
-  std::vector<PiPo::Atom> colindices_;
-  std::vector<int> rowindices_;
-  
   // validity-checked indices
   std::vector<unsigned int> colindices_checked_; 
   std::vector<unsigned int> rowindices_checked_; 
 
   unsigned int frame_width_ = 0;
   unsigned int frame_height_ = 0;
-
   unsigned int out_width_ = 0;
   unsigned int out_height_ = 0;
-
   unsigned int out_frame_size_ = 0;
 
   std::vector<PiPoValue> out_values_;
@@ -87,28 +80,6 @@ public:
 
   ~PiPoSelect()
   { }
-
-  template <typename ELEMTYPE>
-  bool array_changed (PiPoVarSizeAttr<ELEMTYPE> attr, std::vector<ELEMTYPE> cache)
- {
-    bool changed = false;
-    if (attr.size() != cache.size())
-    {
-      changed = true;
-    }
-    else
-    {
-      for (unsigned int i = 0; i < cache.size(); i++)
-      {
-        if (cache[i] != attr[i])
-        {
-          changed = true;
-          break;
-        }
-      }
-    }
-    return changed;
-  }
 
   // get int or string column names, check against input frame width, return array
   template <typename ELEMTYPE>
@@ -166,148 +137,34 @@ public:
 			const char **labels, bool hasVarSize,
 			double domain, unsigned int maxFrames)
   {
-    unsigned int cnSize = colnames_attr_.getSize();
-    unsigned int ciSize = colindices_attr_.getSize();
-    unsigned int riSize = rowindices_attr_.getSize();
     const char *colNames[128]; // these are the labels we pass to the next pipo
 
-    //================== check col names changes
-    bool colNamesChanged = array_changed(colnames_attr_, colnames_);
-
-    //================== check col indices changes
-    bool colIndicesChanged = array_changed(colindices_attr_, colindices_);
-
-    //================== check row indices changes
-    bool rowIndicesChanged = array_changed(rowindices_attr_, rowindices_);
-
-    //===== check any change in stream attributes and/or PiPo attributes =====//
-
-    if (colNamesChanged || colIndicesChanged || rowIndicesChanged ||
-	width != frame_width_ || height != frame_height_)
-    {
-      // set new input dimensions
-      frame_width_  = width;
-      frame_height_ = height;
+    // set new input dimensions
+    frame_width_  = width;
+    frame_height_ = height;
       
-      //=== decide between column indices and mixed column names / indices ===//
-
-      // copy new col indices
-      colindices_.clear();
-      for (unsigned int i = 0; i < ciSize; ++i)
-      {
-	  colindices_.push_back(colindices_attr_.getInt(i));
-
-	  printf("use col %d at pos %d (attr type %s)\n", colindices_attr_.getInt(i), i, typeid(colindices_attr_[0]).name());
-      }
-
-      // copy new col names
-      colnames_.clear();
-      for (unsigned int i = 0; i < cnSize; i++)
-      {
-        colnames_.push_back(colnames_attr_[i]);
-      }
-
-      //========================= copy new row indices =======================//
-
-      rowindices_.clear();
-      for (unsigned int i = 0; i < riSize; i++)
-      {
-        rowindices_.push_back(rowindices_attr_[i]);
-      }
-
-      //===================== first deal with col indices ====================//
-
-      unsigned int cnt = 0;
-      if (colindices_attr_.getSize() > 0)
-      {
-	// first try with "columns" attribute (has precedence0
-	colindices_checked_ = lookup_indices(colindices_attr_, frame_width_, labels);
-/*      for (unsigned int i = 0; i < colindices_.size(); ++i)
-      {
-        if (colindices_[i] < static_cast<int>(frame_width_) &&
-            colindices_[i] >= 0)
-        {
-          colindices_checked_.push_back(colindices_[i]);
-        }
-      }
-*/
-      }
-      else
-      { // when no column names given, use cols attribute
-	colindices_checked_ = lookup_indices(colnames_attr_, frame_width_, labels);
-/*        for (unsigned int i = 0; i < cnSize; i++)
-        {
-          switch (colnames_[i].getType())
-          {
-            case Double:
-            case Int:
-            {
-              int res = colnames_[i].getInt();
-              if (res >= 0 && static_cast<unsigned int>(res) < frame_width_)
-              {
-                colindices_checked_.push_back(res);
-                cnt++;
-              }
-            }
-            break;
-
-            case String:
-            {
-              if (labels != NULL)
-              {
-                for (unsigned int j = 0; j < frame_width_; j++)
-                {
-                  if (std::strcmp(colnames_[i].getString(), labels[j]) == 0)
-                  {
-                    colindices_checked_.push_back(j);
-                    cnt++;
-                  }
-                }
-              }
-            }
-            break;
-
-            default:
-                break;
-          }
-        }
-*/
-      }
-
-      out_width_ = static_cast<unsigned int>(colindices_checked_.size());
-
-      //============== now deal with row indices ================//
-
-      rowindices_checked_ = lookup_indices(rowindices_attr_, frame_height_, NULL);
-/*
-      for (unsigned int i = 0; i < rowindices_.size(); i++)
-      {
-        if (rowindices_[i] < (int)(frame_height_) && rowindices_[i] >= 0) {
-          rowindices_checked_.push_back(rowindices_[i]);
-        }
-      }
-
-      if (rowindices_checked_.size() == 0) // pass all through
-      {
-        // fill with all indices
-        rowindices_checked_.resize(frame_height_);
-        for (unsigned int i = 0; i < frame_height_; i++)
-        {
-          rowindices_checked_[i] = i;
-        }
-      }
-*/
-
-      out_height_ = static_cast<unsigned int>(rowindices_checked_.size());
-      // default sorting is ascending order
-      //std::sort(rowindices_checked_.begin(), rowindices_checked_.end());
-
-      out_frame_size_ = out_width_ * out_height_;
+    //===================== first deal with col indices ====================//
+    if (colindices_attr_.getSize() > 0)
+    {
+      // first try with "columns" attribute (has precedence0
+      colindices_checked_ = lookup_indices(colindices_attr_, frame_width_, labels);
     }
-
+    else
+    { // when no column names given, use cols attribute
+      colindices_checked_ = lookup_indices(colnames_attr_, frame_width_, labels);
+    }
+    out_width_ = static_cast<unsigned int>(colindices_checked_.size());
+    // N.B.: no sorting, double columns are allowed
+    
+    //============== now deal with row indices ================//
+    rowindices_checked_ = lookup_indices(rowindices_attr_, frame_height_, NULL);
+    out_height_ = static_cast<unsigned int>(rowindices_checked_.size());
+    
+    out_frame_size_ = out_width_ * out_height_;
+    
     for (unsigned int i = 0; i < out_width_; ++i)
     {
-        colNames[i] = (labels != NULL ? labels[colindices_checked_[i]] : "");
+      colNames[i] = (labels != NULL ? labels[colindices_checked_[i]] : "");
     }
 
     return propagateStreamAttributes(hasTimeTags, rate, offset,
