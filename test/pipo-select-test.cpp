@@ -28,9 +28,6 @@ SCENARIO ("Testing PiPoSelect")
         REQUIRE (outSa.numLabels == 2);
         REQUIRE (std::strcmp(outSa.labels[0], "Spread") == 0);
         REQUIRE (std::strcmp(outSa.labels[1], "Skewness") == 0);
-        REQUIRE (c.size() == 2);
-        REQUIRE (c[0] == 1);
-        REQUIRE (c[1] == 2);
       }
     }
   }
