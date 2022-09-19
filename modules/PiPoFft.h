@@ -172,7 +172,7 @@ public:
     weighting_attr_.addEnumItem("a", "dB-A weighting");
     weighting_attr_.addEnumItem("b", "dB-B weighting");
     weighting_attr_.addEnumItem("c", "dB-C weighting");
-    weighting_attr_.addEnumItem("d", "dB-C weighting");
+    weighting_attr_.addEnumItem("d", "dB-D weighting");
     weighting_attr_.addEnumItem("itur468", "ITU-R 468 weighting");
   }
   
