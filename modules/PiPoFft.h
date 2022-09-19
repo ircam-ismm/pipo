@@ -132,7 +132,7 @@ public:
   enum WeightingMode { NoWeighting, AWeighting, BWeighting, CWeighting, DWeighting, Itur468Weighting};
 
 private:
-  std::vector<PiPoValue> fftFrame_;	// assuming PiPoValue == rta_real_t
+  std::vector<PiPoValue> fftFrame_;     // assuming PiPoValue == rta_real_t
   std::vector<PiPoValue> fftWeights_;
   double sampleRate_;
   int fftSize_;
@@ -184,14 +184,14 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
-    bool		norm		   = norm_attr_.get();
-    int			new_fft_size	   = size_attr_.get();
+    bool                norm               = norm_attr_.get();
+    int                 new_fft_size       = size_attr_.get();
     enum OutputMode     new_output_mode    = (enum OutputMode)    mode_attr_.get();
     enum WeightingMode  new_weighting_mode = (enum WeightingMode) weighting_attr_.get();
     double              new_samplerate     = (double) height / domain;
-    int			inputSize	   = width * height;
-    int			outputSize, outputWidth;
-    const char	       *fftColNames[2];
+    int                 inputSize          = width * height;
+    int                 outputSize, outputWidth;
+    const char         *fftColNames[2];
     
     if (new_fft_size <= 0)
       new_fft_size = rta_inextpow2(inputSize);

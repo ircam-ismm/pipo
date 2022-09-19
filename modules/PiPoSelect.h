@@ -86,38 +86,38 @@ public:
   std::vector<unsigned int> lookup_indices (PiPoVarSizeAttr<ELEMTYPE> attr, int max_num, const char **labels)
   {
     std::vector<unsigned int> checked;
-    checked.reserve(attr.getSize());	// make space for expected end size
+    checked.reserve(attr.getSize());    // make space for expected end size
     
     for (int i = 0; i < attr.size(); i++)
     {
-      PiPo::Atom elem(attr[i]);	// put ELEMTYPE into pipo Atom, either copying, or wrapping int
+      PiPo::Atom elem(attr[i]); // put ELEMTYPE into pipo Atom, either copying, or wrapping int
       
       switch (elem.getType())
       {
       case Double:
       case Int:
       {
-	int res = elem.getInt();
-	if (res >= 0 && static_cast<unsigned int>(res) < max_num)
-	  checked.push_back(res);
+        int res = elem.getInt();
+        if (res >= 0 && static_cast<unsigned int>(res) < max_num)
+          checked.push_back(res);
       }
       break;
 
       case String:
       {
-	if (labels != NULL)
-	{
-	  for (unsigned int j = 0; j < max_num; j++)
-	  {
-	    if (std::strcmp(elem.getString(), labels[j]) == 0)
-	      checked.push_back(j);
-	  }
-	}
+        if (labels != NULL)
+        {
+          for (unsigned int j = 0; j < max_num; j++)
+          {
+            if (std::strcmp(elem.getString(), labels[j]) == 0)
+              checked.push_back(j);
+          }
+        }
       }
       break;
 
       default:
-	break;
+        break;
       }
     }
 
@@ -126,16 +126,16 @@ public:
       // fill with all indices
       checked.resize(max_num);
       for (unsigned int i = 0; i < max_num; ++i)
-	checked[i] = i;
+        checked[i] = i;
     }
 
     return checked;
   }
   
   int streamAttributes (bool hasTimeTags, double rate, double offset,
-			unsigned int width, unsigned int height,
-			const char **labels, bool hasVarSize,
-			double domain, unsigned int maxFrames)
+                        unsigned int width, unsigned int height,
+                        const char **labels, bool hasVarSize,
+                        double domain, unsigned int maxFrames)
   {
     const char *colNames[128]; // these are the labels we pass to the next pipo
 
@@ -168,9 +168,9 @@ public:
     }
 
     return propagateStreamAttributes(hasTimeTags, rate, offset,
-				     out_width_, out_height_,
-				     (labels != NULL ? colNames : NULL), hasVarSize,
-				     domain, maxFrames);
+                                     out_width_, out_height_,
+                                     (labels != NULL ? colNames : NULL), hasVarSize,
+                                     domain, maxFrames);
   } // end streamAttributes
 
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)

@@ -122,12 +122,12 @@ SCENARIO ("Testing PiPoSelect")
         CHECK (std::string(outSa.labels[0]) == "Spread");
         CHECK (std::string(outSa.labels[1]) == "Skewness");
 
-	columns_attr->setSize(0);
-	columns_attr->set(0, 0);
-	CHECK (cols_attr->getSize() == 0);
-	CHECK (columns_attr->getSize() == 1);
+        columns_attr->setSize(0);
+        columns_attr->set(0, 0);
+        CHECK (cols_attr->getSize() == 0);
+        CHECK (columns_attr->getSize() == 1);
 
-	outSa = h.getOutputStreamAttributes();
+        outSa = h.getOutputStreamAttributes();
         REQUIRE (outSa.numLabels == 1);
         CHECK (std::string(outSa.labels[0]) == "Centroid");
       }
@@ -167,8 +167,8 @@ SCENARIO ("Testing PiPoSelect")
       THEN ("Correct rows are selected")
       {
         PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
-	CHECK (outSa.dims[0] == 4);
-	CHECK (outSa.dims[1] == 1);
+        CHECK (outSa.dims[0] == 4);
+        CHECK (outSa.dims[1] == 1);
         REQUIRE (outSa.numLabels == 4); // default #moments is 4
         CHECK (std::string(outSa.labels[0]) == "Centroid");
         CHECK (std::string(outSa.labels[1]) == "Spread");
@@ -193,8 +193,8 @@ SCENARIO ("Testing PiPoSelect")
       THEN ("Correct #rows are selected")
       {
         PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
-	CHECK (outSa.dims[0] == 2);
-	CHECK (outSa.dims[1] == 3);
+        CHECK (outSa.dims[0] == 2);
+        CHECK (outSa.dims[1] == 3);
       }
     }
   }
