@@ -98,7 +98,7 @@ public:
       case Int:
       {
 	int res = elem.getInt();
-	if (res >= 0 && static_cast<unsigned int>(res) < frame_width_)
+	if (res >= 0 && static_cast<unsigned int>(res) < max_num)
 	  checked.push_back(res);
       }
       break;
@@ -107,7 +107,7 @@ public:
       {
 	if (labels != NULL)
 	{
-	  for (unsigned int j = 0; j < frame_width_; j++)
+	  for (unsigned int j = 0; j < max_num; j++)
 	  {
 	    if (std::strcmp(elem.getString(), labels[j]) == 0)
 	      checked.push_back(j);
@@ -124,8 +124,8 @@ public:
     if (checked.size() == 0)
     {
       // fill with all indices
-      checked.resize(frame_width_);
-      for (unsigned int i = 0; i < frame_width_; ++i)
+      checked.resize(max_num);
+      for (unsigned int i = 0; i < max_num; ++i)
 	checked[i] = i;
     }
 

@@ -132,5 +132,70 @@ SCENARIO ("Testing PiPoSelect")
         CHECK (std::string(outSa.labels[0]) == "Centroid");
       }
     }
+
+    WHEN ("Using empty cols/columns")
+    {
+      auto cols_attr = h.getAttr("select.cols");
+      auto columns_attr = h.getAttr("select.columns");
+      REQUIRE (cols_attr->getSize() == 0);
+      REQUIRE (columns_attr->getSize() == 0);
+      
+      THEN ("All columns are selected")
+      {
+        PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
+        REQUIRE (outSa.numLabels == 4); // default #moments is 4
+        CHECK (std::string(outSa.labels[0]) == "Centroid");
+        CHECK (std::string(outSa.labels[1]) == "Spread");
+        CHECK (std::string(outSa.labels[2]) == "Skewness");
+        CHECK (std::string(outSa.labels[3]) == "Kurtosis");
+      }
+    }
+    
+    WHEN ("Test rows")
+    {
+      h.setAttr("select.rows", 0);
+      h.setInputStreamAttributes(sa);
+
+      auto rows_attr = h.getAttr("select.rows");
+      auto cols_attr = h.getAttr("select.cols");
+      auto columns_attr = h.getAttr("select.columns");
+
+      REQUIRE (rows_attr->getSize() == 1);
+      REQUIRE (cols_attr->getSize() == 0);
+      REQUIRE (columns_attr->getSize() == 0);
+      
+      THEN ("Correct rows are selected")
+      {
+        PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
+	CHECK (outSa.dims[0] == 4);
+	CHECK (outSa.dims[1] == 1);
+        REQUIRE (outSa.numLabels == 4); // default #moments is 4
+        CHECK (std::string(outSa.labels[0]) == "Centroid");
+        CHECK (std::string(outSa.labels[1]) == "Spread");
+        CHECK (std::string(outSa.labels[2]) == "Skewness");
+        CHECK (std::string(outSa.labels[3]) == "Kurtosis");
+      }
+    }
+    
+    WHEN ("Test multiple rows")
+    {
+      h.setGraph("slice:fft:select");
+      h.setAttr("slice.size", 10);
+      h.setAttr("slice.hop", 5);
+      h.setAttr("fft.mode", 0); // complex
+      h.setAttr("fft.size", 32); // enough bins for row 10
+      h.setAttr("select.rows", std::vector<int>{-1, 1, -2, 2, 9999, 10});
+      h.setInputStreamAttributes(sa);
+   
+      auto rows_attr = h.getAttr("select.rows");
+      REQUIRE (rows_attr->getSize() == 6);
+      
+      THEN ("Correct #rows are selected")
+      {
+        PiPoStreamAttributes &outSa = h.getOutputStreamAttributes();
+	CHECK (outSa.dims[0] == 2);
+	CHECK (outSa.dims[1] == 3);
+      }
+    }
   }
 }
