@@ -276,25 +276,24 @@ private:
 public:
   PiPoChop (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  tempMod(), seg(*this),
-  offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
-  chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
-  chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
-  chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false),
-  enDurationA(this, "duration", "Output Segment Duration", true, false),
-  enMinA(this, "min", "Calculate Segment Min", true, false),
-  enMaxA(this, "max", "Calculate Segment Max", true, false),
-  enMeanA(this, "mean", "Calculate Segment Mean", true, true),	// at least one tempmod on
-  enStddevA(this, "stddev", "Calculate Segment StdDev", true, false),
-  maxDescrNameLength(64),
-  reportDuration(0)
+    tempMod(), seg(*this),
+    offsetA(this, "offset", "Time Offset Before Starting Segmentation [ms]", false, 0),
+    chopSizeA(this, "size", "Chop Size [ms] (0 = chop at end)", false, 242),
+    chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides size", false),
+    chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false),
+    enDurationA(this, "duration", "Output Segment Duration", true, false),
+    enMinA(this, "min", "Calculate Segment Min", true, false),
+    enMaxA(this, "max", "Calculate Segment Max", true, false),
+    enMeanA(this, "mean", "Calculate Segment Mean", true, true),	// at least one tempmod on
+    enStddevA(this, "stddev", "Calculate Segment StdDev", true, false),
+    maxDescrNameLength(64),
+    reportDuration(0)
   {
     seg.reset();
   }
   
   ~PiPoChop (void)
-  {
-  }
+  { }
   
   int streamAttributes (bool hasTimeTags, double rate, double offset,
                         unsigned int width, unsigned int height,

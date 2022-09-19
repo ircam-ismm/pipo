@@ -95,24 +95,24 @@ public:
   
   PiPoOnseg(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
-  colindex(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
-  numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
-  fltsize(this, "filtersize", "Filter Size", true, 3),
-  threshold(this, "threshold", "Onset Threshold", false, 5),
-  onsetmode(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
-  mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
-  startisonset(this, "startisonset", "Place Marker at Start of Buffer", false, false),
-  duration(this, "duration", "Output Segment Duration", true, false),
-  durthresh(this, "durthresh", "Duration Threshold", false, 0.0),
-  offthresh(this, "offthresh", "Segment End Threshold", false, -80.0),
-  maxsegsize(this, "maxsize", "Maximum Segment Duration", false, 0.0),
-  enMin(this, "min", "Calculate Segment Min", true, false),
-  enMax(this, "max", "Calculate Segment Max", true, false),
-  enMean(this, "mean", "Calculate Segment Mean", true, false),
-  enStddev(this, "stddev", "Calculate Segment StdDev", true, false),
-  odfoutput(this, "odfoutput", "Output only onset detection function", true, false),
-  offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
+    buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
+    colindex(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
+    numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
+    fltsize(this, "filtersize", "Filter Size", true, 3),
+    threshold(this, "threshold", "Onset Threshold", false, 5),
+    onsetmode(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
+    mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
+    startisonset(this, "startisonset", "Place Marker at Start of Buffer", false, false),
+    duration(this, "duration", "Output Segment Duration", true, false),
+    durthresh(this, "durthresh", "Duration Threshold", false, 0.0),
+    offthresh(this, "offthresh", "Segment End Threshold", false, -80.0),
+    maxsegsize(this, "maxsize", "Maximum Segment Duration", false, 0.0),
+    enMin(this, "min", "Calculate Segment Min", true, false),
+    enMax(this, "max", "Calculate Segment Max", true, false),
+    enMean(this, "mean", "Calculate Segment Mean", true, false),
+    enStddev(this, "stddev", "Calculate Segment StdDev", true, false),
+    odfoutput(this, "odfoutput", "Output only onset detection function", true, false),
+    offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
   {
     this->filterSize = 0;
     this->inputSize = 0;

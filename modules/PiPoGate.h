@@ -81,20 +81,20 @@ private:
 public:
   PiPoGate (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  tempmod(), outputvalues(),
-  colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
-  numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
-  duration(this, "duration", "Output Segment Duration", true, false),
-  threshold(this, "threshold", "Onset Threshold", false, -12),
-  offthresh(this, "offthresh", "Segment End Threshold", false, -80),
-  mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
-  durthresh(this, "durthresh", "Minumum Segment Duration", false, 0.0),
-  maxsegsize(this, "maxdur", "Maximum Segment Duration", false, 0.0),
-  enable_min(this, "min", "Calculate Segment Min", true, false),
-  enable_max(this, "max", "Calculate Segment Max", true, false),
-  enable_mean(this, "mean", "Calculate Segment Mean", true, false),
-  enable_stddev(this, "stddev", "Calculate Segment StdDev", true, false),
-  offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
+    tempmod(), outputvalues(),
+    colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
+    numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
+    duration(this, "duration", "Output Segment Duration", true, false),
+    threshold(this, "threshold", "Onset Threshold", false, -12),
+    offthresh(this, "offthresh", "Segment End Threshold", false, -80),
+    mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
+    durthresh(this, "durthresh", "Minumum Segment Duration", false, 0.0),
+    maxsegsize(this, "maxdur", "Maximum Segment Duration", false, 0.0),
+    enable_min(this, "min", "Calculate Segment Min", true, false),
+    enable_max(this, "max", "Calculate Segment Max", true, false),
+    enable_mean(this, "mean", "Calculate Segment Mean", true, false),
+    enable_stddev(this, "stddev", "Calculate Segment StdDev", true, false),
+    offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
   {
     this->offset = 0.0;
     this->frameperiod = 1.;
