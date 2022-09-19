@@ -52,7 +52,7 @@ extern "C" {
 #include <vector>
 #include <string>
 
-class PiPoOnseg : public PiPo
+class PiPoSegment : public PiPo
 {
 public:
   enum OnsetMode { MeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
@@ -75,44 +75,32 @@ private:
   std::vector<PiPoValue> outputValues;
   
 public:
-  PiPoScalarAttr<int> colindex;
-  PiPoScalarAttr<int> numcols;
-  PiPoScalarAttr<int> fltsize;
-  PiPoScalarAttr<double> threshold;
-  PiPoScalarAttr<PiPo::Enumerate> onsetmode;
-  PiPoScalarAttr<double> mininter;
-  PiPoScalarAttr<bool> startisonset;
-  PiPoScalarAttr<bool> duration;
-  PiPoScalarAttr<double> durthresh;
-  PiPoScalarAttr<double> offthresh;
-  PiPoScalarAttr<double> maxsegsize;
-  PiPoScalarAttr<bool> enMin;
-  PiPoScalarAttr<bool> enMax;
-  PiPoScalarAttr<bool> enMean;
-  PiPoScalarAttr<bool> enStddev;
-  PiPoScalarAttr<bool> odfoutput;
-  PiPoScalarAttr<double> offsetAttr;
+  PiPoScalarAttr<char *> column_attr_;
+  PiPoScalarAttr<int> fltsize_attr_;
+  PiPoScalarAttr<double> threshold_attr_;
+  PiPoScalarAttr<PiPo::Enumerate> onsetmode_attr_;
+  PiPoScalarAttr<double> mininter_attr_;
+  PiPoScalarAttr<bool> startisonset_attr_;
+  PiPoScalarAttr<double> durthresh_attr_;
+  PiPoScalarAttr<double> offthresh_attr_;
+  PiPoScalarAttr<double> maxsegsize_attr_;
+  PiPoScalarAttr<bool> odfoutput_attr_;
+  PiPoScalarAttr<double> offsetAttr_attr_;
   
-  PiPoOnseg(Parent *parent, PiPo *receiver = NULL)
+  PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
-    colindex(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
-    numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
-    fltsize(this, "filtersize", "Filter Size", true, 3),
-    threshold(this, "threshold", "Onset Threshold", false, 5),
-    onsetmode(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
-    mininter(this, "mininter", "Minimum Onset Interval", false, 50.0),
-    startisonset(this, "startisonset", "Place Marker at Start of Buffer", false, false),
-    duration(this, "duration", "Output Segment Duration", true, false),
-    durthresh(this, "durthresh", "Duration Threshold", false, 0.0),
-    offthresh(this, "offthresh", "Segment End Threshold", false, -80.0),
-    maxsegsize(this, "maxsize", "Maximum Segment Duration", false, 0.0),
-    enMin(this, "min", "Calculate Segment Min", true, false),
-    enMax(this, "max", "Calculate Segment Max", true, false),
-    enMean(this, "mean", "Calculate Segment Mean", true, false),
-    enStddev(this, "stddev", "Calculate Segment StdDev", true, false),
-    odfoutput(this, "odfoutput", "Output only onset detection function", true, false),
-    offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
+    column_attr_(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
+    fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
+    threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
+    onsetmode_attr_(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
+    mininter_attr_(this, "mininter", "Minimum Onset Interval", false, 50.0),
+    startisonset_attr_(this, "startisonset", "Place Marker at Start of Buffer", false, false),
+    durthresh_attr_(this, "durthresh", "Duration Threshold", false, 0.0),
+    offthresh_attr_(this, "offthresh", "Segment End Threshold", false, -80.0),
+    maxsegsize_attr_(this, "maxsize", "Maximum Segment Duration", false, 0.0),
+    odfoutput_attr_(this, "odfoutput", "Output only onset detection function", true, false),
+    offsetAttr_attr_(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
   {
     this->filterSize = 0;
     this->inputSize = 0;
@@ -128,11 +116,11 @@ public:
     
     this->onsetmode.addEnumItem("mean", "Mean");
     this->onsetmode.addEnumItem("square", "Mean Square");
-    this->onsetmode.addEnumItem("rms", "Root Mean Square");
+    this->onsetmode.addEnumItem("absmean", "Symmetric");
     this->onsetmode.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
   }
   
-  ~PiPoOnseg(void)
+  ~PiPoSegment(void)
   {
   }
   

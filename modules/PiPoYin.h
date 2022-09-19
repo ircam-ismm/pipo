@@ -76,12 +76,12 @@ public:
   // constructor
   PiPoYin (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
-  downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
-  yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
-  old(this, "old", "Yin old or new behavior", false, false),
-  yinQualityGate(this, "qualitygate", "Yin Quality Gate", true, 0.),
-  yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
+    minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
+    downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
+    yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+    old(this, "old", "Yin old or new behavior", false, false),
+    yinQualityGate(this, "qualitygate", "Yin Quality Gate", true, 0.),
+    yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
     
