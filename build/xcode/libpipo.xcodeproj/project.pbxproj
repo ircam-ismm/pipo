@@ -33,6 +33,7 @@
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
+		21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7428DB13620006CEE9 /* rta_histogram.c */; };
 		2123C98D24EFFB0D005044F8 /* mimo-pca-test-simple.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */; };
 		2123C98E24EFFB0D005044F8 /* mimo-pca-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */; };
 		2123C98F24EFFB0D005044F8 /* mimo-stats-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */; };
@@ -154,6 +155,7 @@
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
+		21056C7428DB13620006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = rta_histogram.c; path = ../../modules/rta/src/statistics/rta_histogram.c; sourceTree = "<group>"; };
 		2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test-simple.cpp"; sourceTree = "<group>"; };
 		2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test.cpp"; sourceTree = "<group>"; };
 		2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-stats-test.cpp"; sourceTree = "<group>"; };
@@ -851,6 +853,7 @@
 		5A04AA9006D4DD3F0098230D = {
 			isa = PBXGroup;
 			children = (
+				21056C7428DB13620006CEE9 /* rta_histogram.c */,
 				31C2B3821FB0D3F1001A134E /* sdk */,
 				31C2B3811FB0D3E8001A134E /* modules */,
 				31D2EEA61ED72A86002E9F6A /* doc */,
@@ -1055,6 +1058,7 @@
 				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
 				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
 				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
+				21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */,
 				316488361FC226440086FEDF /* rta_int.c in Sources */,
 				316488301FC226210086FEDF /* rta_lifter.c in Sources */,
 				316488311FC226210086FEDF /* rta_lpc.c in Sources */,
