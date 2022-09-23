@@ -85,7 +85,7 @@ public:
   
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    buffer(), temp(), frame(), lastFrame(), outputValues(),
+    buffer(), temp(), lastFrame(), outputValues(),
     column_attr_(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0), // PiPo::Atom((int) 0),
     fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
     threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
@@ -135,7 +135,6 @@ public:
     /* resize internal buffers */
     this->buffer.resize(inputSize, filterSize);
     this->temp.resize(inputSize * filterSize);
-    this->frame.resize(inputSize);
     this->lastFrame.resize(inputSize);
     
     this->filterSize = filterSize; // INSANE
@@ -171,6 +170,8 @@ public:
       const char *outlab[1] = { "ODF" };
       return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
+    else
+      return 0;
   } // streamAttributes
 
   
