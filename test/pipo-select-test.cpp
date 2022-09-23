@@ -1,3 +1,4 @@
+/* -*- mode: c++; c-basic-offset:2 -*- */
 #include "catch.hpp"
 
 #include "PiPoTestHost.h"
@@ -197,5 +198,23 @@ SCENARIO ("Testing PiPoSelect")
         CHECK (outSa.dims[1] == 3);
       }
     }
+  }
+
+  GIVEN ("A host with a graph without labels, ending with \"select\"")
+  {
+    h.setGraph("slice:select"); // slice doesn't set column labels
+    h.setAttr("slice.size", 10);
+    h.setAttr("slice.hop", 5);
+
+    auto columns_attr = h.getAttr("select.columns");
+    columns_attr->set(0, "1");
+    columns_attr->set(1, "asdf");
+
+    h.setInputStreamAttributes(sa);
+
+    PiPoStreamAttributes &out_sa = h.getOutputStreamAttributes();
+    REQUIRE(out_sa.labels != NULL);
+    REQUIRE(out_sa.dims[0] == 1); // illegal column name is ignored
+    CHECK(*out_sa.labels[0] == NULL); // slice doesn't set column labels, select passes on empty label string ""
   }
 }

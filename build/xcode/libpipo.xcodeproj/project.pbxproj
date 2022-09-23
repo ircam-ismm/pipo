@@ -34,6 +34,9 @@
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
 		21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7428DB13620006CEE9 /* rta_histogram.c */; };
+		21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7928DDB92D0006CEE9 /* PiPoSegment.h */; };
+		21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */; };
+		21056C7E28DDBDA50006CEE9 /* pipo-temporalmodeling-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */; };
 		2123C98D24EFFB0D005044F8 /* mimo-pca-test-simple.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */; };
 		2123C98E24EFFB0D005044F8 /* mimo-pca-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */; };
 		2123C98F24EFFB0D005044F8 /* mimo-stats-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */; };
@@ -156,6 +159,10 @@
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
 		21056C7428DB13620006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = rta_histogram.c; path = ../../modules/rta/src/statistics/rta_histogram.c; sourceTree = "<group>"; };
+		21056C7728DDB7350006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = rta_histogram.c; sourceTree = "<group>"; };
+		21056C7928DDB92D0006CEE9 /* PiPoSegment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSegment.h; path = ../../modules/PiPoSegment.h; sourceTree = "<group>"; };
+		21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoTemporalModeling.h; path = ../../modules/PiPoTemporalModeling.h; sourceTree = "<group>"; };
+		21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-temporalmodeling-test.cpp"; path = "../../test/pipo-temporalmodeling-test.cpp"; sourceTree = "<group>"; };
 		2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test-simple.cpp"; sourceTree = "<group>"; };
 		2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test.cpp"; sourceTree = "<group>"; };
 		2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-stats-test.cpp"; sourceTree = "<group>"; };
@@ -591,6 +598,8 @@
 				31C2B3B91FB0D43F001A134E /* PiPoRms.h */,
 				31C2B3BA1FB0D43F001A134E /* PiPoScale.h */,
 				31C2B3BB1FB0D43F001A134E /* PiPoSelect.h */,
+				21056C7928DDB92D0006CEE9 /* PiPoSegment.h */,
+				21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */,
 				31C2B3BC1FB0D43F001A134E /* PiPoSlice.h */,
 				31C2B3BD1FB0D43F001A134E /* PiPoSum.h */,
 				31C2B3BF1FB0D43F001A134E /* PiPoWavelet.h */,
@@ -782,6 +791,7 @@
 			children = (
 				316487ED1FC224220086FEDF /* rta_cca.c */,
 				316487EE1FC224220086FEDF /* rta_cca.h */,
+				21056C7728DDB7350006CEE9 /* rta_histogram.c */,
 				316487EF1FC224220086FEDF /* rta_mean_variance.c */,
 				316487F01FC224220086FEDF /* rta_mean_variance.h */,
 				316487F11FC224220086FEDF /* rta_moments.c */,
@@ -828,6 +838,7 @@
 				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
 				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
 				316488471FC31D600086FEDF /* pipo-select-test.cpp */,
+				21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */,
 				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
 				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
 				2123C99224EFFB26005044F8 /* pipo-js */,
@@ -910,6 +921,8 @@
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
 				1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */,
 				31C2B3D51FB0D43F001A134E /* PiPoMedian.h in Headers */,
+				21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */,
+				21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */,
 				31C2B3D71FB0D43F001A134E /* PiPoMfcc.h in Headers */,
 				31C2B3D61FB0D43F001A134E /* PiPoMel.h in Headers */,
 				31C2B3C81FB0D43F001A134E /* PiPoConst.h in Headers */,
@@ -1056,7 +1069,6 @@
 				3164882F1FC226210086FEDF /* rta_cubic.c in Sources */,
 				3164882A1FC225E60086FEDF /* rta_dct.c in Sources */,
 				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
-				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
 				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
 				21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */,
 				316488361FC226440086FEDF /* rta_int.c in Sources */,
@@ -1080,6 +1092,7 @@
 				2123C9BA24EFFD68005044F8 /* json_reader.cpp in Sources */,
 				216E1EC624FE95B90033FAD2 /* jerryscript.c in Sources */,
 				216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */,
+				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
 				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1106,6 +1119,7 @@
 				316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
 				2123C99024EFFB0D005044F8 /* mimo-test.cpp in Sources */,
+				21056C7E28DDBDA50006CEE9 /* pipo-temporalmodeling-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
