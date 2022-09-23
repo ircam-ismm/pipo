@@ -81,64 +81,12 @@ public:
   ~PiPoSelect()
   { }
 
-  // get int or string column names, check against input frame width, return array
-  template <typename ELEMTYPE>
-  std::vector<unsigned int> lookup_indices (PiPoVarSizeAttr<ELEMTYPE> attr, int max_num, const char **labels)
-  {
-    std::vector<unsigned int> checked;
-    checked.reserve(attr.getSize());    // make space for expected end size
-    
-    for (int i = 0; i < attr.size(); i++)
-    {
-      PiPo::Atom elem(attr[i]); // put ELEMTYPE into pipo Atom, either copying, or wrapping int
-      
-      switch (elem.getType())
-      {
-      case Double:
-      case Int:
-      {
-        int res = elem.getInt();
-        if (res >= 0 && static_cast<unsigned int>(res) < max_num)
-          checked.push_back(res);
-      }
-      break;
-
-      case String:
-      {
-        if (labels != NULL)
-        {
-          for (unsigned int j = 0; j < max_num; j++)
-          {
-            if (std::strcmp(elem.getString(), labels[j]) == 0)
-              checked.push_back(j);
-          }
-        }
-      }
-      break;
-
-      default:
-        break;
-      }
-    }
-
-    if (checked.size() == 0)
-    {
-      // fill with all indices
-      checked.resize(max_num);
-      for (unsigned int i = 0; i < max_num; ++i)
-        checked[i] = i;
-    }
-
-    return checked;
-  }
   
   int streamAttributes (bool hasTimeTags, double rate, double offset,
                         unsigned int width, unsigned int height,
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-    const char *colNames[128]; // these are the labels we pass to the next pipo
-
     // set new input dimensions
     frame_width_  = width;
     frame_height_ = height;
@@ -146,30 +94,31 @@ public:
     //===================== first deal with col indices ====================//
     if (colindices_attr_.getSize() > 0)
     {
-      // first try with "columns" attribute (has precedence0
-      colindices_checked_ = lookup_indices(colindices_attr_, frame_width_, labels);
+      // first try with "columns" attribute (has precedence)
+      colindices_checked_ = lookup_column_indices(colindices_attr_, frame_width_, labels);
     }
     else
-    { // when no column names given, use cols attribute
-      colindices_checked_ = lookup_indices(colnames_attr_, frame_width_, labels);
+    { // when no columns attribute given, use cols attribute
+      colindices_checked_ = lookup_column_indices(colnames_attr_, frame_width_, labels);
     }
     out_width_ = static_cast<unsigned int>(colindices_checked_.size());
     // N.B.: no sorting, double columns are allowed
     
     //============== now deal with row indices ================//
-    rowindices_checked_ = lookup_indices(rowindices_attr_, frame_height_, NULL);
+    rowindices_checked_ = lookup_column_indices(rowindices_attr_, frame_height_, NULL);
     out_height_ = static_cast<unsigned int>(rowindices_checked_.size());
     
     out_frame_size_ = out_width_ * out_height_;
-    
+
+    std::vector<const char *> out_colnames(out_width_); // these are the labels we pass to the next pipo
     for (unsigned int i = 0; i < out_width_; ++i)
     {
-      colNames[i] = (labels != NULL ? labels[colindices_checked_[i]] : "");
+      out_colnames[i] = (labels != NULL ? labels[colindices_checked_[i]] : "");
     }
 
     return propagateStreamAttributes(hasTimeTags, rate, offset,
                                      out_width_, out_height_,
-                                     (labels != NULL ? colNames : NULL), hasVarSize,
+                                     (labels != NULL ? &out_colnames[0] : NULL), hasVarSize,
                                      domain, maxFrames);
   } // end streamAttributes
 
