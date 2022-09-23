@@ -54,25 +54,27 @@ extern "C" {
 template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false, bool DURATION = false>
 class PiPoTemporalModeling : public PiPo
 {
-  private:
+private:
   double onsettime;
   bool reportduration;
   bool segison;
-  TempModArray tempmod;
-  std::vector<PiPoValue> outputvalues;
+  TempModArray tempmod_;
+  int input_width_ = 0;
+  bool pass_input_ = true;
+  std::vector<unsigned int> input_columns_;
+  std::vector<PiPoValue> selected_values_;
+  std::vector<PiPoValue> output_values_;
   
 public:
-  PiPoVarSizeAttr<PiPo::Atom> columns;
+  PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
 
   PiPoTemporalModeling (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    tempmod(), outputvalues(),
-    columns(this, "columns", "Column Names or Indices to Output (empty for all)", true, 0)
+    columns_attr_(this, "columns", "List of Column Names or Indices to Use (empty for all)", true, 0)
   {
     this->onsettime = 0;
     this->reportduration = false;
     this->segison = false;
-    tempmod.enable(MIN, MAX, MEAN, STD);
   }
   
   ~PiPoTemporalModeling (void)
@@ -82,55 +84,70 @@ public:
                         unsigned int width, unsigned int size, const char **labels,
                         bool hasvarsize, double domain, unsigned int maxframes) override
   {
-    int inputsize = width;
+    std::vector<const char *> selected_labels;
+
+    if (columns_attr_.getSize() == 0)
+    { // no column choice: set pass through flag for efficiency
+      pass_input_    = true;
+      input_width_   = width;
+    }
+    else
+    {
+      pass_input_    = false;
+      input_columns_ = lookup_column_indices(columns_attr_, width, labels);
+      input_width_   = input_columns_.size();
+      selected_values_.resize(input_width_);
+
+      if (labels)
+      { // copy selected labels for tempmod_ to append suffix
+	selected_labels.resize(input_width_);
+	
+	for (int j = 0; j < input_width_; j++)
+	  selected_labels[j] = labels[input_columns_[j]];
+
+	labels = &selected_labels[0];
+      }
+    }
     
     this->onsettime = 0;
     this->reportduration = DURATION;
     
+    /* resize temporal models */
+    tempmod_.enable(MIN, MAX, MEAN, STD);
+    tempmod_.resize(input_width_);
+      
+    /* get output size */
+    unsigned int outputsize = tempmod_.getNumValues();
+      
+    /* alloc output vector for duration and temporal modelling output */
+    output_values_.resize(outputsize + this->reportduration);
+      
+    /* get labels */
+    char *mem = new char[outputsize * 64 + 64];
+    char **outlabels = new char*[outputsize + 1];
+      
+    for (unsigned int i = 0; i <= outputsize; i++)
+      outlabels[i] = mem + i * 64;
+      
     if (this->reportduration)
-    {
-      /* resize temporal models */
-      //TODO: input column choice
-      this->tempmod.resize(inputsize);
+      snprintf(outlabels[0], 64, "Duration");
+    tempmod_.getLabels(labels, input_width_, &outlabels[this->reportduration], 64, outputsize);
       
-      /* enable temporal models  */
-      // this->tempmod.enable(this->enable_min.get(), this->enable_max.get(), this->enable_mean.get(), this->enable_stddev.get());
+    int ret = this->propagateStreamAttributes(true, rate, 0.0, outputsize + this->reportduration, 1,
+					      (const char **) &outlabels[0],
+					      false, 0.0, 1);
       
-      /* get output size */
-      unsigned int outputsize = this->tempmod.getNumValues();
-      
-      /* alloc output vector for duration and temporal modelling output */
-      this->outputvalues.resize(outputsize + this->reportduration);
-      
-      /* get labels */
-      char *mem = new char[outputsize * 64 + 64];
-      char **outlabels = new char*[outputsize + 1];
-      
-      for (unsigned int i = 0; i <= outputsize; i++)
-        outlabels[i] = mem + i * 64;
-      
-      if (this->reportduration)
-	snprintf(outlabels[0], 64, "Duration");
-      this->tempmod.getLabels(labels, inputsize, &outlabels[this->reportduration], 64, outputsize);
-      
-      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputsize + this->reportduration, 1,
-                                                (const char **) &outlabels[0],
-                                                false, 0.0, 1);
-      
-      delete [] mem;
-      delete [] outlabels;
-      
-      return ret;
-    }
+    delete [] mem;
+    delete [] outlabels;
     
-    return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
+    return ret;
   } // streamAttributes
   
   int reset (void) override
   {
     this->onsettime = 0;
     this->segison = false;
-    this->tempmod.reset();
+    tempmod_.reset();
     
     return this->propagateReset();
   } // reset
@@ -141,9 +158,17 @@ public:
     for (unsigned int i = 0; i < num; i++)
     { // for all frames: feed temporal modelling when within segment (is on)
       if (this->segison)
-	//TODO: select input columns
-	this->tempmod.input(values, size);
+      {
+	if (pass_input_)
+	  tempmod_.input(values, size);
+	else
+	{ // copy selected input columns
+	  for (int j = 0; j < input_width_; j++)
+	    selected_values_[j] = values[input_columns_[j]];
 
+	  tempmod_.input(&selected_values_[0], input_width_);
+	}
+      }
       values += size;
     }
     
@@ -154,20 +179,20 @@ public:
   int segment (double time, bool start) override
   { 
     if (DURATION)
-      this->outputvalues[0] = time - this->onsettime;
+      output_values_[0] = time - this->onsettime;
 
-    long outputsize = this->outputvalues.size();
+    long outputsize = output_values_.size();
           
     /* get temporal modelling */
     if (outputsize > 1)
-      this->tempmod.getValues(&this->outputvalues[DURATION], outputsize - DURATION, true);
+      tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
 
     // remember segment status
     onsettime = time;
     segison = start;
     
     /* report segment data, don't pass on segment() call */
-    int ret = this->propagateFrames(time, 0.0, &this->outputvalues[0], outputsize, 1);
+    int ret = this->propagateFrames(time, 0.0, &output_values_[0], outputsize, 1);
     
     return ret;
   } // segment  
@@ -180,15 +205,17 @@ public:
   } // finalize
 }; // end class PiPoTemporalModeling
 
+
 // define individual temporal modeling classes
-using PiPoMin     = PiPoTemporalModeling<1, 0, 0, 0>;
-using PiPoMax     = PiPoTemporalModeling<0, 1, 0, 0>;
-using PiPoMinMax  = PiPoTemporalModeling<1, 1, 0, 0>;
-using PiPoMean    = PiPoTemporalModeling<0, 0, 1, 0>;
-using PiPoStd     = PiPoTemporalModeling<0, 0, 0, 1>;
-using PiPoMeanStd = PiPoTemporalModeling<0, 0, 1, 1>;
-using PiPoDuration = PiPoTemporalModeling<0, 0, 0, 0, 1>;
-using PiPoSegStats = PiPoTemporalModeling<1, 1, 1, 1, 1>;
+using PiPoSegMin       = PiPoTemporalModeling<1, 0, 0, 0>;
+using PiPoSegMax       = PiPoTemporalModeling<0, 1, 0, 0>;
+using PiPoSegMinMax    = PiPoTemporalModeling<1, 1, 0, 0>;
+using PiPoSegMean      = PiPoTemporalModeling<0, 0, 1, 0>;
+using PiPoSegStd       = PiPoTemporalModeling<0, 0, 0, 1>;
+using PiPoSegMeanStd   = PiPoTemporalModeling<0, 0, 1, 1>;
+using PiPoSegDuration  = PiPoTemporalModeling<0, 0, 0, 0, 1>;
+using PiPoSegStats     = PiPoTemporalModeling<1, 1, 1, 1, 1>;
+// later: using PiPoSegMedian  = PiPoTemporalModeling<0, 0, 0, 0, 0, 1>;
 
 
 /** EMACS **
