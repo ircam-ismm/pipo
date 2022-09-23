@@ -37,8 +37,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPO_ODFSEG_
-#define _PIPO_ODFSEG_
+#ifndef _PIPO_SEGMENT_
+#define _PIPO_SEGMENT_
 
 #include "PiPo.h"
 #include "RingBuffer.h"
@@ -48,7 +48,6 @@ extern "C" {
 #include "rta_selection.h"
 }
 
-#include "TempMod.h"
 #include <vector>
 #include <string>
 
@@ -58,9 +57,8 @@ public:
   enum OnsetMode { MeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
   
 private:
-  RingBuffer<PiPoValue> buffer;
-  std::vector<PiPoValue> temp;
-  std::vector<PiPoValue> frame;
+  RingBuffer<PiPoValue> buffer;	// ring buffer for median calculation
+  std::vector<PiPoValue> temp;  // unrolled ring buffer
   std::vector<PiPoValue> lastFrame;
   unsigned int filterSize;
   unsigned int inputSize;
@@ -69,13 +67,11 @@ private:
   bool lastFrameWasOnset;
   double onsetTime;
   bool segmentmode;
-  int  haveduration;
   bool segIsOn;
-  TempModArray tempMod;
   std::vector<PiPoValue> outputValues;
   
 public:
-  PiPoScalarAttr<char *> column_attr_;
+  PiPoScalarAttr<int> column_attr_; // PiPo::Atom
   PiPoScalarAttr<int> fltsize_attr_;
   PiPoScalarAttr<double> threshold_attr_;
   PiPoScalarAttr<PiPo::Enumerate> onsetmode_attr_;
@@ -85,12 +81,12 @@ public:
   PiPoScalarAttr<double> offthresh_attr_;
   PiPoScalarAttr<double> maxsegsize_attr_;
   PiPoScalarAttr<bool> odfoutput_attr_;
-  PiPoScalarAttr<double> offsetAttr_attr_;
+  PiPoScalarAttr<double> offset_attr_;
   
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
-    column_attr_(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
+    buffer(), temp(), frame(), lastFrame(), outputValues(),
+    column_attr_(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0), // PiPo::Atom((int) 0),
     fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
     threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
     onsetmode_attr_(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
@@ -100,7 +96,7 @@ public:
     offthresh_attr_(this, "offthresh", "Segment End Threshold", false, -80.0),
     maxsegsize_attr_(this, "maxsize", "Maximum Segment Duration", false, 0.0),
     odfoutput_attr_(this, "odfoutput", "Output only onset detection function", true, false),
-    offsetAttr_attr_(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
+    offset_attr_(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
   {
     this->filterSize = 0;
     this->inputSize = 0;
@@ -110,30 +106,30 @@ public:
     this->lastFrameWasOnset = false;
     this->onsetTime = -DBL_MAX;
     
-    this->haveduration = this->duration.get();
     this->segmentmode = false;
     this->segIsOn = false;
     
-    this->onsetmode.addEnumItem("mean", "Mean");
-    this->onsetmode.addEnumItem("square", "Mean Square");
-    this->onsetmode.addEnumItem("absmean", "Symmetric");
-    this->onsetmode.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
+    this->onsetmode_attr_.addEnumItem("mean", "Mean");
+    this->onsetmode_attr_.addEnumItem("square", "Mean Square");
+    this->onsetmode_attr_.addEnumItem("absmean", "Symmetric");
+    this->onsetmode_attr_.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
   }
   
-  ~PiPoSegment(void)
-  {
-  }
+  ~PiPoSegment (void)
+  { }
   
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
+
+ int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
   {
-    int filterSize = this->fltsize.get();
+    int filterSize = this->fltsize_attr_.get();
     int inputSize = width;
-    
+    unsigned int outputSize = width * size;
+	  
     this->frameperiod = 1000.0 / rate;
     this->offset = -this->frameperiod; // offset of negative frame period to include signal just before peak
-    this->offset += this->offsetAttr.get(); // add user offset (default 0)
+    this->offset += this->offset_attr_.get(); // add user offset (default 0)
     
-    if(filterSize < 1)
+    if (filterSize < 1)
       filterSize = 1;
     
     /* resize internal buffers */
@@ -142,10 +138,10 @@ public:
     this->frame.resize(inputSize);
     this->lastFrame.resize(inputSize);
     
-    this->filterSize = filterSize;
-    this->inputSize = inputSize;
+    this->filterSize = filterSize; // INSANE
+    this->inputSize = inputSize; // INSANE
     
-    if (this->startisonset.get())
+    if (this->startisonset_attr_.get())
     { // start with a segment at 0
       this->lastFrameWasOnset = true;
       this->onsetTime = -this->offset;	// first marker will be at 0
@@ -157,58 +153,32 @@ public:
       this->onsetTime = -DBL_MAX;
     }
     
-    // in segment mode, duration or any temp.mod values are output with marker at end of segment
-    this->haveduration = this->duration.get();
-    this->segmentmode = (this->duration.get() || enMin.get() || enMax.get() || enMean.get() || enStddev.get())
-    &&  !this->odfoutput.get();
+    // in segment mode, input data is passed through
+    this->segmentmode = !this->odfoutput_attr_.get();
     
     if (this->segmentmode)
     {
-      
-      /* resize temporal models */
-      this->tempMod.resize(inputSize);
-      
-      /* enable temporal models */
-      this->tempMod.enable(this->enMin.get(), this->enMax.get(), this->enMean.get(), this->enStddev.get());
-      
-      /* get size of tempmod values */
-      unsigned int outputSize = this->tempMod.getNumValues();
-      
-      /* alloc output vector for duration and temporal modelling output */
-      this->outputValues.resize(outputSize + this->haveduration);
-      
-      /* get labels */
-      char *mem = new char[outputSize * 64 + 64];
-      char **outLabels = new char*[outputSize + 1];
-      
-      for(unsigned int i = 0; i <= outputSize; i++)
-        outLabels[i] = mem + i * 64;
-      
-      if (this->haveduration)
-        snprintf(outLabels[0], 64, "Duration");
-      this->tempMod.getLabels(labels, inputSize, &outLabels[this->haveduration], 64, outputSize);
-      
-      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputSize + this->haveduration, 1, (const char **) &outLabels[0], false, 0.0, 1);
-      
-      delete [] mem;
-      delete [] outLabels;
-      
+      /* alloc output vector for output */
+      this->outputValues.resize(outputSize);
+
+      // we pass through the input data, for subsequent temporal modeling modules
+      int ret = this->propagateStreamAttributes(true, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+            
       return ret;
     }
-    else if (this->odfoutput.get())
-    {
+    else if (this->odfoutput_attr_.get())
+    { // we output the onset detection function (and segment() calls)
       const char *outlab[1] = { "ODF" };
       return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
-    else // real-time mode: output marker immediately, no data
-      return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
-  }
+  } // streamAttributes
+
   
-  int reset(void) override
+  int reset (void) override
   {
     this->buffer.reset();
     
-    if (this->startisonset.get())
+    if (this->startisonset_attr_.get())
     { // start with a segment at 0
       this->lastFrameWasOnset = true;
       this->onsetTime = -this->offset;
@@ -221,38 +191,21 @@ public:
       this->segIsOn = false;
     }
     
-    this->tempMod.reset();
-    
     return this->propagateReset();
-  };
+  } // reset
+
   
-  // helper function: get requested temporal modelling values and propagate
-  int propagate (double time, double weight, double duration)
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
   {
-    long outsize = this->outputValues.size();
+    double onsetThreshold = this->threshold_attr_.get();
+    double minimumInterval = this->mininter_attr_.get();
+    double durationThreshold = this->durthresh_attr_.get();
+    double offThreshold = this->offthresh_attr_.get();
+    int colindex = 0; //this->colindex_attr_.get();
+    int numcols = -1; //this->numcols_attr_.get();
+    enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode_attr_.get();
     
-    if (this->haveduration)
-      this->outputValues[0] = duration;
-    
-    /* get temporal modelling */
-    if (outsize > 1)
-      this->tempMod.getValues(&this->outputValues[this->haveduration], outsize - this->haveduration, true);
-    
-    /* report segment */
-    return this->propagateFrames(time, weight, &this->outputValues[0], outsize, 1);
-  }
-  
-  int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
-  {
-    double onsetThreshold = this->threshold.get();
-    double minimumInterval = this->mininter.get();
-    double durationThreshold = this->durthresh.get();
-    double offThreshold = this->offthresh.get();
-    int colindex = this->colindex.get();
-    int numcols = this->numcols.get();
-    enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode.get();
-    
-    if(size > this->buffer.width)
+    if (size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
     
     // clip colindex/size
@@ -266,18 +219,18 @@ public:
     if (colindex + numcols > (int) size)
       numcols = size - colindex;
     
-    for(unsigned int i = 0; i < num; i++)
+    for (unsigned int i = 0; i < num; i++)
     { // for all frames
       PiPoValue scale = 1.0;
       double odf = 0.0;
       double energy = 0.0;
       
       /* normalize sum to one for Kullback Leibler divergence */
-      if(onset_mode == KullbackLeiblerOnset)
+      if (onset_mode == KullbackLeiblerOnset)
       {
         PiPoValue normSum = 0.0;
         
-        for(int j = 0; j < numcols; j++)
+        for (int j = 0; j < numcols; j++)
           normSum += values[colindex + j];
         
         scale = 1.0 / normSum;
@@ -287,12 +240,12 @@ public:
       int filterSize = this->buffer.input(values, size, scale);
       this->temp = this->buffer.vector;
       
-      switch(onset_mode)
+      switch (onset_mode)
       {
         case MeanOnset:
         {
           unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++, k++)
           {
             odf += (values[k] - this->lastFrame[k]);
             energy += values[k];
@@ -310,7 +263,7 @@ public:
         case RootMeanSquareOnset:
         {
           unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++, k++)
           {
             double diff = values[k] - this->lastFrame[k];
             
@@ -323,7 +276,7 @@ public:
           odf /= numcols;
           energy /= numcols;
           
-          if(onset_mode == RootMeanSquareOnset)
+          if (onset_mode == RootMeanSquareOnset)
           {
             odf = sqrt(odf);
             energy = sqrt(energy);
@@ -335,9 +288,9 @@ public:
         case KullbackLeiblerOnset:
         {
           unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++, k++)
           {
-            if(values[k] != 0.0 && this->lastFrame[k] != 0.0)
+            if (values[k] != 0.0 && this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
             energy += values[k] * values[k];
@@ -353,54 +306,52 @@ public:
       }
       
       /* get onset */
-      double maxsize = maxsegsize.get();
+      double maxsize = maxsegsize_attr_.get();
       bool frameIsOnset = (odf > onsetThreshold  &&  !this->lastFrameWasOnset  &&  time >= this->onsetTime + minimumInterval)
       || (maxsize > 0  &&  (time >= this->onsetTime + maxsize)); // chop unconditionally after maxsize if given
-      int ret = 0;
+      int ret = 1;
       
       if (!this->segmentmode)
       { // real-time mode: output just marker immediatly at onset, no temp.mod data
-        if (!this->odfoutput.get())
+        if (!this->odfoutput_attr_.get())
         { /* output marker */
-          if(frameIsOnset)
+          if (frameIsOnset)
           { /* report immediate onset */
-            ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
+	    ret &= propagateSegment(this->offset + time, frameIsOnset);
             this->onsetTime = time;
           }
         }
         else
         { /* output odf for each frame*/
           PiPoValue odfval = odf;
-          ret = this->propagateFrames(this->offset + time, weight, &odfval, 1, 1);
+          ret &= this->propagateFrames(this->offset + time, weight, &odfval, 1, 1);
         }
       }
       else
-      { // segment mode: output frame at end of segment
+      { // segment mode: signal segment end by calling segment()
         double duration = time - this->onsetTime;
         
-        if(this->segIsOn && (frameIsOnset || energy < offThreshold) && duration >= durationThreshold)
-        { /* end of segment (new onset or energy below off threshold) */
-          // get requested temporal modelling values and propagate
-          ret = propagate(this->offset + this->onsetTime, weight, duration);
+        if (this->segIsOn  &&  (frameIsOnset || energy < offThreshold)  &&  duration >= durationThreshold)
+        { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
+          ret &= propagateSegment(this->offset + this->onsetTime, frameIsOnset);
         }
         
         /* segment on/off (segment has at least one frame) */
-        if(frameIsOnset)
+        if (frameIsOnset)
         {
           this->segIsOn = true;
           this->onsetTime = time;
         }
-        else if(energy < offThreshold)
+        else if (energy < offThreshold)
           this->segIsOn = false;
-        
-        /* feed temporal modelling */
-        if(this->segIsOn)
-          this->tempMod.input(values, size);
       }
       
       this->lastFrameWasOnset = frameIsOnset;
-      
-      if(ret != 0)
+
+      // pass through frames one by one for subsequent temporal modeling modules
+      ret &= this->propagateFrames(time, weight, values, size, 1);
+	
+      if (ret != 0)
         return ret;
       
       values += size;
@@ -408,23 +359,23 @@ public:
     } // end for all frames
     
     return 0;
-  }
+  } // frames
+
   
-  int finalize(double inputEnd) override
+  int finalize (double inputEnd) override
   {
-    double durationThreshold = this->durthresh.get();
+    double durationThreshold = this->durthresh_attr_.get();
     double duration = inputEnd - this->onsetTime;
     //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
     
-    if(this->segIsOn && duration >= durationThreshold)
-    { /* end of segment (new onset or below off threshold) */
-      // get requested temporal modelling values and propagate
-      return propagate(this->offset + this->onsetTime, 0.0, duration);
+    if (this->segIsOn  &&  duration >= durationThreshold)
+    { // end of segment (new onset or below off threshold): propagate last segment end
+      return propagateSegment(this->offset + this->onsetTime, false);
     }
     
     return this->propagateFinalize(inputEnd);
-  }
-};
+  } // finalize
+}; // end class PiPoSegment
 
 /** EMACS **
  * Local variables:
@@ -433,4 +384,4 @@ public:
  * End:
  */
 
-#endif
+#endif // _PIPO_SEGMENT_
