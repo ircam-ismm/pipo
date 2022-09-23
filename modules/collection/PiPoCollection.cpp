@@ -68,6 +68,8 @@
 // #include "PiPoRms.h"
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
+#include "PiPoSegment.h"
+#include "PiPoTemporalModeling.h"
 #include "PiPoSlice.h"
 #include "PiPoSum.h"
 // #include "PiPoWavelet.h" // << boost is required to compile this
@@ -143,6 +145,14 @@ public:
     // include("rms", new PiPoCreator<PiPoRms>);
     include("scale", new PiPoCreator<PiPoScale>);
     include("select", new PiPoCreator<PiPoSelect>);
+    include("segment", new PiPoCreator<PiPoSegment>);
+    include("segmean", new PiPoCreator<PiPoSegMean>);
+    include("segstddev", new PiPoCreator<PiPoSegStd>);
+    include("segmeanstd", new PiPoCreator<PiPoSegMeanStd>);
+    include("segmin", new PiPoCreator<PiPoSegMin>);
+    include("segmax", new PiPoCreator<PiPoSegMax>);
+    include("segminmax", new PiPoCreator<PiPoSegMinMax>);
+    include("segduration", new PiPoCreator<PiPoSegDuration>);
     include("slice", new PiPoCreator<PiPoSlice>);
     include("sum", new PiPoCreator<PiPoSum>);
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
