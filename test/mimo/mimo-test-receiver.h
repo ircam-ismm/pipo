@@ -6,8 +6,10 @@
 class MimoTestReceiver : public Mimo
 {
 public:
-  std::vector<mimo_buffer> output_buffers; // capture training output data
-  
+  std::vector<mimo_buffer>	      output_buffers; // capture training output buffers
+  std::vector<std::vector<PiPoValue>> output_data;    // capture training output data arrays for output_buffers
+  size_t			      framesize = 0;
+
   MimoTestReceiver (PiPo::Parent *parent)
     : Mimo(parent), prx(parent)
   {  }
@@ -21,6 +23,7 @@ public:
   int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) override
   {
     const PiPoStreamAttributes *at = streamattr[0];
+    framesize = at->dims[0] * at->dims[1];
 
     char str[1000];
     printf("%s: received mimo setup output stream attributes\n%s", __PRETTY_FUNCTION__, at->to_string(str, 1000));
@@ -32,8 +35,16 @@ public:
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
     printf("%s: count %d trackindex %d, received %d mimo training output buffers\n%s", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);    
+
     output_buffers.resize(numbuffers);
-    std::copy(buffers, buffers + numbuffers, output_buffers.begin());	// shallow copy of array of mimo_buffer struct
+    output_data.resize(numbuffers);
+
+    for (int i = 0; i < numbuffers; i++)
+    {
+	output_data[i].assign(buffers[i].data, buffers[i].data + buffers[i].numframes * framesize);	// copy buffer data array
+	output_buffers[i] = buffers[i];							// shallow copy of mimo_buffer struct
+	output_buffers[i].data = &(output_data[i][0]);					// copy buffer data pointer
+    }
     return 0;
   };
 
