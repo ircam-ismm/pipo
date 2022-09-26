@@ -4,13 +4,14 @@
 
 #include "../catch.hpp"
 #include <stdlib.h>
-#include "mimo-test-receiver.h"
+#include "MimoTestReceiver.h"
 #include "mimo_stats.h"
+
 
 TEST_CASE("mimo")
 {
   MimoTestReceiver rx(NULL);	// is also parent
-  mimo_stats stats(NULL);
+  MimoStats stats(NULL);
 
   stats.setReceiver(&rx);
 
