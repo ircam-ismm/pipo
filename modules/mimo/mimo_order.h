@@ -44,8 +44,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
-#include <numeric>	// for iota
-#include <algorithm>	// for sort
+#include <numeric>      // for iota
+#include <algorithm>    // for sort
 
 #include "jsoncpp/include/json.h"
 
@@ -90,7 +90,7 @@ public:
     if(!succes)
     {
       std::cout << "mimo.order model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
-		<< "in\n" << json_string << std::endl;
+                << "in\n" << json_string << std::endl;
       return -1;
     }
     const Json::Value _sizes = root["dimensions"];
@@ -117,7 +117,7 @@ private:
     for (size_t i = 0; i < v.size(); ++i)
     {
             if (i != 0)
-	      ss << ",";
+              ss << ",";
             ss << v[i];
     }
     ss << "]";
@@ -134,11 +134,11 @@ public:
   enum Direction { Forward = 0, Backward = 1 };
   int numbuffers_, numtracks_, numframestotal_;
   std::vector<int> bufsizes_; // num frames for each buffer
-  int m_ = 0, n_ = 0, framesize_ = 0;	// input data vector size (m_, n_)
+  int m_ = 0, n_ = 0, framesize_ = 0;   // input data vector size (m_, n_)
   std::vector<std::string> labelstore_;
         
 public:
-  PiPoDictionaryAttr		  model_attr_;
+  PiPoDictionaryAttr              model_attr_;
 
   order_model_data decomposition_;
     
@@ -160,7 +160,7 @@ public:
     n_ = streamattr[0]->dims[0];
     framesize_ = m_ * n_;
     
-    numframestotal_ = 0;	// total number of frames over all buffers
+    numframestotal_ = 0;        // total number of frames over all buffers
     for (int i = 0; i < numbuffers_; i++)
       numframestotal_ += bufsizes_[i];
 
@@ -177,19 +177,19 @@ public:
       outattr[i]->labels = new const char*[n_];
       outattr[i]->numLabels = n_;
       outattr[i]->labels_alloc = n_;
-	
+        
       for (int j = 0; j < n_; j++)
       {
-	char *lab = (char *) malloc(10); //todo: memleak!
-	snprintf(lab, 8, "Order%d", j);
-	outattr[i]->labels[j] = lab;
+        char *lab = (char *) malloc(10); //todo: memleak!
+        snprintf(lab, 8, "Order%d", j);
+        outattr[i]->labels[j] = lab;
       }
     }
 
     return propagateSetup(numbuffers, numtracks, tracksize, const_cast<const PiPoStreamAttributes**>(outattr));
   }
 
-public:	
+public: 
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
   {
     // allocate temp space for output data, will be deallocated at end of function
@@ -209,19 +209,19 @@ public:
     // create rank array of size numframes
     std::vector<size_t> indices(numframestotal_);
 
-    // create marker/buffer redirection arrays
-    std::vector<size_t> markeroffset(numframestotal_);
+    // create marker(frame)/buffer redirection arrays
+    std::vector<size_t> frameoffset(numframestotal_);
     std::vector<size_t> bufferind(numframestotal_);
 
     int k = 0;
     for (int i = 0; i < numbuffers_; i++)
       for (int j = 0; j < bufsizes_[i]; j++, k++)
       {
-	markeroffset[k] = j * framesize_; // element offset at marker index 
-	bufferind[k] = i;
+        frameoffset[k] = j * framesize_; // element offset at marker index 
+        bufferind[k]   = i; // buffer index at linear array
       }
 
-    // for each frame element:
+    // for each frame element (usually columns):
     for (int elemind = 0; elemind < framesize_; elemind++)
     {
       // fill rank array with 0..numframes
@@ -229,23 +229,24 @@ public:
 
       // sort rank array with indirection to data
       std::sort(
-	begin(indices), end(indices),
+        begin(indices), end(indices),
         [&](size_t a, size_t b)
-	{
-	  const PiPoValue* buffera = buffers[bufferind[a]].data;
-	  const PiPoValue* bufferb = buffers[bufferind[b]].data;
-	  
-	  return buffera[markeroffset[a] + elemind] < bufferb[markeroffset[b] + elemind];
-	}
+        {
+          const PiPoValue* buffera = buffers[bufferind[a]].data;
+          const PiPoValue* bufferb = buffers[bufferind[b]].data;
+
+          // ascending order, such that small elements get small indices
+          return buffera[frameoffset[a] + elemind] < bufferb[frameoffset[b] + elemind];
+        }
       );
       
       // copy order of elem back to output track, elem-by-elem
       for (size_t i = 0; i < numframestotal_; i++)
       {
-        size_t order    = indices[i];
-	size_t bufind   = bufferind[i];
-	size_t mrkoffs  = markeroffset[i];
-	outdata[bufind][mrkoffs + elemind] = order;
+        size_t order     = indices[i];
+        size_t bufind    = bufferind[order];
+        size_t frameoffs = frameoffset[order];
+        outdata[bufind][frameoffs + elemind] = i;
       }
     } // end for elemind
     
