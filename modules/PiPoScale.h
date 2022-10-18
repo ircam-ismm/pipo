@@ -100,6 +100,7 @@
 #include "PiPo.h"
 
 #include <math.h>
+#include <numeric>
 #include <vector>
 
 #define defMinLogVal 1e-24f
@@ -118,8 +119,8 @@ public:
     // can use PiPoScale members: funcBase, minLogVal, extInMin/Max/OutMin/Max
     virtual void setup (int framesize) = 0;
     
-    // apply scaling from values to buffer for numElems starting at elemOffset
-    // uses PiPoScale members: numElems, elemOffset, width, extInMin/Max/OutMin/Max
+    // apply scaling from values to buffer for elems in columns_ array
+    // uses PiPoScale members: columns_, width, extInMin/Max/OutMin/Max
     virtual void scale (bool clip, PiPoValue *values, PiPoValue *buffer, int numframes, int numrows) = 0;
     
   protected:
@@ -127,12 +128,15 @@ public:
     template<typename ScaleFuncType>
     void scale_frame (bool clip, PiPoValue *values, PiPoValue *buffer, unsigned int numframes, unsigned int numrows, ScaleFuncType scalefunc)
     {
+      int numcols = (int) pipo_->columns_.size();
+      
       if (!clip)
       {
         for (unsigned int i = 0; i < numframes * numrows; i++)
         {
-          for (int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+          for (int j = 0; j < numcols; j++)
           {
+	    const int k = pipo_->columns_[j];
             buffer[k] = scalefunc(values[k], j);
           }
           
@@ -144,8 +148,9 @@ public:
       { // clipped
         for (unsigned int i = 0; i < numframes * numrows; i++)
         {
-          for (int j = 0, k = pipo_->elemOffset; j < pipo_->numElems; j++, k++)
+          for (int j = 0; j < numcols; j++)
           {
+	    const int k = pipo_->columns_[j];
             double f = values[k];
             
             if (f <= pipo_->extInMin[j])
@@ -222,7 +227,7 @@ public:
       Scaler::scale_frame(clip, values, buffer, numframes, numrows,
         [=] (PiPoValue x, int j) -> PiPoValue
 	{
-	  double inVal = x * inScale[j] + inOffset[j]; //TODO: why double?
+	  double inVal = (double) x * inScale[j] + inOffset[j]; // calc in double to keep precision
         
 	  if (inVal < pipo_->minLogVal)
 	    inVal = pipo_->minLogVal;
@@ -407,9 +412,8 @@ private:
   enum ScaleFun scaleFunc;
   double funcBase;
   double minLogVal;
-  int elemOffset;
-  int numElems;
   int width;
+  std::vector<unsigned int> columns_;
   
 public:
   PiPoVarSizeAttr<double> inMin;
@@ -423,6 +427,7 @@ public:
   PiPoScalarAttr<PiPo::Enumerate> complete;
   PiPoScalarAttr<int> colIndex;
   PiPoScalarAttr<int> numCols;
+  PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
   
   PiPoScale(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer(),
@@ -438,7 +443,8 @@ public:
     minlog(this, "minlog", "Minimum Log Value", true, defMinLogVal),
     complete(this, "complete", "Complete Min/Max Lists", true, CompleteRepeatLast),
     colIndex(this, "colindex", "Index of First Column to Scale (negative values count from end)", true, 0),
-    numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0)
+    numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0),
+    columns_attr_(this, "columns", "List of Names or Indices of Columns to be Scaled (overrides colindex/numcols)", true)
   {
     this->frameSize = 0;
     this->scaleFunc = (enum ScaleFun) this->func.get();
@@ -530,36 +536,44 @@ public:
     double funcBase = this->base.get();
     double minLogVal = this->minlog.get();
     enum CompleteMode completeMode = (enum CompleteMode)this->complete.get();
-    
-    // check and normalise column choice:
-    // neg. values count from end, no wraparound
-    int colIndex = this->colIndex.get();
-    int numCols = this->numCols.get();
-    
-    if (colIndex < 0)
-    {
-      colIndex += width;
-      
-      if (colIndex < 0)
-        colIndex = 0;
+    this->width = width;
+	
+    if (columns_attr_.getSize() > 0)
+    { // check if attr really given (lookup_column_indices would otherwise fill columns_ with 0..width - 1)
+      columns_ = lookup_column_indices(columns_attr_, width, labels);
     }
-    else if (colIndex >= (int)width)
-      colIndex = width - 1;
-    
-    if (numCols <= 0)
-    {
-      numCols += width;
+    else
+    { // no columns list given, use index/num
+      // check and normalise column choice:
+      // neg. values count from end, no wraparound
+      int colIndex = this->colIndex.get();
+      int numCols = this->numCols.get();
+
+      if (colIndex < 0)
+      {
+	colIndex += width;
+	
+	if (colIndex < 0)
+	  colIndex = 0;
+      }
+      else if (colIndex >= (int)width)
+	colIndex = width - 1;
       
       if (numCols <= 0)
-        numCols = width;
+      {
+	numCols += width;
+	
+	if (numCols <= 0)
+	  numCols = width;
+      }
+      
+      if (colIndex + numCols > (int)width)
+	numCols = width - colIndex;
+
+      // fill column_ list with numCols consecutive indices from colIndex
+      columns_.resize(numCols);
+      std::iota(begin(columns_), end(columns_), colIndex);
     }
-    
-    if (colIndex + numCols > (int)width)
-      numCols = width - colIndex;
-    
-    this->elemOffset = colIndex;
-    this->numElems = numCols;
-    this->width = width;
     
     extendVector(this->inMin, this->extInMin, frameSize, 0.0, completeMode);
     extendVector(this->inMax, this->extInMax, frameSize, 1.0, completeMode);
@@ -600,20 +614,21 @@ public:
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
   } // streamAttributes
+
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int numframes)
   {
-    float *buffer = &this->buffer[0];
+    float *bufferptr = &this->buffer[0];
     bool clip = this->clip.get();
     unsigned int numrows = this->width > 0  ?  size / this->width  :  0;
     
-    if (this->elemOffset > 0 || this->numElems < (int)size)
-    { /* copy through unscaled values */
-      memcpy(buffer, values, numframes * size * sizeof(float));
+    if (columns_.size() < width)
+    { // some values will not be scaled: first copy whole frame to output buffer
+      memcpy(bufferptr, values, numframes * size * sizeof(float));
     }
     
     // apply scale func
-    scaler_->scale(clip, values, buffer, numframes, numrows);
+    scaler_->scale(clip, values, bufferptr, numframes, numrows);
     
     return this->propagateFrames(time, weight, &this->buffer[0], size, numframes);
   } // frames

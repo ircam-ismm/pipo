@@ -62,6 +62,7 @@ private:
   std::vector<PiPoValue> lastFrame;
   unsigned int filterSize;
   unsigned int inputSize;
+  std::vector<unsigned int> columns;
   double offset;
   double frameperiod;
   bool lastFrameWasOnset;
@@ -71,7 +72,7 @@ private:
   std::vector<PiPoValue> outputValues;
   
 public:
-  PiPoScalarAttr<int> column_attr_; // PiPo::Atom
+  PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
   PiPoScalarAttr<int> fltsize_attr_;
   PiPoScalarAttr<double> threshold_attr_;
   PiPoScalarAttr<PiPo::Enumerate> onsetmode_attr_;
@@ -86,10 +87,10 @@ public:
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(), temp(), lastFrame(), outputValues(),
-    column_attr_(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0), // PiPo::Atom((int) 0),
+    columns_attr_(this, "columns", "List of Names or Indices of Columns Used for Onset Calculation", true),
     fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
     threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
-    onsetmode_attr_(this, "odfmode", "Onset Detection Calculation Mode", true, MeanOnset),
+    onsetmode_attr_(this, "mode", "Onset Detection Calculation Mode", true, MeanOnset),
     mininter_attr_(this, "mininter", "Minimum Onset Interval", false, 50.0),
     startisonset_attr_(this, "startisonset", "Place Marker at Start of Buffer", false, false),
     durthresh_attr_(this, "durthresh", "Duration Threshold", false, 0.0),
@@ -124,6 +125,8 @@ public:
     int filterSize = this->fltsize_attr_.get();
     int inputSize = width;
     unsigned int outputSize = width * size;
+
+    columns = lookup_column_indices(columns_attr_, width, labels);
 	  
     this->frameperiod = 1000.0 / rate;
     this->offset = -this->frameperiod; // offset of negative frame period to include signal just before peak
@@ -202,23 +205,12 @@ public:
     double minimumInterval = this->mininter_attr_.get();
     double durationThreshold = this->durthresh_attr_.get();
     double offThreshold = this->offthresh_attr_.get();
-    int colindex = 0; //this->colindex_attr_.get();
-    int numcols = -1; //this->numcols_attr_.get();
     enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode_attr_.get();
     
     if (size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
-    
-    // clip colindex/size
-    //TODO: this shouldn't change at runtime, so do this in streamAttributes only
-    while (colindex < 0  &&  size > 0)
-      colindex += size;
-    
-    if (numcols <= 0)
-      numcols = size;
-    
-    if (colindex + numcols > (int) size)
-      numcols = size - colindex;
+
+    int numcols = columns.size();
     
     for (unsigned int i = 0; i < num; i++)
     { // for all frames
@@ -232,7 +224,7 @@ public:
         PiPoValue normSum = 0.0;
         
         for (int j = 0; j < numcols; j++)
-          normSum += values[colindex + j];
+          normSum += values[columns[j]];
         
         scale = 1.0 / normSum;
       }
@@ -245,9 +237,9 @@ public:
       {
         case MeanOnset:
         {
-          unsigned int k = colindex;
-          for (int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];
             odf += (values[k] - this->lastFrame[k]);
             energy += values[k];
             
@@ -263,9 +255,9 @@ public:
         case MeanSquareOnset:
         case RootMeanSquareOnset:
         {
-          unsigned int k = colindex;
-          for (int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];
             double diff = values[k] - this->lastFrame[k];
             
             odf += (diff * diff);
@@ -288,9 +280,9 @@ public:
           
         case KullbackLeiblerOnset:
         {
-          unsigned int k = colindex;
-          for (int j = 0; j < numcols; j++, k++)
+          for (int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];
             if (values[k] != 0.0 && this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
