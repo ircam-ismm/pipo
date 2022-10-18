@@ -58,13 +58,13 @@ public:
   enum OnsetMode { MeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
   
 private:
-  RingBuffer<PiPoValue> buffer;
+  RingBuffer<PiPoValue> buffer; 
   std::vector<PiPoValue> temp;
   std::vector<PiPoValue> frame;
   std::vector<PiPoValue> lastFrame;
   unsigned int filterSize;
   unsigned int inputSize;
-  double offset;
+  double offset; // todo: rename to avoid shadowing 
   double frameperiod;
   bool lastFrameWasOnset;
   double onsetTime;
@@ -153,7 +153,9 @@ public:
     this->temp.resize(inputSize * filterSize);
     this->frame.resize(inputSize);
     this->lastFrame.resize(inputSize);
-    
+    std::fill(begin(lastFrame), end(lastFrame), offthresh.get()); // init with silence level so that a first loud frame will trigger
+    //todo: use zero for odfmode rms
+
     this->filterSize = filterSize;
     this->inputSize = inputSize;
     
@@ -296,7 +298,7 @@ public:
       }
       
       /* input frame */
-      int filterSize = this->buffer.input(values, size, scale);
+      int filterSize = this->buffer.input(values, size, scale); //todo: rename to not shadow member
       this->temp = this->buffer.vector;
       
       switch(onset_mode)
