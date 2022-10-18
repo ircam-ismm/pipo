@@ -122,6 +122,7 @@ public:
     this->num = 0;
   };
 
+  // add data element for temporal modeling: calculate running statistics
   void input(PiPoValue value)
   {
     if(this->enabled[Min] && value < this->min)
@@ -139,6 +140,7 @@ public:
     this->num++;
   };
 
+  // copy up to numValues temporal modeling values to output array values, return number of values copied
   unsigned int getValues(PiPoValue *values, unsigned int numValues, bool reset = false)
   {
     if(this->num > 0)

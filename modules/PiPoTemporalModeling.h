@@ -38,7 +38,7 @@
  */
 
 #ifndef _PIPO_TEMPMOD_
-#define _PIPO_TEMPMOD__
+#define _PIPO_TEMPMOD_
 
 #include "PiPo.h"
 
@@ -225,4 +225,4 @@ using PiPoSegStats     = PiPoTemporalModeling<1, 1, 1, 1, 1>;
  * End:
  */
 
-#endif
+#endif // _PIPO_TEMPMOD_
