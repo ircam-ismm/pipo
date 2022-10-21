@@ -51,6 +51,8 @@ extern "C" {
 #include "TempMod.h"
 #include <vector>
 #include <string>
+#include <numeric> // for std::iota
+#include <algorithm> // for std::min/max
 
 class PiPoOnseg : public PiPo
 {
@@ -65,16 +67,19 @@ private:
   unsigned int filterSize;
   unsigned int inputSize;
   double offset; // todo: rename to avoid shadowing 
+  std::vector<unsigned int> columns;
   double frameperiod;
   bool lastFrameWasOnset;
   double onsetTime;
   bool segmentmode;
   int  haveduration;
   bool segIsOn;
+  bool inFirstSegment = false;
   TempModArray tempMod;
   std::vector<PiPoValue> outputValues;
   
 public:
+  PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
   PiPoScalarAttr<int> colindex;
   PiPoScalarAttr<int> numcols;
   PiPoScalarAttr<int> fltsize;
@@ -96,6 +101,7 @@ public:
   PiPoOnseg(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(), temp(), frame(), lastFrame(), tempMod(), outputValues(),
+    columns_attr_(this, "columns", "List of Names or Indices of Columns Used for Onset Calculation (overrides colindex/numcols)", true),
     colindex(this, "colindex", "Index of First Column Used for Onset Calculation (starts at 0)", true, 0),
     numcols(this, "numcols", "Number of Columns Used for Onset Calculation", true, -1),
     fltsize(this, "filtersize", "Filter Size", true, 3),
@@ -135,11 +141,55 @@ public:
   ~PiPoOnseg(void)
   {
   }
+
+private:
+  void reset_onset()
+  {
+    if (this->startisonset.get())
+    { // start with a segment at 0
+      this->lastFrameWasOnset = true;
+      this->onsetTime = -this->offset;	// first marker will be at 0
+      this->segIsOn = true;
+      this->inFirstSegment = true;
+    }
+    else
+    {
+      this->lastFrameWasOnset = false;
+      this->onsetTime = -DBL_MAX;
+      this->segIsOn = false;
+      this->inFirstSegment = false;
+    }
+  }
   
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
+public:
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
   {
     int filterSize = this->fltsize.get();
     int inputSize = width;
+    int size = width * height;
+
+    if (columns_attr_.getSize() > 0)
+    { // check if attr really given (lookup_column_indices would otherwise fill columns_ with 0..width - 1)
+      columns = lookup_column_indices(columns_attr_, width, labels);
+    }
+    else
+    {
+      int colindex = this->colindex.get();
+      int numcols  = this->numcols.get();
+
+      while (colindex < 0  &&  size > 0)
+	colindex += size;
+    
+      if (numcols <= 0)
+	numcols = size;
+    
+      if (colindex + numcols > size)
+	numcols = size - colindex;
+
+      // fill column_ list with numCols consecutive indices from colIndex
+      columns.resize(numcols);
+      std::iota(begin(columns), end(columns), colindex);
+    }
     
     this->frameperiod = 1000.0 / rate;
     this->offset = -this->frameperiod; // offset of negative frame period to include signal just before peak
@@ -158,18 +208,7 @@ public:
 
     this->filterSize = filterSize;
     this->inputSize = inputSize;
-    
-    if (this->startisonset.get())
-    { // start with a segment at 0
-      this->lastFrameWasOnset = true;
-      this->onsetTime = -this->offset;	// first marker will be at 0
-      this->segIsOn = true;
-    }
-    else
-    {
-      this->lastFrameWasOnset = false;
-      this->onsetTime = -DBL_MAX;
-    }
+    reset_onset();
     
     // in segment mode, duration or any temp.mod values are output with marker at end of segment
     this->haveduration = this->duration.get();
@@ -221,22 +260,9 @@ public:
   int reset(void) override
   {
     this->buffer.reset();
-    
-    if (this->startisonset.get())
-    { // start with a segment at 0
-      this->lastFrameWasOnset = true;
-      this->onsetTime = -this->offset;
-      this->segIsOn = true;
-    }
-    else
-    {
-      this->lastFrameWasOnset = false;
-      this->onsetTime = -DBL_MAX;
-      this->segIsOn = false;
-    }
-    
     this->tempMod.reset();
-    
+    reset_onset();
+
     return this->propagateReset();
   };
   
@@ -262,24 +288,13 @@ public:
     double minimumInterval = this->mininter.get();
     double durationThreshold = this->durthresh.get();
     double offThreshold = this->offthresh.get();
-    int colindex = this->colindex.get();
-    int numcols = this->numcols.get();
+    long   numcols = columns.size();
+ 
     enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode.get();
     
     if(size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
-    
-    // clip colindex/size
-    //TODO: this shouldn't change at runtime, so do this in streamAttributes only
-    while (colindex < 0  &&  size > 0)
-      colindex += size;
-    
-    if (numcols <= 0)
-      numcols = size;
-    
-    if (colindex + numcols > (int) size)
-      numcols = size - colindex;
-    
+        
     for(unsigned int i = 0; i < num; i++)
     { // for all frames
       PiPoValue scale = 1.0;
@@ -292,7 +307,7 @@ public:
         PiPoValue normSum = 0.0;
         
         for(int j = 0; j < numcols; j++)
-          normSum += values[colindex + j];
+          normSum += values[columns[j]];
         
         scale = 1.0 / normSum;
       }
@@ -305,9 +320,9 @@ public:
       {
         case MeanOnset:
         {
-          unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for(int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];
             odf += (values[k] - this->lastFrame[k]);
             energy += values[k];
             
@@ -323,9 +338,9 @@ public:
         case MeanSquareOnset:
         case RootMeanSquareOnset:
         {
-          unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for(int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];		   
             double diff = values[k] - this->lastFrame[k];
             
             odf += (diff * diff);
@@ -348,9 +363,9 @@ public:
           
         case KullbackLeiblerOnset:
         {
-          unsigned int k = colindex;
-          for(int j = 0; j < numcols; j++, k++)
+          for(int j = 0; j < numcols; j++)
           {
+	    const int k = columns[j];
             if(values[k] != 0.0 && this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
@@ -367,19 +382,22 @@ public:
       }
       
       /* get onset */
-      double maxsize = maxsegsize.get();
-      bool frameIsOnset = (odf > onsetThreshold  &&  !this->lastFrameWasOnset  &&  time >= this->onsetTime + minimumInterval)
-      || (maxsize > 0  &&  (time >= this->onsetTime + maxsize)); // chop unconditionally after maxsize if given
       int ret = 0;
+      double maxsize = maxsegsize.get();
+      bool frameIsOnset	=  (odf > onsetThreshold			// onset detected
+			    &&  !this->lastFrameWasOnset		// avoid double trigger
+			    &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+			|| (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
       
       if (!this->segmentmode)
       { // real-time mode: output just marker immediatly at onset, no temp.mod data
         if (!this->odfoutput.get())
         { /* output marker */
-          if(frameIsOnset)
+          if(frameIsOnset  ||  inFirstSegment)
           { /* report immediate onset */
             ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
             this->onsetTime = time;
+            inFirstSegment = false;
           }
         }
         else
@@ -391,23 +409,30 @@ public:
       else
       { // segment mode: output frame at end of segment
         double duration = time - this->onsetTime;
-        
-        if(this->segIsOn && (frameIsOnset || energy < offThreshold) && duration >= durationThreshold)
-        { /* end of segment (new onset or energy below off threshold) */
-          // get requested temporal modelling values and propagate
+        bool   frameIsOffset =   energy < offThreshold	// end of segment content
+			     ||  inFirstSegment;	// override with startisonset: keep silent first segment
+
+	if (this->segIsOn				// only when we're within a running segment
+	    &&  (frameIsOnset  ||  frameIsOffset)	// new trigger or end of segment content 
+	    &&  duration >= durationThreshold)		// keep only long enough segments
+        { // end of segment (new onset or energy below off threshold)
+	  // switch off first segment special status
+	  inFirstSegment = false;
+	  
+	  // get requested temporal modelling values and propagate
           ret = propagate(this->offset + this->onsetTime, weight, duration);
         }
         
         /* segment on/off (segment has at least one frame) */
-        if(frameIsOnset)
+        if (frameIsOnset)
         {
           this->segIsOn = true;
           this->onsetTime = time;
         }
-        else if(energy < offThreshold)
+        else if (frameIsOffset) // offset detected: signal below threshold
           this->segIsOn = false;
         
-        /* feed temporal modelling */
+        /* feed temporal modelling when segment is on */
         if(this->segIsOn)
           this->tempMod.input(values, size);
       }
