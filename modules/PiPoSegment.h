@@ -54,7 +54,7 @@ extern "C" {
 class PiPoSegment : public PiPo
 {
 public:
-  enum OnsetMode { MeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
+  enum OnsetMode { MeanOnset, AbsMeanOnset, NegativeMeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
   
 private:
   RingBuffer<PiPoValue> buffer;	// ring buffer for median calculation
@@ -90,7 +90,7 @@ public:
     columns_attr_(this, "columns", "List of Names or Indices of Columns Used for Onset Calculation", true),
     fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
     threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
-    onsetmode_attr_(this, "mode", "Onset Detection Calculation Mode", true, MeanOnset),
+    onsetmode_attr_(this, "onsegmetric", "Onset Detection Calculation Mode", true, MeanOnset),
     mininter_attr_(this, "mininter", "Minimum Onset Interval", false, 50.0),
     startisonset_attr_(this, "startisonset", "Place Marker at Start of Buffer", false, false),
     durthresh_attr_(this, "durthresh", "Duration Threshold", false, 0.0),
@@ -111,8 +111,10 @@ public:
     this->segIsOn = false;
     
     this->onsetmode_attr_.addEnumItem("mean", "Mean");
+    this->onsetmode_attr_.addEnumItem("absmean", "Absolute Mean");
+    this->onsetmode_attr_.addEnumItem("negmean", "Mean with Inverted Peaks");
     this->onsetmode_attr_.addEnumItem("square", "Mean Square");
-    this->onsetmode_attr_.addEnumItem("absmean", "Symmetric");
+    this->onsetmode_attr_.addEnumItem("rms", "Root of Mean Square");
     this->onsetmode_attr_.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
   }
   
@@ -139,6 +141,7 @@ public:
     this->buffer.resize(inputSize, filterSize);
     this->temp.resize(inputSize * filterSize);
     this->lastFrame.resize(inputSize);
+    std::fill(begin(lastFrame), end(lastFrame), offthresh_attr_.get()); // init with silence level so that a first loud frame will trigger
     
     this->filterSize = filterSize; // INSANE
     this->inputSize = inputSize; // INSANE
@@ -198,6 +201,37 @@ public:
     return this->propagateReset();
   } // reset
 
+  template<typename MetricFuncType>
+  void calc_onseg_metric (const PiPoValue *values, const unsigned int size, const int filterSize, double &odf, double &energy, MetricFuncType func)
+  {
+    const unsigned long numcols = columns.size();
+
+    if (numcols == 1)
+    {
+      const int k = columns[0];
+      odf    = func(values[k] - this->lastFrame[k]);
+      energy = func(values[k]);
+	
+      this->lastFrame[k] = rta_selection_stride(&this->temp[k], size, filterSize, (filterSize - 1) * 0.5);
+    }
+    else
+    {
+      odf    = 0;
+      energy = 0;
+
+      for (unsigned int j = 0; j < numcols; j++)
+      {
+	const int k = columns[j];
+	odf    += func(values[k] - this->lastFrame[k]);
+	energy += func(values[k]);
+	
+	this->lastFrame[k] = rta_selection_stride(&this->temp[k], size, filterSize, (filterSize - 1) * 0.5);
+      }
+
+      odf /= numcols;
+      energy /= numcols;
+    }
+  }
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
   {
@@ -210,20 +244,19 @@ public:
     if (size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
 
-    int numcols = columns.size();
+    const unsigned long numcols = columns.size();
     
     for (unsigned int i = 0; i < num; i++)
     { // for all frames
+      double odf, energy;
       PiPoValue scale = 1.0;
-      double odf = 0.0;
-      double energy = 0.0;
       
       /* normalize sum to one for Kullback Leibler divergence */
       if (onset_mode == KullbackLeiblerOnset)
       {
         PiPoValue normSum = 0.0;
         
-        for (int j = 0; j < numcols; j++)
+        for (unsigned int j = 0; j < numcols; j++)
           normSum += values[columns[j]];
         
         scale = 1.0 / normSum;
@@ -235,55 +268,33 @@ public:
       
       switch (onset_mode)
       {
-        case MeanOnset:
-        {
-          for (int j = 0; j < numcols; j++)
-          {
-	    const int k = columns[j];
-            odf += (values[k] - this->lastFrame[k]);
-            energy += values[k];
-            
-            this->lastFrame[k] = rta_selection_stride(&this->temp[k], size, filterSize, (filterSize - 1) * 0.5);
-          }
-          
-          odf /= numcols;
-          energy /= numcols;
-          
-          break;
-        }
+        case MeanOnset: // identity metric func
+	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x; });
+        break;
+        
+        case AbsMeanOnset:
+	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return fabs(x); });
+        break;
           
         case MeanSquareOnset:
+	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
+        break;
+
         case RootMeanSquareOnset:
-        {
-          for (int j = 0; j < numcols; j++)
-          {
-	    const int k = columns[j];
-            double diff = values[k] - this->lastFrame[k];
-            
-            odf += (diff * diff);
-            energy += values[k] * values[k];
-            
-            this->lastFrame[k] = rta_selection_stride(&this->temp[k], size, filterSize, (filterSize - 1) * 0.5);
-          }
-          
-          odf /= numcols;
-          energy /= numcols;
-          
-          if (onset_mode == RootMeanSquareOnset)
-          {
-            odf = sqrt(odf);
-            energy = sqrt(energy);
-          }
-          
-          break;
-        }
+	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
+
+	  odf    = sqrt(odf);
+	  energy = sqrt(energy);
+        break;
           
         case KullbackLeiblerOnset:
-        {
+	  odf = 0;
+	  energy = 0;
+	  
           for (int j = 0; j < numcols; j++)
           {
 	    const int k = columns[j];
-            if (values[k] != 0.0 && this->lastFrame[k] != 0.0)
+            if (values[k] != 0.0  &&  this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
             energy += values[k] * values[k];
@@ -293,15 +304,15 @@ public:
           
           odf /= numcols;
           energy /= numcols;
-          
-          break;
-        }
-      }
+	break;
+      } // end switch(onset_mode)
       
       /* get onset */
       double maxsize = maxsegsize_attr_.get();
-      bool frameIsOnset = (odf > onsetThreshold  &&  !this->lastFrameWasOnset  &&  time >= this->onsetTime + minimumInterval)
-      || (maxsize > 0  &&  (time >= this->onsetTime + maxsize)); // chop unconditionally after maxsize if given
+      bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
+                             &&  !this->lastFrameWasOnset    // avoid double trigger
+                             &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
       int ret = 1;
       
       if (!this->segmentmode)
@@ -322,10 +333,17 @@ public:
       }
       else
       { // segment mode: signal segment end by calling segment()
-        double duration = time - this->onsetTime;
-        
-        if (this->segIsOn  &&  (frameIsOnset || energy < offThreshold)  &&  duration >= durationThreshold)
+        double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
+        bool   frameIsOffset =   energy < offThreshold;  // end of segment content
+               // ||  inFirstSegment;  // override with startisonset: keep silent first segment
+
+        if ((frameIsOnset  // new trigger
+             || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
+            &&  (duration >= durationThreshold))    // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
         { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
+          // switch off first segment special status
+          //inFirstSegment = false;
+
           ret &= propagateSegment(this->offset + this->onsetTime, frameIsOnset);
         }
         
@@ -335,7 +353,7 @@ public:
           this->segIsOn = true;
           this->onsetTime = time;
         }
-        else if (energy < offThreshold)
+        else if (frameIsOffset) // offset detected: signal below threshold
           this->segIsOn = false;
       }
       
