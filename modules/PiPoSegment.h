@@ -66,7 +66,7 @@ private:
   double offset;
   double frameperiod;
   bool lastFrameWasOnset;
-  double onsetTime;
+  double onsetTime; // time of last onset or -DBL_MAX if none yet
   bool segmentmode;
   bool segIsOn;
   std::vector<PiPoValue> outputValues;
@@ -344,7 +344,7 @@ public:
           // switch off first segment special status
           //inFirstSegment = false;
 
-          ret &= propagateSegment(this->offset + this->onsetTime, frameIsOnset);
+          ret &= propagateSegment(this->offset + time, frameIsOnset);
         }
         
         /* segment on/off (segment has at least one frame) */
