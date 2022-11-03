@@ -274,8 +274,8 @@ public:
     if (this->haveduration)
       this->outputValues[0] = duration;
     
-    /* get temporal modelling */
-    if (outsize > 1)
+    /* get temporal modelling, if any was requested */
+    if (outsize - this->haveduration > 0)
       this->tempMod.getValues(&this->outputValues[this->haveduration], outsize - this->haveduration, true);
     
     /* report segment */
