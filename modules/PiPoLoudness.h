@@ -83,8 +83,8 @@ public:
 
     // init attributes
     slice.unit.set("samples");  // must stay at default setting of "samples"
-    slice.size.set(1710);
-    slice.hop.set(128);
+    slice.size.set(1024);
+    slice.hop.set(256);
     slice.norm.set("power");
     fft.mode_attr_.set("power");
     fft.weighting_attr_.set("itur468");
