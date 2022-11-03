@@ -125,7 +125,6 @@ public:
   {
     int filterSize = this->fltsize_attr_.get();
     int inputSize = width;
-    unsigned int outputSize = width * size;
 
     columns = lookup_column_indices(columns_attr_, width, labels);
 	  
