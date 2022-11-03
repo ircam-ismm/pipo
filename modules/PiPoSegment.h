@@ -69,7 +69,6 @@ private:
   double onsetTime; // time of last onset or -DBL_MAX if none yet
   bool segmentmode;
   bool segIsOn;
-  std::vector<PiPoValue> outputValues;
   
 public:
   PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
@@ -86,7 +85,7 @@ public:
   
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    buffer(), temp(), lastFrame(), outputValues(),
+    buffer(), temp(), lastFrame(), 
     columns_attr_(this, "columns", "List of Names or Indices of Columns Used for Onset Calculation", true),
     fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
     threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
@@ -163,9 +162,6 @@ public:
     
     if (this->segmentmode)
     {
-      /* alloc output vector for output */
-      this->outputValues.resize(outputSize);
-
       // we pass through the input data, for subsequent temporal modeling modules
       int ret = this->propagateStreamAttributes(true, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
             
@@ -178,7 +174,7 @@ public:
     }
     else
       return 0;
-  } // streamAttributes
+  } // end streamAttributes
 
   
   int reset (void) override
