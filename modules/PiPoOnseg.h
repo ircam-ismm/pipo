@@ -206,8 +206,8 @@ public:
     std::fill(begin(lastFrame), end(lastFrame), offthresh.get()); // init with silence level so that a first loud frame will trigger
     //todo: use zero for odfmode rms
 
-    this->filterSize = filterSize;
-    this->inputSize = inputSize;
+    this->filterSize = filterSize; // FIXME: INSANE
+    this->inputSize = inputSize; // FIXME: INSANE
     reset_onset();
     
     // in segment mode, duration or any temp.mod values are output with marker at end of segment
@@ -322,7 +322,7 @@ public:
         {
           for(int j = 0; j < numcols; j++)
           {
-	    const int k = columns[j];
+            const int k = columns[j];
             odf += (values[k] - this->lastFrame[k]);
             energy += values[k];
             
@@ -340,7 +340,7 @@ public:
         {
           for(int j = 0; j < numcols; j++)
           {
-	    const int k = columns[j];		   
+            const int k = columns[j];              
             double diff = values[k] - this->lastFrame[k];
             
             odf += (diff * diff);
@@ -365,7 +365,7 @@ public:
         {
           for(int j = 0; j < numcols; j++)
           {
-	    const int k = columns[j];
+            const int k = columns[j];
             if(values[k] != 0.0 && this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
@@ -384,10 +384,10 @@ public:
       /* get onset */
       int ret = 0;
       double maxsize = maxsegsize.get();
-      bool frameIsOnset	=  (odf > onsetThreshold			// onset detected
-			    &&  !this->lastFrameWasOnset		// avoid double trigger
-			    &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
-			|| (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
+      bool frameIsOnset =  (odf > onsetThreshold                        // onset detected
+                            &&  !this->lastFrameWasOnset                // avoid double trigger
+                            &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+                        || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
       
       if (!this->segmentmode)
       { // real-time mode: output just marker immediatly at onset, no temp.mod data
@@ -409,15 +409,14 @@ public:
       else
       { // segment mode: output frame at end of segment
         double duration = time - this->onsetTime;
-        bool   frameIsOffset =   energy < offThreshold	// end of segment content
-			     ||  inFirstSegment;	// override with startisonset: keep silent first segment
+        bool   frameIsOffset =   energy < offThreshold  // end of segment content
+                             ||  inFirstSegment;        // override with startisonset: keep silent first segment
 
-	if (this->segIsOn				// only when we're within a running segment
-	    &&  (frameIsOnset  ||  frameIsOffset)	// new trigger or end of segment content 
-	    &&  duration >= durationThreshold)		// keep only long enough segments
+        if ((frameIsOnset                       // new trigger
+             || (segIsOn  &&  frameIsOffset))   // end of segment content (detect only when we're within a running segment)
+            &&  duration >= durationThreshold)  // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
         { // end of segment (new onset or energy below off threshold)
-	  // switch off first segment special status
-	  inFirstSegment = false;
+	  inFirstSegment = false;  // switch off first segment special status
 	  
 	  // get requested temporal modelling values and propagate
           ret = propagate(this->offset + this->onsetTime, weight, duration);
