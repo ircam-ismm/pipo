@@ -54,6 +54,9 @@ extern "C" {
 #include <numeric> // for std::iota
 #include <algorithm> // for std::min/max
 
+
+#define DEBUG_ONSEG  DEBUG && 0
+
 class PiPoOnseg : public PiPo
 {
 public:
@@ -388,6 +391,10 @@ public:
                             &&  !this->lastFrameWasOnset                // avoid double trigger
                             &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
+#if DEBUG_ONSEG
+      printf("PiPoOnseg::frames(%5.1f)  en %5.1f  odf %5.1f  dur %5.1f  onset %d  last %d  offset %d  segIsOn %d\n", time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
+	     frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  inFirstSegment, segIsOn);
+#endif
       
       if (!this->segmentmode)
       { // real-time mode: output just marker immediatly at onset, no temp.mod data
@@ -412,9 +419,9 @@ public:
         bool   frameIsOffset =   energy < offThreshold  // end of segment content
                              ||  inFirstSegment;        // override with startisonset: keep silent first segment
 
-        if ((frameIsOnset                       // new trigger
-             || (segIsOn  &&  frameIsOffset))   // end of segment content (detect only when we're within a running segment)
-            &&  duration >= durationThreshold)  // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
+        if (((frameIsOnset  &&  this->onsetTime > -DBL_MAX) // new trigger (but not first one)
+             || (segIsOn    &&  frameIsOffset))             // end of segment content (detect only when we're within a running segment)
+             &&  duration >= durationThreshold)  // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
         { // end of segment (new onset or energy below off threshold)
 	  inFirstSegment = false;  // switch off first segment special status
 	  
@@ -453,7 +460,12 @@ public:
     double durationThreshold = this->durthresh.get();
     double duration = inputEnd - this->onsetTime;
     //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
-    
+
+#if DEBUG_ONSEG
+    printf("PiPoOnseg::finalize(%5.1f)  dur %5.1f  last %d  segIsOn %d\n", inputEnd, duration,
+	   lastFrameWasOnset, segIsOn);
+#endif
+
     if(this->segIsOn && duration >= durationThreshold)
     { /* end of segment (new onset or below off threshold) */
       // get requested temporal modelling values and propagate
