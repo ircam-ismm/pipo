@@ -111,23 +111,24 @@ public:
     tempmod_.resize(input_width_);
       
     /* get output size */
-    unsigned int outputsize = tempmod_.getNumValues();
-      
+    unsigned int numtempmod  = tempmod_.getNumValues();
+    unsigned int outputwidth = numtempmod + DURATION;
+
     /* alloc output vector for duration and temporal modelling output */
-    output_values_.resize(outputsize + DURATION);
+    output_values_.resize(outputwidth);
       
     /* get labels */
-    char *mem = new char[outputsize * 64 + 64];
-    char **outlabels = new char*[outputsize + 1];
+    char *mem = new char[outputwidth * 64];
+    char **outlabels = new char*[outputwidth];
       
-    for (unsigned int i = 0; i <= outputsize; i++)
+    for (unsigned int i = 0; i < outputwidth; i++)
       outlabels[i] = mem + i * 64;
       
     if (DURATION)
       snprintf(outlabels[0], 64, "Duration");
-    tempmod_.getLabels(labels, input_width_, &outlabels[DURATION], 64, outputsize);
+    tempmod_.getLabels(labels, input_width_, &outlabels[DURATION], 64, numtempmod);
       
-    int ret = propagateStreamAttributes(true, rate, 0.0, outputsize + DURATION, 1,
+    int ret = propagateStreamAttributes(true, rate, 0.0, outputwidth, outputwidth > 0,
 					(const char **) &outlabels[0],
 					false, 0.0, 1);
       
