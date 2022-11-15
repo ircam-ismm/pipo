@@ -146,13 +146,15 @@ public:
     include("scale", new PiPoCreator<PiPoScale>);
     include("select", new PiPoCreator<PiPoSelect>);
     include("segment", new PiPoCreator<PiPoSegment>);
+    include("segduration", new PiPoCreator<PiPoSegDuration>);
+    include("segmarker", new PiPoCreator<PiPoSegMarker>);
     include("segmean", new PiPoCreator<PiPoSegMean>);
     include("segstddev", new PiPoCreator<PiPoSegStd>);
     include("segmeanstd", new PiPoCreator<PiPoSegMeanStd>);
     include("segmin", new PiPoCreator<PiPoSegMin>);
     include("segmax", new PiPoCreator<PiPoSegMax>);
     include("segminmax", new PiPoCreator<PiPoSegMinMax>);
-    include("segduration", new PiPoCreator<PiPoSegDuration>);
+    include("segstats", new PiPoCreator<PiPoSegStats>);
     include("slice", new PiPoCreator<PiPoSlice>);
     include("sum", new PiPoCreator<PiPoSum>);
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
@@ -167,10 +169,14 @@ public:
   PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module, PiPo::Parent *parent)
   {
       pipoMap::iterator it = map.find(pipoName);
-      if (it == map.end()) return NULL;
-      PiPo *ret = it->second->create();
-      module = new PiPoPoolModule(ret);
-      return ret;
+      if (it == map.end())
+	  return NULL;
+      else
+      {
+	  PiPo *ret = it->second->create();
+	  module = new PiPoPoolModule(ret);
+	  return ret;
+      }
   }
 
 private:
