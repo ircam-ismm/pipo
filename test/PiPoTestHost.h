@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset:2 -*-
 #ifndef _PIPO_TEST_HOST_
 #define _PIPO_TEST_HOST_
 
@@ -33,12 +34,18 @@ private:
   //     std::cout << "just re-propagated stream attributes because an attribute value changed" << std::endl;
   // }
 
-  void onNewFrame(double _time, double _weight, PiPoValue *_values, unsigned int _size) override
+  void onNewFrame (double _time, double _weight, PiPoValue *_values, unsigned int _size) override
   {
     last_time   = _time;
     last_size   = _size;
     std::vector<PiPoValue> frame(_values, _values + _size); // copy values via input iterator
     receivedFrames.emplace_back(frame);
+  }
+
+  void onFinalize (double time) override
+  {
+    count_finalize++;
+    end_time = time;
   }
 
   /** called by pipo to signal error in parameters */
@@ -57,19 +64,11 @@ private:
     printf("warning: PiPoTestHost::signalWarning: %s\n", errorMsg.c_str());
   }
 
-  /* TODO: host doesn't handle finalize yet
-  virtual int finalize (double inputEnd) override
-  {
-    count_finalize++;
-    end_time = inputEnd;
-    return 0;
-  }
-*/
 public:
-    void reset()
-    {
-        receivedFrames.resize(0);
-    }
+  void reset()
+  {
+    receivedFrames.resize(0);
+  }
 };
 
 #endif /* _PIPO_TEST_HOST_ */
