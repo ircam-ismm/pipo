@@ -170,6 +170,7 @@ public:
     int filterSize = this->fltsize.get();
     int inputSize = width;
     int size = width * height;
+    int ret  = 0;
 
     if (columns_attr_.getSize() > 0)
     { // check if attr really given (lookup_column_indices would otherwise fill columns_ with 0..width - 1)
@@ -193,6 +194,7 @@ public:
       {
         signalError("column index/number out of bounds");
         numcols = 0;
+	ret = -1;
       }
       
       // fill column_ list with numCols consecutive indices from colIndex
@@ -249,21 +251,24 @@ public:
       if (this->haveduration)
         snprintf(outLabels[0], 64, "Duration");
       this->tempMod.getLabels(labels, inputSize, &outLabels[this->haveduration], 64, outputSize);
-      
-      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputSize + this->haveduration, 1, (const char **) &outLabels[0], false, 0.0, 1);
+
+      if (ret == 0)
+	ret = this->propagateStreamAttributes(true, rate, 0.0, outputSize + this->haveduration, 1, (const char **) &outLabels[0], false, 0.0, 1);
       
       delete [] mem;
       delete [] outLabels;
-      
-      return ret;
     }
     else if (this->odfoutput.get())
     {
       const char *outlab[1] = { "ODF" };
-      return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
+      if (ret == 0)
+	ret = this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
     else // real-time mode: output marker immediately, no data
-      return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
+      if (ret == 0)
+	ret = this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
+    
+    return ret;
   }
   
   int reset(void) override
