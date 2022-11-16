@@ -181,14 +181,20 @@ public:
       int numcols  = this->numcols.get();
 
       while (colindex < 0  &&  size > 0)
-	colindex += size;
+	colindex += size; // negative index counts from end
     
       if (numcols <= 0)
-	numcols = size;
+        numcols = size; // negative num means all
     
       if (colindex + numcols > size)
 	numcols = size - colindex;
 
+      if (numcols <= 0)
+      {
+        signalError("column index/number out of bounds");
+        numcols = 0;
+      }
+      
       // fill column_ list with numCols consecutive indices from colIndex
       columns.resize(numcols);
       std::iota(begin(columns), end(columns), colindex);
