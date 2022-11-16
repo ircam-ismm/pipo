@@ -76,4 +76,33 @@ TEST_CASE ("onseg")
       CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.5)); // duration until end
     }
   }
+  
+  WHEN ("bad column index/number")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("loudness:onseg"));
+    host.setAttr("onseg.colindex", 99);
+    host.setAttr("onseg.numcols", 1);
+    host.setAttr("onseg.mean", 1);
+
+    THEN ("error is caught")
+    {
+      // force streamAttributes call, should fail
+      int ret = host.setInputStreamAttributes(sa);
+      CHECK(ret != 0);
+      // but we try to push data anyway, to catch follow-up crashes
+      REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+      REQUIRE(host.finalize(t_samp) == 0);
+      
+      THEN ("output doesn't crash")
+      {
+	PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+	CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+	CHECK(sa.dims[0] == 0);
+	CHECK(sa.dims[1] == 0); // expect no data
+	
+	REQUIRE(host.receivedFrames.size() == 0);
+      }
+    }
+  }
 }
