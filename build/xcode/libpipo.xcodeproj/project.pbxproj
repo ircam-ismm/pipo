@@ -33,6 +33,7 @@
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
+		2101B13B2924FDFB00DA72DA /* PiPoLoudness.h in Headers */ = {isa = PBXBuildFile; fileRef = 2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */; };
 		21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7428DB13620006CEE9 /* rta_histogram.c */; };
 		21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7928DDB92D0006CEE9 /* PiPoSegment.h */; };
 		21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */; };
@@ -158,6 +159,7 @@
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
+		2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoLoudness.h; path = ../../modules/PiPoLoudness.h; sourceTree = "<group>"; };
 		21056C7428DB13620006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = rta_histogram.c; path = ../../modules/rta/src/statistics/rta_histogram.c; sourceTree = "<group>"; };
 		21056C7728DDB7350006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = rta_histogram.c; sourceTree = "<group>"; };
 		21056C7928DDB92D0006CEE9 /* PiPoSegment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSegment.h; path = ../../modules/PiPoSegment.h; sourceTree = "<group>"; };
@@ -583,6 +585,7 @@
 				31C2B3A91FB0D43F001A134E /* PiPoIdentity.h */,
 				216C9F6224EFF4E00069A8EE /* PiPoJs.h */,
 				31C2B3AC1FB0D43F001A134E /* PiPoLpc.h */,
+				2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */,
 				31C2B3AE1FB0D43F001A134E /* PiPoMaximChroma.h */,
 				31C2B3AF1FB0D43F001A134E /* PiPoMeanStddev.h */,
 				31C2B3B01FB0D43F001A134E /* PiPoMedian.h */,
@@ -890,6 +893,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2123C9B124EFFD68005044F8 /* autolink.h in Headers */,
+				2101B13B2924FDFB00DA72DA /* PiPoLoudness.h in Headers */,
 				2123C9BC24EFFD68005044F8 /* json_tool.h in Headers */,
 				2123C99C24EFFD5A005044F8 /* mimo_pca.h in Headers */,
 				2123C9B224EFFD68005044F8 /* jsoncpp_config.h in Headers */,
