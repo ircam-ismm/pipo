@@ -54,6 +54,7 @@
 #include "PiPoFiniteDif.h"
 #include "PiPoGate.h"
 #include "PiPoLpc.h"
+#include "PiPoLoudness.h"
 // #include "PiPoMaximChroma.h" // << Maximilian is required to compile this
 // #include "PiPoMeanStddev.h"
 #include "PiPoMedian.h"
@@ -130,6 +131,7 @@ public:
     include("fft", new PiPoCreator<PiPoFft>);
     include("finitedif", new PiPoCreator<PiPoFiniteDif>);
     include("gate", new PiPoCreator<PiPoGate>);
+    include("loudness", new PiPoCreator<PiPoLoudness>);
     include("lpc", new PiPoCreator<PiPoLpc>);
     // include("chroma", new PiPoCreator<PiPoMaximChroma>); // << needs Maximilian
     // include("meanstddev", new PiPoCreator<PiPoMeanStddev>);
