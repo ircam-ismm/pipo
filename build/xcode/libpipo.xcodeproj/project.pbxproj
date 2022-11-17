@@ -72,6 +72,7 @@
 		216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9ED24F002F7005044F8 /* handler-print.c */; };
 		216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9EE24F002F7005044F8 /* handler-register.c */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
+		21BF4DDB2926443700650F02 /* PiPoThru.h in Headers */ = {isa = PBXBuildFile; fileRef = 21BF4DDA2926443500650F02 /* PiPoThru.h */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
@@ -212,6 +213,7 @@
 		216E1EC124FE95B80033FAD2 /* jerryscript.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jerryscript.c; sourceTree = "<group>"; };
 		216E1EC224FE95B80033FAD2 /* jerryscript.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jerryscript.h; sourceTree = "<group>"; };
 		21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDescr.h; path = ../../modules/PiPoDescr.h; sourceTree = "<group>"; };
+		21BF4DDA2926443500650F02 /* PiPoThru.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoThru.h; path = ../../modules/PiPoThru.h; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
 		315B904B1FB4B9980005150B /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../sdk/src/PiPo.h; sourceTree = "<group>"; };
@@ -605,6 +607,7 @@
 				21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */,
 				31C2B3BC1FB0D43F001A134E /* PiPoSlice.h */,
 				31C2B3BD1FB0D43F001A134E /* PiPoSum.h */,
+				21BF4DDA2926443500650F02 /* PiPoThru.h */,
 				31C2B3BF1FB0D43F001A134E /* PiPoWavelet.h */,
 				31C2B3C01FB0D43F001A134E /* PiPoYin.h */,
 				1DFED20023A8DE6900BF943F /* PiPoYin2.h */,
@@ -901,6 +904,7 @@
 				2123C99B24EFFD5A005044F8 /* mimo_normalize.h in Headers */,
 				2123C9B624EFFD68005044F8 /* reader.h in Headers */,
 				216E1EC524FE95B90033FAD2 /* jerryscript-port-default.h in Headers */,
+				21BF4DDB2926443700650F02 /* PiPoThru.h in Headers */,
 				2123C9B424EFFD68005044F8 /* json-features.h in Headers */,
 				2123C9B824EFFD68005044F8 /* version.h in Headers */,
 				216E1EC724FE95B90033FAD2 /* jerryscript.h in Headers */,
