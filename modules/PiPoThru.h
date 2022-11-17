@@ -50,7 +50,7 @@ public:
   {}
 
   int streamAttributes (bool hasTimeTags, double rate, double offset,
-                        unsigned int width, unsigned int size, const char **labels,
+                        unsigned int width, unsigned int height, const char **labels,
                         bool hasVarSize, double domain, unsigned int maxframes)
   {
     return propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxframes);

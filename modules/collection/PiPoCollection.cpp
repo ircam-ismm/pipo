@@ -159,6 +159,7 @@ public:
     include("segstats", new PiPoCreator<PiPoSegStats>);
     include("slice", new PiPoCreator<PiPoSlice>);
     include("sum", new PiPoCreator<PiPoSum>);
+    include("thru", new PiPoCreator<PiPoThru>);
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
     include("yin", new PiPoCreator<PiPoYin>);
   }
