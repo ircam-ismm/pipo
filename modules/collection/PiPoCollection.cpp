@@ -74,6 +74,7 @@
 #include "PiPoTemporalModeling.h"
 #include "PiPoSlice.h"
 #include "PiPoSum.h"
+#include "PiPoThru.h"
 // #include "PiPoWavelet.h" // << boost is required to compile this
 #include "PiPoYin.h"
 
