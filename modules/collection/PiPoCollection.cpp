@@ -70,6 +70,7 @@
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
 #include "PiPoSegment.h"
+#include "PiPoSegFirst.h"
 #include "PiPoTemporalModeling.h"
 #include "PiPoSlice.h"
 #include "PiPoSum.h"
@@ -149,6 +150,7 @@ public:
     include("select", new PiPoCreator<PiPoSelect>);
     include("segment", new PiPoCreator<PiPoSegment>);
     include("segduration", new PiPoCreator<PiPoSegDuration>);
+    include("segfirst", new PiPoCreator<PiPoSegFirst>);
     include("segmarker", new PiPoCreator<PiPoSegMarker>);
     include("segmean", new PiPoCreator<PiPoSegMean>);
     include("segstddev", new PiPoCreator<PiPoSegStd>);
