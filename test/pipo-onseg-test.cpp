@@ -13,11 +13,6 @@ extern "C" {
 
 TEST_CASE ("onseg")
 {
-  PiPoTestHost host;
-  host.setGraph("descr:onseg");
-  host.setAttr("onseg.columns", "Loudness");
-  host.setAttr("onseg.duration", 0);
-
   const double sr = 44100;
   const int    n_samp = sr / 2; // 0.5 s
   const int    n_win = 1710;	// descr default
@@ -34,6 +29,11 @@ TEST_CASE ("onseg")
   // generate test audio with 0.25s silence, then 0.25s noise
   for (unsigned int i = n_onset; i < n_samp; ++i)
     vals[i] = std::rand() / static_cast<float>(RAND_MAX);
+
+  PiPoTestHost host;
+  host.setGraph("descr:onseg");
+  host.setAttr("onseg.columns", "Loudness");
+  host.setAttr("onseg.duration", 0);
 
   PiPoStreamAttributes sa;
   sa.rate = sr;
@@ -103,6 +103,22 @@ TEST_CASE ("onseg")
 	
 	REQUIRE(host.receivedFrames.size() == 0);
       }
+    }
+  }
+
+  WHEN ("chain with undefined sync")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("mfcc<onseg,thru>"));
+    REQUIRE(host.setAttr("onseg.columns", 0));
+    REQUIRE(host.setAttr("onseg.duration", 1));
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("host did not crash")
+    {
+      REQUIRE(host.receivedFrames.size() > 0);
     }
   }
 }

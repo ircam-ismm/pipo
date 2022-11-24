@@ -1,3 +1,5 @@
+// -*- mode: c++; c-basic-offset:2 -*-
+
 #include <sstream>
 #include <string>
 #include <cstddef>

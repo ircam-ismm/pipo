@@ -13,10 +13,7 @@ extern "C" {
 
 TEST_CASE ("segment")
 {
-  PiPoTestHost host;
-  REQUIRE(host.setGraph("descr:segment:segmarker"));
-  REQUIRE(host.setAttr("segment.columns", "Loudness"));
-
+  // test audio (off-on) params
   const double sr = 44100;
   const int    n_samp = sr / 2; // 0.5 s
   const int    n_win = 1710;	// descr default
@@ -33,6 +30,10 @@ TEST_CASE ("segment")
   // generate test audio with 0.25s silence, then 0.25s noise
   for (unsigned int i = n_onset; i < n_samp; ++i)
     vals[i] = std::rand() / static_cast<float>(RAND_MAX);
+
+  PiPoTestHost host;
+  REQUIRE(host.setGraph("descr:segment:segmarker"));
+  REQUIRE(host.setAttr("segment.columns", "Loudness"));
 
   PiPoStreamAttributes sa;
   sa.rate = sr;
