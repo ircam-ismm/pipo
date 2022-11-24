@@ -32,9 +32,6 @@ TEST_CASE ("segment")
     vals[i] = std::rand() / static_cast<float>(RAND_MAX);
 
   PiPoTestHost host;
-  REQUIRE(host.setGraph("descr:segment:segmarker"));
-  REQUIRE(host.setAttr("segment.columns", "Loudness"));
-
   PiPoStreamAttributes sa;
   sa.rate = sr;
 
@@ -42,6 +39,9 @@ TEST_CASE ("segment")
   
   WHEN ("no duration")
   {
+    REQUIRE(host.setGraph("descr:segment:segmarker"));
+    REQUIRE(host.setAttr("segment.columns", "Loudness"));
+
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
     
@@ -77,6 +77,36 @@ TEST_CASE ("segment")
       REQUIRE(host.receivedFrames.size() > 0);
       CHECK(host.last_time == Approx(t_expected).epsilon(0.1));
       CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.5)); // duration until end
+    }
+  }
+
+  WHEN ("with multiple outputs")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("descr:segment<segduration,segmean,segstddev,segmeanstd>"));
+    REQUIRE(host.setAttr("segment.columns", "Loudness"));
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+      CHECK(sa.dims[0] == 1 + 4 * 9);
+      CHECK(sa.dims[1] == 1); 
+
+      REQUIRE(host.receivedFrames.size() > 0);
+      CHECK(host.last_time == Approx(t_expected).epsilon(0.1));
+      CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.1)); // duration until end
+
+      CAPTURE(host.receivedFrames.size());
+      for (int j = 0; j < host.receivedFrames.size(); j++)
+      {
+	CAPTURE(host.receivedFrames[j].size());
+	for (int i = 0; i < host.receivedFrames[j].size(); i++)
+	  INFO(j << i << host.receivedFrames[j][i]);
+      }
     }
   }
 }
