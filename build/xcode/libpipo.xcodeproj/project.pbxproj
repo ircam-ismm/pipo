@@ -63,6 +63,7 @@
 		2123C9BE24EFFD68005044F8 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AD24EFFD68005044F8 /* json_value.cpp */; };
 		2123C9BF24EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
 		2123C9C024EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
+		215B2AF8292FD1C400D7E1FD /* PiPoSegFirst.h in Headers */ = {isa = PBXBuildFile; fileRef = 215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */; };
 		216C9F6324EFF4E00069A8EE /* PiPoJs.h in Headers */ = {isa = PBXBuildFile; fileRef = 216C9F6224EFF4E00069A8EE /* PiPoJs.h */; };
 		216E1EC324FE95B80033FAD2 /* jerryscript-config.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */; };
 		216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */ = {isa = PBXBuildFile; fileRef = 216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */; };
@@ -206,6 +207,7 @@
 		2123C9F924F002F7005044F8 /* module.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = module.h; sourceTree = "<group>"; };
 		2123C9FA24F002F7005044F8 /* libjerry-ext.pc.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "libjerry-ext.pc.in"; sourceTree = "<group>"; };
 		2123C9FC24F002F7005044F8 /* module.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = module.c; sourceTree = "<group>"; };
+		215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSegFirst.h; path = ../../modules/PiPoSegFirst.h; sourceTree = "<group>"; };
 		216C9F6224EFF4E00069A8EE /* PiPoJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoJs.h; path = ../../modules/PiPoJs.h; sourceTree = "<group>"; };
 		216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "jerryscript-config.h"; sourceTree = "<group>"; };
 		216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "jerryscript-port-default.c"; sourceTree = "<group>"; };
@@ -604,6 +606,7 @@
 				31C2B3BA1FB0D43F001A134E /* PiPoScale.h */,
 				31C2B3BB1FB0D43F001A134E /* PiPoSelect.h */,
 				21056C7928DDB92D0006CEE9 /* PiPoSegment.h */,
+				215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */,
 				21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */,
 				31C2B3BC1FB0D43F001A134E /* PiPoSlice.h */,
 				31C2B3BD1FB0D43F001A134E /* PiPoSum.h */,
@@ -932,6 +935,7 @@
 				21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */,
 				21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */,
 				31C2B3D71FB0D43F001A134E /* PiPoMfcc.h in Headers */,
+				215B2AF8292FD1C400D7E1FD /* PiPoSegFirst.h in Headers */,
 				31C2B3D61FB0D43F001A134E /* PiPoMel.h in Headers */,
 				31C2B3C81FB0D43F001A134E /* PiPoConst.h in Headers */,
 				31C2B3D81FB0D43F001A134E /* PiPoMinMax.h in Headers */,
