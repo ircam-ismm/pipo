@@ -13,7 +13,7 @@ extern "C" {
 #include "PiPoCollection.h"
 #include "PiPoGraph.h"
 
-TEST_CASE ("Test pipo collection")
+TEST_CASE ("collection")
 {
   PiPoCollection::init();
 
@@ -27,7 +27,8 @@ TEST_CASE ("Test pipo collection")
     //*
     //PiPo *graph = PiPoCollection::create("slice:fft:sum:scale:onseg");
     //PiPo *graph = PiPoCollection::create("slice:fft<_,sum,moments>");
-    PiPo *graph = PiPoCollection::create("slice<_,fft<sum:scale,moments>>"); // this graph makes no sense but works
+    //PiPo *graph = PiPoCollection::create("slice<_,fft<sum:scale,moments>>"); // this graph makes no sense but works
+    PiPo *graph = PiPoCollection::create("slice<yin,fft<sum:scale,moments>>"); // this graph makes sense 
     //PiPo *graph = PiPoCollection::create("slice:fft<sum:scale,moments>");
     //std::shared_ptr<PiPo> graph = std::make_shared<PiPo>(PiPoCollection::create("slice<_,fft<sum:scale,moments>>"));
 
@@ -55,8 +56,8 @@ TEST_CASE ("Test pipo collection")
     THEN ("Graph is ok")
     {
       CHECK(rx.sa.rate == 100);
-      CHECK(rx.sa.dims[0] == 6);	// 2 unnamed columns from _ and sum:scale, 4 moment
-      CHECK(rx.sa.dims[1] == winsize);	// slice is column vector, so output frame is nonsensical 100 x 6 matrix
+      CHECK(rx.sa.dims[0] == 9);	// 5 columns from yin and sum:scale, 4 moments
+      CHECK(rx.sa.dims[1] == 1);	// slice is column vector, so output frame is nonsensical 1000 x 6 matrix
 
       for (int i = 0; i < rx.sa.numLabels; i++)
       {
@@ -76,23 +77,24 @@ TEST_CASE ("Test pipo collection")
         vals[i] = std::rand() / static_cast<float>(RAND_MAX);
       }
 
-      for (unsigned int i = 0; i < numsamples; ++i) {
-        graph->frames(0, 0, &vals[i], 1, 1);
-      }
+      //for (unsigned int i = 0; i < numsamples; ++i)
+      //  graph->frames(0, 0, &vals[i], 1, 1);
+      graph->frames(0, 0, &vals[0], 1, numsamples);
 
       THEN ("Received data is ok")
       {
 	CHECK(rx.count_error == 0);
-	std::cout << rx.count_frames << std::endl;
+        REQUIRE(rx.count_frames > 0);
+        REQUIRE(rx.size >= rx.sa.dims[0]); // size of last received frame
 
 	// check we get the signal back
 	double absmean = 0;
-	for (int i = 0; i < winsize; i++)
-	  absmean += fabs(rx.values[i * rx.sa.dims[0]]);
+	for (int i = 0; i < rx.sa.dims[0]; i++)
+	  absmean += fabs(rx.values[i]);
 	absmean /= winsize;
 	
 	CHECK(absmean > 0);
-	CHECK(rx.values[2]  > 0); // centroid
+	CHECK(rx.values[5]  > 0); // centroid
       }
     }
   }
