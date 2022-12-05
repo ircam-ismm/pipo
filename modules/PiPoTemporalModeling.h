@@ -41,12 +41,6 @@
 #define _PIPO_TEMPMOD_
 
 #include "PiPo.h"
-
-extern "C" {
-#include "rta_configuration.h"
-#include "rta_selection.h"
-}
-
 #include "TempMod.h"
 #include <vector>
 #include <string>
@@ -55,10 +49,10 @@ template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false
 class PiPoTemporalModeling : public PiPo
 {
 private:
-  double onset_time_ = 0;
-  bool seg_is_on_    = false;
-  int input_width_   = 0;
-  bool pass_input_   = true;
+  double onset_time_   = 0;
+  bool   seg_is_on_    = false;
+  int    input_width_  = 0;
+  bool   pass_input_   = true;
   TempModArray tempmod_;
   std::vector<unsigned int> input_columns_;
   std::vector<PiPoValue> selected_values_;
@@ -107,9 +101,9 @@ public:
     onset_time_ = 0;
     
     /* resize temporal models */
-    tempmod_.enable(MIN, MAX, MEAN, STD); // todo: templatize TempModArray
     tempmod_.resize(input_width_);
-      
+    tempmod_.enable(MIN, MAX, MEAN, STD); // todo: templatize TempModArray
+
     /* get output size */
     unsigned int numtempmod  = tempmod_.getNumValues();
     unsigned int outputwidth = numtempmod + DURATION;
