@@ -55,7 +55,7 @@ extern "C" {
 #include <algorithm> // for std::min/max
 
 
-#define DEBUG_ONSEG  DEBUG && 0
+#define DEBUG_ONSEG  (DEBUG * 0)
 
 class PiPoOnseg : public PiPo
 {
@@ -403,7 +403,7 @@ public:
                             &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
 #if DEBUG_ONSEG
-      printf("PiPoOnseg::frames(%5.1f)  en %5.1f  odf %5.1f  dur %5.1f  onset %d  last %d  offset %d  segIsOn %d\n", time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
+      printf("PiPoOnseg::frames(%5.1f)  en %6.1f  odf %6.1f  dur %6.1f  onset %d  last %d  offset %d  segIsOn %d\n", time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
 	     frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  inFirstSegment, segIsOn);
 #endif
       
@@ -429,13 +429,20 @@ public:
         double duration = time - this->onsetTime;
         bool   frameIsOffset =   energy < offThreshold  // end of segment content
                              ||  inFirstSegment;        // override with startisonset: keep silent first segment
-
-        if (((frameIsOnset  &&  this->onsetTime > -DBL_MAX) // new trigger (but not first one)
-             || (segIsOn    &&  frameIsOffset))             // end of segment content (detect only when we're within a running segment)
+    
+        if (((frameIsOnset  ||	 // new trigger, or...
+	      frameIsOffset)  && // ...end of segment content
+	     segIsOn)            // BUT: detect both only when we're within a running segment
              &&  duration >= durationThreshold)  // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
         { // end of segment (new onset or energy below off threshold)
+#if DEBUG_ONSEG
+	  printf("PiPoOnseg::frames(%5.1f)  en %6.1f  odf %6.1f  dur %6.1f  onset %d  last %d  offset %d  segIsOn %d  -->  segment %f dur %f\n",
+		 time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
+		 frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  inFirstSegment, segIsOn,
+		 offset + onsetTime, duration);
+#endif
 	  inFirstSegment = false;  // switch off first segment special status
-	  
+
 	  // get requested temporal modelling values and propagate
           ret = propagate(this->offset + this->onsetTime, weight, duration);
         }
@@ -464,7 +471,7 @@ public:
     } // end for all frames
     
     return 0;
-  }
+  } // end frames()
   
   int finalize(double inputEnd) override
   {
