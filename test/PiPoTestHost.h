@@ -9,6 +9,7 @@ class PiPoTestHost : public PiPoHost
 {
 public:
   // capture output frames
+  std::vector<double>			received_times_;
   std::vector<std::vector<PiPoValue>> receivedFrames;
 
   // capture arguments of last call of frames()
@@ -40,6 +41,7 @@ private:
     last_size   = _size;
     std::vector<PiPoValue> frame(_values, _values + _size); // copy values via input iterator
     receivedFrames.emplace_back(frame);
+    received_times_.emplace_back(_time);
   }
 
   void onFinalize (double time) override
