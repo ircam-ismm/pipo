@@ -18,12 +18,12 @@ TEST_CASE ("segment")
   const int    n_samp = sr / 2; // 0.5 s
   const int    n_win = 1710;	// descr default
   const int    n_hop = 128;	// descr default
-  const int    n_onset = n_samp / 2; // onset at half of data
+  const int    n_onset = 200. / 1000. * sr; // onset at 200ms
 
   const double t_win      = n_win   / sr * 1000.; 
   const double t_hop      = n_hop   / sr * 1000.; 
-  const double t_samp     = n_samp  / sr * 1000;	// duration in ms
-  const double t_onset    = n_onset / sr * 1000;	// true onset time
+  const double t_samp     = n_samp  / sr * 1000.;	// duration in ms
+  const double t_onset    = n_onset / sr * 1000.;	// true sample onset time
   const double t_expected = t_onset - (t_win / 2 + t_hop);	// expected reported onset (- framesize etc.)
   std::vector<float> vals(n_samp);
   
@@ -37,7 +37,7 @@ TEST_CASE ("segment")
 
   REQUIRE(host.setInputStreamAttributes(sa) == 0);
   
-  WHEN ("no duration")
+  WHEN ("markers only - no duration")
   {
     REQUIRE(host.setGraph("descr:segment:segmarker"));
     REQUIRE(host.setAttr("segment.columns", "Loudness"));
@@ -53,7 +53,7 @@ TEST_CASE ("segment")
       CHECK(sa.dims[1] == 0); // expect just marker, no data
 
       REQUIRE(host.receivedFrames.size() > 0);
-      CHECK(host.last_time == Approx(t_expected).epsilon(0.1));
+      CHECK(host.received_times_[0] == Approx(t_expected).epsilon(0.1));
     }
   }
   
@@ -75,8 +75,8 @@ TEST_CASE ("segment")
       CHECK(sa.dims[1] == 1); // expect duration column
 
       REQUIRE(host.receivedFrames.size() > 0);
-      CHECK(host.last_time == Approx(t_expected).epsilon(0.1));
-      CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.5)); // duration until end
+      CHECK(host.received_times_[0] == Approx(t_expected).epsilon(0.1));
+      CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.1)); // duration until end
     }
   }
 
@@ -97,8 +97,8 @@ TEST_CASE ("segment")
       CHECK(sa.dims[1] == 1); 
 
       REQUIRE(host.receivedFrames.size() > 0);
-      CHECK(host.last_time == Approx(t_expected).epsilon(0.1));
-      CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected - t_hop).epsilon(0.1)); // duration until end
+      CHECK(host.received_times_[0] == Approx(t_expected).epsilon(0.1));
+      CHECK(host.receivedFrames[0][0] == Approx(t_samp - t_expected).epsilon(0.1)); // duration until end
 
       CAPTURE(host.receivedFrames.size());
       for (int j = 0; j < host.receivedFrames.size(); j++)
