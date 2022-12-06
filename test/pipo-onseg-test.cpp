@@ -17,7 +17,7 @@ TEST_CASE ("onseg")
   const int    n_samp = sr / 2; // 0.5 s
   const int    n_win = 1710;	// descr default
   const int    n_hop = 128;	// descr default
-  const int    n_onset = n_samp / 2; // onset at half of data
+  const int    n_onset = 200. / 1000. * sr; // onset at 200ms
 
   const double t_win      = n_win   / sr * 1000.; 
   const double t_hop      = n_hop   / sr * 1000.; 
@@ -109,7 +109,7 @@ TEST_CASE ("onseg")
   WHEN ("chain with undefined sync")
   {
     host.reset(); // clear stored received frames
-    REQUIRE(host.setGraph("mfcc<onseg,thru>"));
+    REQUIRE(host.setGraph("mfcc<onseg,thru>")); // undefined: onseg not in sync with thru frames from mfcc
     REQUIRE(host.setAttr("onseg.columns", 0));
     REQUIRE(host.setAttr("onseg.duration", 1));
 
