@@ -51,6 +51,10 @@ extern "C" {
 #include <vector>
 #include <string>
 
+
+#define DEBUG_SEGMENT (DEBUG * 1)
+
+
 class PiPoSegment : public PiPo
 {
 public:
@@ -67,7 +71,7 @@ private:
   double frameperiod;
   bool lastFrameWasOnset;
   double onsetTime; // time of last onset or -DBL_MAX if none yet
-  bool segmentmode;
+  bool odfoutput_;
   bool segIsOn;
   
 public:
@@ -106,7 +110,7 @@ public:
     this->lastFrameWasOnset = false;
     this->onsetTime = -DBL_MAX;
     
-    this->segmentmode = false;
+    this->odfoutput_ = false;
     this->segIsOn = false;
     
     this->onsetmode_attr_.addEnumItem("mean", "Mean");
@@ -157,22 +161,17 @@ public:
     }
     
     // in segment mode, input data is passed through
-    this->segmentmode = !this->odfoutput_attr_.get();
+    this->odfoutput_ = this->odfoutput_attr_.get();
     
-    if (this->segmentmode)
-    {
-      // we pass through the input data, for subsequent temporal modeling modules
-      int ret = this->propagateStreamAttributes(true, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
-            
-      return ret;
-    }
-    else if (this->odfoutput_attr_.get())
+    if (this->odfoutput_)
     { // we output the onset detection function (and segment() calls)
       const char *outlab[1] = { "ODF" };
       return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
     else
-      return 0;
+    { // normal mode: we pass through the input data, for subsequent temporal modeling modules
+      return this->propagateStreamAttributes(true, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+    }
   } // end streamAttributes
 
   
@@ -310,21 +309,10 @@ public:
                          || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
       int ret = 1;
       
-      if (!this->segmentmode)
-      { // real-time mode: output just marker immediatly at onset, no temp.mod data
-        if (!this->odfoutput_attr_.get())
-        { /* output marker */
-          if (frameIsOnset)
-          { /* report immediate onset */
-	    ret &= propagateSegment(this->offset + time, frameIsOnset);
-            this->onsetTime = time;
-          }
-        }
-        else
-        { /* output odf for each frame*/
-          PiPoValue odfval = odf;
-          ret &= this->propagateFrames(this->offset + time, weight, &odfval, 1, 1);
-        }
+      if (this->odfoutput_)
+      { // output odf for each frame
+	PiPoValue odfval = odf;
+	ret &= this->propagateFrames(this->offset + time, weight, &odfval, 1, 1);
       }
       else
       { // segment mode: signal segment end by calling segment()
@@ -338,7 +326,9 @@ public:
         { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
           // switch off first segment special status
           //inFirstSegment = false;
-
+#if DEBUG_SEGMENT
+	  printf("PiPoSegment::frames@ %f  seg on %d  dur %f  --> segment %f %d\n", time, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration, this->offset + time, frameIsOnset);
+#endif
           ret &= propagateSegment(this->offset + time, frameIsOnset);
         }
         
@@ -376,7 +366,10 @@ public:
     
     if (this->segIsOn  &&  duration >= durationThreshold)
     { // end of segment (new onset or below off threshold): propagate last segment end
-      return propagateSegment(this->offset + this->onsetTime, false);
+#if DEBUG_SEGMENT
+	  printf("PiPoSegment::finalize @ %f  seg on %d  dur %f  --> segment %f %d\n", inputEnd, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration, this->offset + inputEnd, false);
+#endif
+      return propagateSegment(this->offset + inputEnd, false);
     }
     
     return this->propagateFinalize(inputEnd);
