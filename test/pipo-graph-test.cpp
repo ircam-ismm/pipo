@@ -13,7 +13,7 @@ extern "C" {
 #include "PiPoCollection.h"
 #include "PiPoGraph.h"
 
-TEST_CASE ("pipo-graph")
+TEST_CASE ("pipo-graph", "[seg]")
 {
   PiPoCollection::init();
 

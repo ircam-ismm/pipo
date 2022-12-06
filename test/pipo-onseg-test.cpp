@@ -11,7 +11,7 @@ extern "C" {
 #include "catch.hpp"
 #include "PiPoTestHost.h"
 
-TEST_CASE ("onseg")
+TEST_CASE ("onseg", "[seg]")
 {
   const double sr = 44100;
   const int    n_samp = sr / 2; // 0.5 s

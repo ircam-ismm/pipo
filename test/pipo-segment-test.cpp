@@ -11,7 +11,7 @@ extern "C" {
 #include "catch.hpp"
 #include "PiPoTestHost.h"
 
-TEST_CASE ("segment")
+TEST_CASE ("segment", "[seg]")
 {
   // test audio (off-on) params
   const double sr = 44100;
