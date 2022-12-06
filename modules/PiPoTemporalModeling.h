@@ -51,6 +51,7 @@ class PiPoTemporalModeling : public PiPo
 private:
   double onset_time_   = 0;
   bool   seg_is_on_    = false;
+  bool   marker_only_  = false;
   int    input_width_  = 0;
   bool   pass_input_   = true;
   TempModArray tempmod_;
@@ -107,6 +108,7 @@ public:
     /* get output size */
     unsigned int numtempmod  = tempmod_.getNumValues();
     unsigned int outputwidth = numtempmod + DURATION;
+    marker_only_ = outputwidth == 0;
 
     /* alloc output vector for duration and temporal modelling output */
     output_values_.resize(outputwidth);
@@ -121,7 +123,7 @@ public:
     if (DURATION)
       snprintf(outlabels[0], 64, "Duration");
     tempmod_.getLabels(labels, input_width_, &outlabels[DURATION], 64, numtempmod);
-      
+     
     int ret = propagateStreamAttributes(true, rate, 0.0, outputwidth, outputwidth > 0,
 					(const char **) &outlabels[0],
 					false, 0.0, 1);
@@ -164,25 +166,33 @@ public:
     return 0;
   } // frames
 
-  // segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
+  // upstream segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
   int segment (double time, bool start) override
-  { 
-    if (DURATION)
-      output_values_[0] = time - onset_time_;
+  {
+    int ret = 0;
+    
+    if (start == false   // end of segment
+	|| seg_is_on_	 // restart segment
+	|| marker_only_) // immediate marker output, no temporal modeling data
+    {
+      if (DURATION)
+	output_values_[0] = time - onset_time_;
 
-    long outputsize = output_values_.size();
+      long outputsize = output_values_.size();
           
-    /* get temporal modelling */
-    if (outputsize - DURATION > 0)
-      tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
+      /* get temporal modelling */
+      if (outputsize - DURATION > 0)
+	tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
+
+      // report segment data, don't pass on segment() call
+      // when markers only are requested, report current segmentation time, otherwise, report segment start
+      ret = propagateFrames(marker_only_  ?  time  :  onset_time_, 0.0, &output_values_[0], outputsize, 1);
+    }
 
     // remember segment status
     onset_time_ = time;
-    seg_is_on_ = start;
-    
-    /* report segment data, don't pass on segment() call */
-    int ret = propagateFrames(time, 0.0, &output_values_[0], outputsize, 1);
-    
+    seg_is_on_  = start;
+
     return ret;
   } // segment  
   
