@@ -157,6 +157,7 @@ public:
       values = (PiPoValue *) realloc(values, size * sizeof(PiPoValue));
     else
       values = (PiPoValue *) malloc(size * sizeof(PiPoValue));
+    assert(values);
     memcpy(values, _values, size * sizeof(PiPoValue));
 
     for (int i = 0; i < size; i++)
