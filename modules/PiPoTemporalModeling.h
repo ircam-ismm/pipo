@@ -170,10 +170,13 @@ public:
   int segment (double time, bool start) override
   {
     int ret = 0;
-    
-    if (start == false   // end of segment
-	|| seg_is_on_	 // restart segment
-	|| marker_only_) // immediate marker output, no temporal modeling data
+     
+    if (marker_only_)
+    { // immediate marker output, no temporal modeling data: report current segmentation time, no data
+      ret = propagateFrames(time, 0.0, NULL, 0, 1);
+    }
+    else if (start == false   // end of segment
+	     || seg_is_on_)   // restart segment
     {
       if (DURATION)
 	output_values_[0] = time - onset_time_;
@@ -184,9 +187,8 @@ public:
       if (outputsize - DURATION > 0)
 	tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
 
-      // report segment data, don't pass on segment() call
-      // when markers only are requested, report current segmentation time, otherwise, report segment start
-      ret = propagateFrames(marker_only_  ?  time  :  onset_time_, 0.0, &output_values_[0], outputsize, 1);
+      // report segment data, don't pass on segment() call: report segment start time
+      ret = propagateFrames(onset_time_, 0.0, &output_values_[0], outputsize, 1);
     }
 
     // remember segment status
