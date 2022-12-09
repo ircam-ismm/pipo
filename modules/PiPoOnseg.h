@@ -77,7 +77,7 @@ private:
   bool segmentmode;
   int  haveduration;
   bool segIsOn;
-  bool inFirstSegment = false;
+  bool keepFirstSegment = false;
   TempModArray tempMod;
   std::vector<PiPoValue> outputValues;
   
@@ -153,22 +153,22 @@ private:
       this->lastFrameWasOnset = true;
       this->onsetTime = -this->offset;	// first marker will be at 0
       this->segIsOn = true;
-      this->inFirstSegment = true;
+      this->keepFirstSegment = true;
     }
     else
     {
       this->lastFrameWasOnset = false;
       this->onsetTime = -DBL_MAX;
       this->segIsOn = false;
-      this->inFirstSegment = false;
+      this->keepFirstSegment = false;
     }
   }
   
 public:
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
   {
-    int filterSize = this->fltsize.get();
-    int inputSize = width;
+    int filterSize = this->fltsize.get(); //FIXME: INSANE: shadows this->filterSize
+    int inputSize = width; //FIXME: INSANE: shadows this->inputSize
     int size = width * height;
     int ret  = 0;
 
@@ -327,7 +327,7 @@ public:
       }
       
       /* input frame */
-      int filterSize = this->buffer.input(values, size, scale); //todo: rename to not shadow member
+      int filterSize = this->buffer.input(values, size, scale); //FIXME: rename to not shadow member
       this->temp = this->buffer.vector;
       
       switch(onset_mode)
@@ -404,18 +404,18 @@ public:
                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
 #if DEBUG_ONSEG
       printf("PiPoOnseg::frames(%5.1f)  en %6.1f  odf %6.1f  dur %6.1f  onset %d  last %d  offset %d  segIsOn %d\n", time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
-	     frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  inFirstSegment, segIsOn);
+	     frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  keepFirstSegment, segIsOn);
 #endif
       
       if (!this->segmentmode)
       { // real-time mode: output just marker immediatly at onset, no temp.mod data
         if (!this->odfoutput.get())
         { /* output marker */
-          if(frameIsOnset  ||  inFirstSegment)
+          if(frameIsOnset  ||  keepFirstSegment)
           { /* report immediate onset */
             ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
-            this->onsetTime = time;
-            inFirstSegment = false;
+            this->onsetTime  = time;
+            keepFirstSegment = false;
           }
         }
         else
@@ -428,7 +428,7 @@ public:
       { // segment mode: output frame at end of segment
         double duration = time - this->onsetTime;
         bool   frameIsOffset =   energy < offThreshold  // end of segment content
-                             ||  inFirstSegment;        // override with startisonset: keep silent first segment
+                             &&  !keepFirstSegment;     // override with startisonset: keep silent first segment by not having it be switched off immediately when under threshold
     
         if (((frameIsOnset  ||	 // new trigger, or...
 	      frameIsOffset)  && // ...end of segment content
@@ -438,10 +438,10 @@ public:
 #if DEBUG_ONSEG
 	  printf("PiPoOnseg::frames(%5.1f)  en %6.1f  odf %6.1f  dur %6.1f  onset %d  last %d  offset %d  segIsOn %d  -->  segment %f dur %f\n",
 		 time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
-		 frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  inFirstSegment, segIsOn,
+		 frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  keepFirstSegment, segIsOn,
 		 offset + onsetTime, duration);
 #endif
-	  inFirstSegment = false;  // switch off first segment special status
+	  keepFirstSegment = false;  // switch off first segment special status
 
 	  // get requested temporal modelling values and propagate
           ret = propagate(this->offset + this->onsetTime, weight, duration);

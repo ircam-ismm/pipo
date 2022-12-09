@@ -73,6 +73,7 @@ private:
   double onsetTime; // time of last onset or -DBL_MAX if none yet
   bool odfoutput_;
   bool segIsOn;
+  int keepFirstSegment = 0; // 0: off, 1: wait for first frame (force onset), 2: in first segment
   
 public:
   PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
@@ -147,18 +148,8 @@ public:
     
     this->filterSize = filterSize; // INSANE
     this->inputSize = inputSize; // INSANE
-    
-    if (this->startisonset_attr_.get())
-    { // start with a segment at 0
-      this->lastFrameWasOnset = true;
-      this->onsetTime = -this->offset;	// first marker will be at 0
-      this->segIsOn = true;
-    }
-    else
-    {
-      this->lastFrameWasOnset = false;
-      this->onsetTime = -DBL_MAX;
-    }
+
+    reset_segment();
     
     // in segment mode, input data is passed through
     this->odfoutput_ = this->odfoutput_attr_.get();
@@ -175,26 +166,33 @@ public:
   } // end streamAttributes
 
   
-  int reset (void) override
+  void reset_segment ()
   {
-    this->buffer.reset();
-    
     if (this->startisonset_attr_.get())
     { // start with a segment at 0
       this->lastFrameWasOnset = true;
-      this->onsetTime = -this->offset;
+      this->onsetTime = -this->offset;	// first marker will be at 0
       this->segIsOn = true;
+      this->keepFirstSegment = 1;
     }
     else
     {
       this->lastFrameWasOnset = false;
       this->onsetTime = -DBL_MAX;
       this->segIsOn = false;
+      this->keepFirstSegment = 0;
     }
-    
-    return this->propagateReset();
-  } // reset
+  } // reset_segment
 
+  
+  int reset () override
+  {
+    this->buffer.reset();
+    reset_segment();
+
+    return this->propagateReset();
+  };
+  
   template<typename MetricFuncType>
   void calc_onseg_metric (const PiPoValue *values, const unsigned int size, const int filterSize, double &odf, double &energy, MetricFuncType func)
   {
@@ -306,6 +304,7 @@ public:
       bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
                              &&  !this->lastFrameWasOnset    // avoid double trigger
                              &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+	                 || keepFirstSegment == 1	     // force immediate first segment be detected
                          || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
       int ret = 1;
       
@@ -317,18 +316,24 @@ public:
       else
       { // segment mode: signal segment end by calling segment()
         double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
-        bool   frameIsOffset =   energy < offThreshold;  // end of segment content
-               // ||  inFirstSegment;  // override with startisonset: keep silent first segment
+        bool   frameIsOffset =   energy < offThreshold  // end of segment content
+			     &&  keepFirstSegment == 0;  // override with startisonset: keep silent first segment
 
         if ((frameIsOnset  // new trigger
              || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
             &&  (duration >= durationThreshold))    // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
         { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
           // switch off first segment special status
-          //inFirstSegment = false;
 #if DEBUG_SEGMENT
-	  printf("PiPoSegment::frames@ %f  seg on %d  dur %f  --> segment %f %d\n", time, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration, this->offset + time, frameIsOnset);
+	  printf("PiPoSegment::frames@ %6.1f  onset %d  seg on %d  dur %6.1f  --> segment %f %d\n",
+		 time, frameIsOnset, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration,
+		 this->offset + time, frameIsOnset);
 #endif
+	  if (keepFirstSegment == 1)
+	    keepFirstSegment = 2; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
+	  else if (keepFirstSegment == 2  &&  frameIsOnset)
+	    keepFirstSegment = 0; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
+
           ret &= propagateSegment(this->offset + time, frameIsOnset);
         }
         

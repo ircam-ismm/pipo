@@ -41,6 +41,7 @@ TEST_CASE ("segment", "[seg]")
   {
     REQUIRE(host.setGraph("descr:segment:segmarker"));
     REQUIRE(host.setAttr("segment.columns", "Loudness"));
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
 
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
@@ -62,6 +63,7 @@ TEST_CASE ("segment", "[seg]")
     host.reset(); // clear stored received frames
     REQUIRE(host.setGraph("descr:segment:segduration"));
     REQUIRE(host.setAttr("segment.columns", "Loudness"));
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
 
     host.setAttr("segment.duration", 1);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
@@ -85,6 +87,7 @@ TEST_CASE ("segment", "[seg]")
     host.reset(); // clear stored received frames
     REQUIRE(host.setGraph("descr:segment<segduration,segmean,segstddev,segmeanstd>"));
     REQUIRE(host.setAttr("segment.columns", "Loudness"));
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
 
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
@@ -107,6 +110,30 @@ TEST_CASE ("segment", "[seg]")
 	for (int i = 0; i < host.receivedFrames[j].size(); i++)
 	  INFO(j << i << host.receivedFrames[j][i]);
       }
+    }
+  }
+  
+  WHEN ("with startisonset 1")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("descr:segment:segduration")); 
+    REQUIRE(host.setAttr("segment.columns", "Loudness"));
+    REQUIRE(host.setAttr("segment.startisonset", 1));
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+      CHECK(sa.dims[0] == 1);
+      CHECK(sa.dims[1] == 1); // expect duration column
+
+      REQUIRE(host.receivedFrames.size() > 0);
+      CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onsete timetagged at middle of window
+      CHECK(host.receivedFrames[0][0] == Approx(t_expected - t_hop).epsilon(0.1)); // duration until first true segment
     }
   }
 }
