@@ -12,6 +12,7 @@
 #ifndef _PIPO_IDESC_
 #define _PIPO_IDESC_
 
+// debug print
 #define IDESC_DEBUG (DEBUG*1)
 
 #include "PiPo.h"
@@ -69,10 +70,12 @@ private:
   int				numcols_; // total number of output columns
   const char                  **colnames_;
 
+#if DEBUG
   int db_loudness_did;
   bool db_loudness_requested;
   bool db_loudness_warned;
-  
+#endif
+
   void clearcolnames();
 };
 
@@ -148,9 +151,11 @@ PiPoIdesc::PiPoIdesc(PiPo::Parent *parent, PiPo *receiver)
   for (int i = 0; i < num_descr_available; i++)
     descriptors.addEnumItem(idesc::idesc::get_descriptor_name(i));
 
+#if DEBUG
   db_loudness_did = descriptors.getEnumIndex("Loudness");
   db_loudness_requested = false;
   db_loudness_warned = false;
+#endif
   
   // set up window type and unit enums
   window.addEnumItem("blackman");
@@ -227,7 +232,8 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   {
     try {
       // init idesc
-      if (idesc_ != NULL  &&  (idesc_->get_sr() != rate  ||  idesc_->get_WindowSize() != winlen  ||  idesc_->get_HopSize() != hoplen))
+      if (idesc_ != NULL  &&  (idesc_->get_sr() != rate  ||  idesc_->get_WindowSize() != winlen  ||  idesc_->get_HopSize() != hoplen
+                               || (ndescr == 1  &&  descriptors.getInt(0) == 0))) // workaround for probable bug in idesc lib: switching back to single TotalEnergy descr. does not work (previous descr. output stays)
       {
 	delete idesc_;	// reinit only first time or if params changed
 	idesc_ = NULL;
@@ -264,8 +270,10 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       int ndescr_unique = 0;
       int ndescr_dropped = 0;
       std::map<int, int> descr_seen;
+#if DEBUG
       db_loudness_requested = false;
       db_loudness_warned = false;
+#endif
       
       for (int i = 0; i < ndescr; i++)
       {
@@ -280,8 +288,10 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 	    colnames_[ndescr_unique++] = strdup(dname);
 	    idesc_->set_descriptor(did, idesc::idesc::get_default_variation(did));
 
+#if DEBUG
 	    if (did == db_loudness_did)
 	      db_loudness_requested = true;
+#endif
 	  }
 	  else
 	  { // was already in list: ignore for idesc, remove from attr list (will be ndescr_dropped shorter)
@@ -416,6 +426,7 @@ void PiPoIdesc::datacallback (int descrid, int varnum, int numval,
 {
   PiPoIdesc *self = (PiPoIdesc *) obj;
 
+#if DEBUG
   // gather data for each descriptor
   if (self->db_loudness_requested == false  &&  descrid == self->db_loudness_did)
   {
@@ -427,7 +438,8 @@ void PiPoIdesc::datacallback (int descrid, int varnum, int numval,
     }
     return;
   }
-
+#endif
+  
   int offset = self->doffset_[descrid];
   for (int i = 0; i < self->dwidth_[descrid]; i++)
     self->outbuf_[offset + i] = values[i];
