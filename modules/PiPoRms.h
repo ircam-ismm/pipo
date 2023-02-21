@@ -97,7 +97,7 @@ public:
       
       meanOfSquare *= norm;
 
-      this->outputFrame[0] = meanOfSquare;
+      this->outputFrame[0] = sqrt(meanOfSquare);
 
       int ret = this->propagateFrames(time, weight, this->outputFrame, 2, 1);
       
