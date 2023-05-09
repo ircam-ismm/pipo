@@ -151,6 +151,29 @@ TEST_CASE ("chop", "[seg]")
     }
   }
 
+  WHEN ("one input column, size 0")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("loudness:chop"));
+    host.setAttr("chop.size", 0);
+    host.setAttr("chop.duration", 0);
+    host.setAttr("chop.mean", 1);
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.dims[0] == 1); // expect loudness mean column
+      CHECK(sa.dims[1] == 1);
+
+      REQUIRE(host.receivedFrames.size() == 1); // expect 1 segment of whole duration 500
+      CHECK(host.last_time == 0);
+      CHECK(host.received_times_[0] == 0);
+      CHECK(host.receivedFrames[0][0] < 0); // expect some dB value
+    }
+  }
+
   WHEN ("chain with undefined sync")
   {
     host.reset(); // clear stored received frames
