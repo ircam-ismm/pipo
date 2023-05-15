@@ -100,8 +100,8 @@
 #include "PiPo.h"
 
 #include <math.h>
-#include <numeric>
 #include <vector>
+#include <numeric> // for std::iota
 
 #define defMinLogVal 1e-24f
 
@@ -413,7 +413,7 @@ private:
   double funcBase;
   double minLogVal;
   int width;
-  std::vector<unsigned int> columns_;
+  std::vector<unsigned int> columns_; // apply scaling on input values only for column indices in columns_ array 
   
 public:
   PiPoVarSizeAttr<double> inMin;
@@ -428,7 +428,8 @@ public:
   PiPoScalarAttr<int> colIndex;
   PiPoScalarAttr<int> numCols;
   PiPoVarSizeAttr<PiPo::Atom> columns_attr_;
-  
+  PiPoVarSizeAttr<const char *> outcolnames_attr_;
+
   PiPoScale(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver), buffer(),
     fac(this),
@@ -444,7 +445,8 @@ public:
     complete(this, "complete", "Complete Min/Max Lists", true, CompleteRepeatLast),
     colIndex(this, "colindex", "Index of First Column to Scale (negative values count from end)", true, 0),
     numCols(this, "numcols", "Number of Columns to Scale (negative values count from end, 0 means all)", true, 0),
-    columns_attr_(this, "columns", "List of Names or Indices of Columns to be Scaled (overrides colindex/numcols)", true)
+    columns_attr_(this, "columns", "List of Names or Indices of Columns to be Scaled (overrides colindex/numcols)", true),
+    outcolnames_attr_(this, "outcolnames", "List of Output Column Names to Replace Scaled Input Columns", true)
   {
     this->frameSize = 0;
     this->scaleFunc = (enum ScaleFun) this->func.get();
@@ -574,7 +576,24 @@ public:
       columns_.resize(numCols);
       std::iota(begin(columns_), end(columns_), colIndex);
     }
-    
+
+    std::vector<const char *> outlabels;
+    if (outcolnames_attr_.getSize() > 0)
+    { // replace output labels for columns chosen to be scaled by given outcolnames
+      if (labels)
+        outlabels.assign(labels, labels + width); // copy label pointers
+      else
+        outlabels.assign(width, NULL); // create array of empty labels
+
+      int num = std::min<int>(columns_.size(), outcolnames_attr_.getSize());
+      for (int i = 0; i < num; i++)
+      {
+	outlabels[i] = outcolnames_attr_.getStr(i);
+      }
+
+      labels = &(outlabels[0]);
+    }
+
     extendVector(this->inMin, this->extInMin, frameSize, 0.0, completeMode);
     extendVector(this->inMax, this->extInMax, frameSize, 1.0, completeMode);
     extendVector(this->outMin, this->extOutMin, frameSize, 0.0, completeMode);
@@ -611,7 +630,7 @@ public:
     if (scaler_) delete(scaler_);
     scaler_ = fac.create_scaler(scaleFunc);
     scaler_->setup(frameSize);
-    
+
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
   } // streamAttributes
 
@@ -622,7 +641,7 @@ public:
     bool clip = this->clip.get();
     unsigned int numrows = this->width > 0  ?  size / this->width  :  0;
     
-    if (columns_.size() < width)
+    if (columns_.size() < width) //TODO: check for duplicate columns!!!
     { // some values will not be scaled: first copy whole frame to output buffer
       memcpy(bufferptr, values, numframes * size * sizeof(float));
     }
