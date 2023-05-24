@@ -609,7 +609,7 @@ public:
       if (scaleFunc >= NumScaleFunc)
         scaleFunc = (enum ScaleFun) (NumScaleFunc - 1);
       
-      if (scaleFunc == ScaleExp  &&  funcBase == 1.0)
+      if ((scaleFunc == ScaleExp || scaleFunc == ScalePow) &&  funcBase == 1.0)
         scaleFunc = ScaleLin;
     }
     
