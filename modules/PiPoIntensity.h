@@ -110,20 +110,18 @@ public:
         for(int i = 0; i < 3; i++)
         {
           double value = getValueByMode(deltaValues[i]);
-          value = value + feedBack * memoryVector[i];
+          value = value*value + feedBack * memoryVector[i];
 
           // store value for next pass
           memoryVector[i] = value;
 
-          value = value * gainVal;
-          value = value * value;
-          
+          value = value * gainVal;          
           norm += value;
                   
           outVector[i + 1] = value;
         }
         
-        outVector[0] = sqrt(norm);
+        outVector[0] = norm;
       
         int ret = this->propagateFrames(time, weight, &this->outVector[0], 4, 1);
         if(ret != 0)
