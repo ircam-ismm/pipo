@@ -189,7 +189,7 @@ public:
     scale.inMin.setSize(4);
     scale.inMax.setSize(4);
     scale.outMin.setSize(4);
-    scale.inMax.setSize(4);
+    scale.outMax.setSize(4);
     for(int i = 0; i < 4; i++)
     {
       scale.inMin.set(i, 0.0);
