@@ -295,10 +295,10 @@ public:
       
       for (int i = 0; i < framesize; i++)
       {
-        inScale[i]   = log(pipo_->funcBase) / (pipo_->extInMax[i] - pipo_->extInMin[i]);
+        inScale[i]   = 1 / (pipo_->extInMax[i] - pipo_->extInMin[i]);
         inOffset[i]  = -pipo_->extInMin[i] * inScale[i];
-        outScale[i]  = (pipo_->extOutMax[i] - pipo_->extOutMin[i]) / (pipo_->funcBase - 1.0);
-        outOffset[i] = pipo_->extOutMin[i] - outScale[i];
+        outScale[i]  = (pipo_->extOutMax[i] - pipo_->extOutMin[i]);
+        outOffset[i] = pipo_->extOutMin[i];
       }
     }
     
@@ -609,7 +609,7 @@ public:
       if (scaleFunc >= NumScaleFunc)
         scaleFunc = (enum ScaleFun) (NumScaleFunc - 1);
       
-      if ((scaleFunc == ScaleExp || scaleFunc == ScalePow) &&  funcBase == 1.0)
+      if ((scaleFunc == ScaleLog || scaleFunc == ScaleExp || scaleFunc == ScalePow) &&  funcBase == 1.0)
         scaleFunc = ScaleLin;
     }
     
