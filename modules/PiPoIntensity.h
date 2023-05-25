@@ -65,7 +65,7 @@ private:
   float outVector[4];
   
 public:
-  enum IntensityModeE { AbsMode = 0, PosMode = 1, NegMode = 2};
+  enum IntensityModeE { SquareMode = 0, AbsMode = 1, PosMode = 2, NegMode = 3};
 
   PiPoScalarAttr<double> gain;
   PiPoScalarAttr<double> feedback;
@@ -77,6 +77,7 @@ public:
   feedback(this, "feedback", "Feedback (integration)", false, 0.9),
   mode(this, "mode", "Input values mode", false, AbsMode)
   {
+    this->mode.addEnumItem("square", "square of value");
     this->mode.addEnumItem("abs", "absolute value");
     this->mode.addEnumItem("pos", "positive part of value");
     this->mode.addEnumItem("neg", "negative part of value");
@@ -110,14 +111,14 @@ public:
         for(int i = 0; i < 3; i++)
         {
           double value = getValueByMode(deltaValues[i]);
-          value = value*value + feedBack * memoryVector[i];
+          value = value + feedBack * memoryVector[i];
 
           // store value for next pass
           memoryVector[i] = value;
 
-          value = value * gainVal;          
+          value = value * gainVal;
           norm += value;
-                  
+
           outVector[i + 1] = value;
         }
         
@@ -140,6 +141,9 @@ public:
     switch(valMode)
     {
       default:
+      case SquareMode:
+        retValue = val*val;
+        break;
       case AbsMode:
         retValue = abs(val);
         break;
@@ -202,7 +206,7 @@ public:
     
     intensity.gain.set(0.1);
     intensity.feedback.set(0.9);
-    intensity.mode.set(PiPoInnerIntensity::AbsMode);
+    intensity.mode.set(PiPoInnerIntensity::SquareMode);
   }
 
 /*  virtual ~PiPoIntensity ()
