@@ -63,27 +63,41 @@ private:
   double memoryVector[3];
   
   float outVector[4];
+  double feedBack;
+  double rate;
+  bool adHocCorrection;
   
 public:
   enum IntensityModeE { SquareMode = 0, AbsMode = 1, PosMode = 2, NegMode = 3};
+  enum NormModeE { L2Mode = 0, MeanMode = 1};
 
   PiPoScalarAttr<double> gain;
-  PiPoScalarAttr<double> feedback;
+  PiPoScalarAttr<double> cutfrequency;
   PiPoScalarAttr<PiPo::Enumerate> mode;
+  PiPoScalarAttr<PiPo::Enumerate> normmode;
+  PiPoScalarAttr<bool> adhoccorrection;
   
   PiPoInnerIntensity(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
   gain(this, "gain", "Overall gain", false, 0.1),
-  feedback(this, "feedback", "Feedback (integration)", false, 0.9),
-  mode(this, "mode", "Input values mode", false, AbsMode)
+  cutfrequency(this, "cutfrequency", "Cut  Frequency (Hz)", false, 11.1),
+  mode(this, "mode", "Input values mode", false, AbsMode),
+  normmode(this, "normmode", "Normalisation mode", false, MeanMode),
+  adhoccorrection(this, "adhoccorrection", "Ad Hoc Correction for SamplingRate invariance", false, true)
   {
     this->mode.addEnumItem("square", "square of value");
     this->mode.addEnumItem("abs", "absolute value");
     this->mode.addEnumItem("pos", "positive part of value");
     this->mode.addEnumItem("neg", "negative part of value");
+    
+    this->normmode.addEnumItem("l2", "sqrt of square sum");
+    this->normmode.addEnumItem("mean", "mean");
             
     for(int i = 0; i < 3; i++)
       this->memoryVector[i] = 0;
+    
+    this->feedBack = 0.9;
+    this->rate = 0.1;
   }
   
   ~PiPoInnerIntensity(void)
@@ -91,12 +105,17 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
+    double fb = (this->cutfrequency.get() / (rate*1000.0));
+    this->feedBack = 1. - fb/(fb+1);
+    this->rate = rate;
+                       
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 4, 1, labels, 0, domain, maxFrames);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    double feedBack = this->feedback.get();
+    NormModeE normMode = (NormModeE)this->normmode.get();
+    bool adHocCorrection = (bool)this->adhoccorrection.get();
     double gainVal = this->gain.get();
     double norm = 0;
     
@@ -111,18 +130,29 @@ public:
         for(int i = 0; i < 3; i++)
         {
           double value = getValueByMode(deltaValues[i]);
-          value = value + feedBack * memoryVector[i];
+          //lowpass order 1
+          value = value * (1-this->feedBack) + this->feedBack * memoryVector[i];
 
           // store value for next pass
           memoryVector[i] = value;
 
           value = value * gainVal;
-          norm += value;
+          
+          if(adHocCorrection)
+            value = value * this->rate * 10.;
+          
+          if(normMode == L2Mode)
+            norm += value*value;
+          else
+            norm += value;
 
           outVector[i + 1] = value;
         }
         
-        outVector[0] = norm;
+        if(normMode == L2Mode)
+          outVector[0] = sqrt(norm);
+        else
+          outVector[0] = norm/3;
       
         int ret = this->propagateFrames(time, weight, &this->outVector[0], 4, 1);
         if(ret != 0)
@@ -175,8 +205,10 @@ public:
     this->setReceiver(receiver);
 
     this->addAttr(this, "gain", "Overall gain", &intensity.gain);
-    this->addAttr(this, "feedback", "Feedback (integration)", &intensity.feedback);
+    this->addAttr(this, "cutfrequency", "Feedback (integration)", &intensity.cutfrequency);
     this->addAttr(this, "mode", "Input values mode", &intensity.mode);
+    this->addAttr(this, "normmode", "Normalisation mode", &intensity.normmode);
+    this->addAttr(this, "adhoccorrection", "Ad Hoc Correction for SamplingRate invariance", &intensity.adhoccorrection);
     
     this->addAttr(this, "clip", "Clip values", &scale.clip);
     this->addAttr(this, "scaleinmin", "Scale input minimun", &scale.inMin);
@@ -205,10 +237,25 @@ public:
     scale.base.set(1.0);
     
     intensity.gain.set(0.1);
-    intensity.feedback.set(0.9);
+    intensity.cutfrequency.set(11.1);
     intensity.mode.set(PiPoInnerIntensity::SquareMode);
+    intensity.normmode.set(PiPoInnerIntensity::L2Mode);
+    intensity.adhoccorrection.set(true);
   }
 
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    int old_numframes = delta.filter_size_param.get();
+    
+    int deltaNumframes = rate/10.0 * 3;
+    if(deltaNumframes < 3) deltaNumframes = 3;
+    if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
+    if(deltaNumframes != old_numframes)
+      delta.filter_size_param.set(deltaNumframes, true);
+
+    return delta.streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+  }
+  
 /*  virtual ~PiPoIntensity ()
   {
     //printf("•••••••• %s: DESTRUCTOR\n", __PRETTY_FUNCTION__); //db
