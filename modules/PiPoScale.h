@@ -540,6 +540,12 @@ public:
     enum CompleteMode completeMode = (enum CompleteMode)this->complete.get();
     this->width = width;
 	
+    if((scaleFunc == ScaleLog || scaleFunc == ScaleExp || scaleFunc == ScalePow) &&  funcBase < 0.0)
+    {
+      this->base.set(0.0);
+      funcBase = 0.0;
+    }
+    
     if (columns_attr_.getSize() > 0)
     { // check if attr really given (lookup_column_indices would otherwise fill columns_ with 0..width - 1)
       columns_ = lookup_column_indices(columns_attr_, width, labels);
@@ -553,24 +559,24 @@ public:
 
       if (colIndex < 0)
       {
-	colIndex += width;
+        colIndex += width;
 	
-	if (colIndex < 0)
-	  colIndex = 0;
+        if (colIndex < 0)
+          colIndex = 0;
       }
       else if (colIndex >= (int)width)
-	colIndex = width - 1;
+        colIndex = width - 1;
       
       if (numCols <= 0)
       {
-	numCols += width;
+        numCols += width;
 	
-	if (numCols <= 0)
-	  numCols = width;
+        if (numCols <= 0)
+          numCols = width;
       }
       
       if (colIndex + numCols > (int)width)
-	numCols = width - colIndex;
+        numCols = width - colIndex;
 
       // fill column_ list with numCols consecutive indices from colIndex
       columns_.resize(numCols);
@@ -588,7 +594,7 @@ public:
       int num = std::min<int>(columns_.size(), outcolnames_attr_.getSize());
       for (int i = 0; i < num; i++)
       {
-	outlabels[i] = outcolnames_attr_.getStr(i);
+        outlabels[i] = outcolnames_attr_.getStr(i);
       }
 
       labels = &(outlabels[0]);
