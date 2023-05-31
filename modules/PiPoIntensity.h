@@ -53,6 +53,12 @@ using namespace std;
 const double toDeg = 180. / M_PI;
 const double toRad = M_PI / 180.;
 
+#define samplingRateRef 100.
+#define defaultCutFrequency 10.
+#define defaultfeedback 0.9
+#define defaultGain 1.
+
+
 class PiPoInnerIntensity : public PiPo
 {
 private:
@@ -79,8 +85,8 @@ public:
   
   PiPoInnerIntensity(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  gain(this, "gain", "Overall gain", false, 0.1),
-  cutfrequency(this, "cutfrequency", "Cut  Frequency (Hz)", true, 11.1),
+  gain(this, "gain", "Overall gain", false, defaultGain),
+  cutfrequency(this, "cutfrequency", "Cut  Frequency (Hz)", true, defaultCutFrequency),
   mode(this, "mode", "Input values mode", false, AbsMode),
   normmode(this, "normmode", "Normalisation mode", false, MeanMode),
   adhoccorrection(this, "adhoccorrection", "Ad Hoc Correction for SamplingRate invariance", false, true)
@@ -96,8 +102,8 @@ public:
     for(int i = 0; i < 3; i++)
       this->memoryVector[i] = 0;
     
-    this->feedBack = 0.9;
-    this->rate = 100.;
+    this->feedBack = defaultfeedback;
+    this->rate = samplingRateRef;
   }
   
   ~PiPoInnerIntensity(void)
@@ -139,7 +145,7 @@ public:
           value = value * gainVal;
           
           if(adHocCorrection)
-            value = value * this->rate / 100.;
+            value = value * this->rate / samplingRateRef;
           
           if(normMode == L2Mode)
             norm += value*value;
@@ -236,8 +242,8 @@ public:
     scale.clip.set(0);
     scale.base.set(1.0);
     
-    intensity.gain.set(0.1);
-    intensity.cutfrequency.set(11.1);
+    intensity.gain.set(defaultGain);
+    intensity.cutfrequency.set(defaultCutFrequency);
     intensity.mode.set(PiPoInnerIntensity::SquareMode);
     intensity.normmode.set(PiPoInnerIntensity::L2Mode);
     intensity.adhoccorrection.set(true);
@@ -247,7 +253,7 @@ public:
   {
     int old_numframes = delta.filter_size_param.get();
     
-    int deltaNumframes = rate/10.0 * 3;
+    int deltaNumframes = rate/samplingRateRef * 3;
     if(deltaNumframes < 3) deltaNumframes = 3;
     if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
     if(deltaNumframes != old_numframes)
