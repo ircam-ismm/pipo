@@ -205,7 +205,7 @@ public:
     this->setReceiver(receiver);
 
     this->addAttr(this, "gain", "Overall gain", &intensity.gain);
-    this->addAttr(this, "cutfrequency", "Feedback (integration)", &intensity.cutfrequency);
+    this->addAttr(this, "cutfrequency", "Cut Frequency (Hz)", &intensity.cutfrequency);
     this->addAttr(this, "mode", "Input values mode", &intensity.mode);
     this->addAttr(this, "normmode", "Normalisation mode", &intensity.normmode);
     this->addAttr(this, "adhoccorrection", "Ad Hoc Correction for SamplingRate invariance", &intensity.adhoccorrection);
