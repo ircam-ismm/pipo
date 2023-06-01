@@ -57,6 +57,8 @@ const double toRad = M_PI / 180.;
 #define defaultCutFrequency 10.
 #define defaultfeedback 0.9
 #define defaultGain 1.
+#define gainAdjustment 0.001
+#define deltaNumframesDefault 3
 
 class PiPoInnerIntensity : public PiPo
 {
@@ -150,9 +152,9 @@ public:
           // store value for next passs
           memoryVector[i] = value;
 
-          value = value * gainVal;
-          
+          value = value * gainAdjustment;
           value = powf(value, this->powerexp.get());
+          value = value * gainVal;
           
           if(this->offset.get())
           {
@@ -252,8 +254,9 @@ public:
   {
     int old_numframes = delta.filter_size_param.get();
     
-    int deltaNumframes = rate/samplingRateRef * 3;
-    if(deltaNumframes < 3) deltaNumframes = 3;
+    //int deltaNumframes = rate/samplingRateRef * 3;
+    //if(deltaNumframes < 3) deltaNumframes = 3;
+    int deltaNumframes = deltaNumframesDefault;
     if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
     if(deltaNumframes != old_numframes)
       delta.filter_size_param.set(deltaNumframes, true);
