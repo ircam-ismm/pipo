@@ -143,7 +143,7 @@ public:
     double norm = 0;
     float *outVector = &(this->output[0]);
 
-    if(size >= 3)
+    if(size > 0)
     {
       for(unsigned int j = 0; j < num; j++)
       {
