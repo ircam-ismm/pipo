@@ -57,7 +57,7 @@ const double toRad = M_PI / 180.;
 #define defaultCutFrequency 10.
 #define defaultfeedback 0.9
 #define defaultGain 1.
-#define gainAdjustment 0.001
+#define gainAdjustment 0.01
 #define deltaNumframesDefault 3
 
 class PiPoInnerIntensity : public PiPo
@@ -149,7 +149,7 @@ public:
       {
         for(unsigned int i = 0; i < size; i++)
         {
-          deltaValues[i] = values[i];
+          deltaValues[i] = values[i] * gainAdjustment;;
           
           double value = getValueByMode(deltaValues[i]);
           //lowpass order 1
@@ -158,7 +158,6 @@ public:
           // store value for next passs
           memoryVector[i] = value;
 
-          value = value * gainAdjustment;
           value = powf(value, this->powerexp.get());
           value = value * gainVal;
           
