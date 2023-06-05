@@ -65,14 +65,13 @@ class PiPoInnerIntensity : public PiPo
 private:
   bool normSum;
   // compute on double precision, to minimize accumulation of errors
-  double deltaValues[3];
+  vector<double> deltaValues;
   // normalize gyro order and direction according to R-ioT
-  double memoryVector[3];
+  vector<double> memoryVector;
   
-  float outVector[4];
+  vector<float> output;
   double feedBack;
   double rate;
-  bool adHocCorrection;
   
 public:
   enum IntensityModeE { SquareMode = 0, AbsMode = 1, PosMode = 2, NegMode = 3};
@@ -108,8 +107,11 @@ public:
     this->normmode.addEnumItem("l2", "sqrt of square sum");
     this->normmode.addEnumItem("mean", "mean");
             
+    this->memoryVector.resize(3);
     for(int i = 0; i < 3; i++)
-      this->memoryVector[i] = 0;
+      this->memoryVector[i] = 0.;
+    this->output.resize(4);
+    this->deltaValues.resize(3);
     
     this->feedBack = defaultfeedback;
     this->rate = samplingRateRef;
@@ -123,6 +125,11 @@ public:
     double normedCutFrequency = this->cutfrequency.get() / rate;
     this->feedBack = 1. - normedCutFrequency/(normedCutFrequency + 1);
     this->rate = rate;
+    this->output.resize(width * size * maxFrames);
+    this->deltaValues.resize(width);
+    this->memoryVector.resize(width);
+    for(unsigned int i = 0; i < width; i++)
+      this->memoryVector[i] = 0.;
                        
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 4, 1, labels, 0, domain, maxFrames);
   }
@@ -134,17 +141,16 @@ public:
     double offsetValue = this->offsetvalue.get();
     double gainVal = this->gain.get();
     double norm = 0;
-    
-    for(unsigned int i = 0; i < num; i++)
+    float *outVector = &(this->output[0]);
+
+    if(size >= 3)
     {
-      if(size >= 3)
+      for(unsigned int j = 0; j < num; j++)
       {
-        deltaValues[0] = values[0];
-        deltaValues[1] = values[1];
-        deltaValues[2] = values[2];
-        
-        for(int i = 0; i < 3; i++)
+        for(unsigned int i = 0; i < size; i++)
         {
+          deltaValues[i] = values[i];
+          
           double value = getValueByMode(deltaValues[i]);
           //lowpass order 1
           value = value * (1. - this->feedBack) + this->feedBack * memoryVector[i];
@@ -168,20 +174,20 @@ public:
           else
             norm += value;
           
-          outVector[i + 1] = value;
+          outVector[j*size + i + 1] = value;
         }
         
         if(normMode == L2Mode)
-          outVector[0] = sqrt(norm);
+          outVector[j*size] = sqrt(norm);
         else
-          outVector[0] = norm/3;
-      
-        int ret = this->propagateFrames(time, weight, &this->outVector[0], 4, 1);
-        if(ret != 0)
-          return ret;
-      
+          outVector[j*size] = norm/size;
+            
         values += size;
       }
+      
+      int ret = this->propagateFrames(time, weight, &outVector[0], size+1, num);
+      if(ret != 0)
+        return ret;
     }
     return 0;
   }
@@ -242,7 +248,6 @@ public:
     intensity.cutfrequency.set(defaultCutFrequency);
     intensity.mode.set(PiPoInnerIntensity::SquareMode);
     intensity.normmode.set(PiPoInnerIntensity::L2Mode);
-    //intensity.adhoccorrection.set(true);
     intensity.offset.set(false);
     intensity.clipmax.set(false);
     intensity.offsetvalue.set(0.);
@@ -254,8 +259,6 @@ public:
   {
     int old_numframes = delta.filter_size_param.get();
     
-    //int deltaNumframes = rate/samplingRateRef * 3;
-    //if(deltaNumframes < 3) deltaNumframes = 3;
     int deltaNumframes = deltaNumframesDefault;
     if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
     if(deltaNumframes != old_numframes)
