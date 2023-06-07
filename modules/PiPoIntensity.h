@@ -188,7 +188,7 @@ public:
         values += size;
       }
       
-      int ret = this->propagateFrames(time, weight, &outVector[0], size+1, num);
+      int ret = this->propagateFrames(time, weight, &outVector[0], size, num);
       if(ret != 0)
         return ret;
     }
