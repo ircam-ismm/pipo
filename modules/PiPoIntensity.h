@@ -74,7 +74,7 @@ private:
   double rate;
   
 public:
-  enum IntensityModeE { SquareMode = 0, AbsMode = 1, PosMode = 2, NegMode = 3};
+  enum IntensityModeE {AbsMode = 0, PosMode = 1, NegMode = 2, SquareMode = 3};
   enum NormModeE { L2Mode = 0, MeanMode = 1};
 
   PiPoScalarAttr<double> gain;
@@ -99,12 +99,12 @@ public:
   clipmaxvalue(this, "clipmaxvalue", "Maximum clip value", false, 1.),
   powerexp(this, "powerexp", "Power exponent on values", false, 1.)
   {
-    this->mode.addEnumItem("square", "square of value");
     this->mode.addEnumItem("abs", "absolute value");
     this->mode.addEnumItem("pos", "positive part of value");
     this->mode.addEnumItem("neg", "negative part of value");
+    this->mode.addEnumItem("square", "square of value");
     
-    this->normmode.addEnumItem("l2", "sqrt of square sum");
+    this->normmode.addEnumItem("L2", "sqrt of square sum");
     this->normmode.addEnumItem("mean", "mean");
             
     this->memoryVector.resize(3);
@@ -149,7 +149,7 @@ public:
       {
         for(unsigned int i = 0; i < size; i++)
         {
-          deltaValues[i] = values[i] * gainAdjustment;;
+          deltaValues[i] = values[i] * gainAdjustment;
           
           double value = getValueByMode(deltaValues[i]);
           //lowpass order 1
@@ -245,13 +245,14 @@ public:
         
     intensity.gain.set(defaultGain);
     intensity.cutfrequency.set(defaultCutFrequency);
-    intensity.mode.set(PiPoInnerIntensity::SquareMode);
+    intensity.mode.set(PiPoInnerIntensity::AbsMode);
     intensity.normmode.set(PiPoInnerIntensity::L2Mode);
-    intensity.offset.set(false);
-    intensity.clipmax.set(false);
-    intensity.offsetvalue.set(0.);
-    intensity.clipmaxvalue.set(1.);
     intensity.powerexp.set(1.);
+    intensity.offset.set(false);
+    intensity.offsetvalue.set(0.);
+    intensity.clipmax.set(false);
+    intensity.clipmaxvalue.set(1.);
+
   }
 
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
