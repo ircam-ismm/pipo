@@ -151,40 +151,40 @@ public:
     {
       for(unsigned int j = 0; j < num; j++)
       {
-        for(unsigned int i = 0; i < size; i++)
+        for(unsigned int i = 0; i < size; i++) //start from 1 because 0 index is for mean value
         {
           deltaValues[i] = values[i] * gainAdjustment;
-          
+            
           double value = getValueByMode(deltaValues[i]);
           //lowpass order 1
           value = value * (1. - this->feedBack) + this->feedBack * memoryVector[i];
-
+          
           // store value for next passs
           memoryVector[i] = value;
-
+            
           value = powf(value, this->powerexp.get());
           value = value * gainVal;
-          
+            
           if(this->offset.get())
           {
             value -= offsetValue;
             if(value < 0.) value = 0.;
           }
           if(this->clipmax.get() && value > clipMaxValue) value = clipMaxValue;
-          
+            
           if(normMode == L2PostMode)
             norm += value*value;
-          else if(MeanPostMode)
+          else if(normMode == MeanPostMode)
             norm += value;
-          
-          outVector[j*size + i + 1] = value;
+            
+          outVector[j*size + i] = value;
         }
         
         if(normMode == L2PostMode)
           outVector[j*size] = sqrt(norm);
         else if(normMode == MeanPostMode)
           outVector[j*size] = norm/size;
-            
+        
         values += size;
       }
       
@@ -253,7 +253,8 @@ public:
     mvavrg.size.set(defaultMovingAverageSize);
     delta.filter_size_param.set(defaultDeltaSize);
     delta.use_frame_rate.set(true);
-        
+    delta.normalize.set(true);
+    
     intensity.gain.set(defaultGain);
     intensity.cutfrequency.set(defaultCutFrequency);
     intensity.mode.set(PiPoInnerIntensity::AbsMode);
@@ -271,7 +272,7 @@ public:
     
     int old_numframes = delta.filter_size_param.get();
     
-    int deltaNumframes = defaultDeltaSize;
+    int deltaNumframes = old_numframes;
     if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
     if(deltaNumframes != old_numframes)
       delta.filter_size_param.set(deltaNumframes, true);
@@ -295,14 +296,18 @@ public:
           value = values[i];
           if(normMode == PiPoInnerIntensity::L2PreMode)
             norm += value*value;
-          else if(PiPoInnerIntensity::MeanPreMode)
+          else if(normMode == PiPoInnerIntensity::MeanPreMode)
             norm += value;
+          
+          outVector[j*size + i + 1] = value;
         }
         
         if(normMode == PiPoInnerIntensity::L2PreMode)
           outVector[j*size] = sqrt(norm);
         else if(normMode == PiPoInnerIntensity::MeanPreMode)
           outVector[j*size] = norm/size;
+        else
+          outVector[j*size] = 0.;
             
         values += size;
       }
