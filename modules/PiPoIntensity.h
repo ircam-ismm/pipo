@@ -162,28 +162,37 @@ public:
           // store value for next passs
           memoryVector[i] = value;
             
-          value = powf(value, this->powerexp.get());
           value = value * gainVal;
+                    
+          if(normMode == L2PostMode)
+            norm += value*value;
+          else if(normMode == MeanPostMode)
+            norm += value;
             
+          value = powf(value, this->powerexp.get());
           if(this->offset.get())
           {
             value -= offsetValue;
             if(value < 0.) value = 0.;
           }
           if(this->clipmax.get() && value > clipMaxValue) value = clipMaxValue;
-            
-          if(normMode == L2PostMode)
-            norm += value*value;
-          else if(normMode == MeanPostMode)
-            norm += value;
-            
+
           outVector[j*size + i] = value;
         }
         
+        double normValue = 0.0;
         if(normMode == L2PostMode)
-          outVector[j*size] = sqrt(norm);
+          normValue = sqrt(norm);
         else if(normMode == MeanPostMode)
-          outVector[j*size] = norm/size;
+          normValue = norm/size;
+        normValue = powf(normValue, this->powerexp.get());
+        if(this->offset.get())
+        {
+          normValue -= offsetValue;
+          if(normValue < 0.) normValue = 0.;
+        }
+        if(this->clipmax.get() && normValue > clipMaxValue) normValue = clipMaxValue;
+        outVector[j*size] = normValue;
         
         values += size;
       }
