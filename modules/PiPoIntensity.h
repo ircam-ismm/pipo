@@ -151,7 +151,7 @@ public:
     {
       for(unsigned int j = 0; j < num; j++)
       {
-        for(unsigned int i = 0; i < size; i++) //start from 1 because 0 index is for mean value
+        for(unsigned int i = 1; i < size; i++) //start from 1 because 0 index is for mean value
         {
           deltaValues[i] = values[i] * gainAdjustment;
             
@@ -180,7 +180,7 @@ public:
           outVector[j*size + i] = value;
         }
         
-        double normValue = 0.0;
+        double normValue = values[j*size];
         if(normMode == L2PostMode)
           normValue = sqrt(norm);
         else if(normMode == MeanPostMode)
