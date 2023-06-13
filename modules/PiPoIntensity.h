@@ -77,7 +77,7 @@ private:
   
 public:
   enum IntensityModeE {AbsMode = 0, PosMode = 1, NegMode = 2, SquareMode = 3};
-  enum NormModeE { L2PostMode = 0, MeanPostMode = 1, L2PreMode = 2, MeanPreMode = 3};
+  enum NormModeE {L2PreMode = 0, L2PostMode = 1, MeanPreMode = 2 , MeanPostMode = 3};
 
   PiPoScalarAttr<double> gain;
   PiPoScalarAttr<double> cutfrequency;
@@ -94,7 +94,7 @@ public:
   gain(this, "gain", "Overall gain", false, defaultGain),
   cutfrequency(this, "cutfrequency", "Cut  Frequency (Hz)", true, defaultCutFrequency),
   mode(this, "mode", "Input values mode", false, AbsMode),
-  normmode(this, "normmode", "Normalisation mode", false, L2PostMode),
+  normmode(this, "normmode", "Normalisation mode", false, L2PreMode),
   offset(this, "offset", "Remove offset value", false, false),
   clipmax(this, "clipmax", "Clip at max value", false, false),
   offsetvalue(this, "offsetvalue", "Offset value", false, 0.),
@@ -106,10 +106,10 @@ public:
     this->mode.addEnumItem("neg", "negative part of value");
     this->mode.addEnumItem("square", "square of value");
     
-    this->normmode.addEnumItem("L2post", "post sqrt of square sum");
-    this->normmode.addEnumItem("meanpost", "post mean");
     this->normmode.addEnumItem("L2pre", "pre sqrt of square sum");
+    this->normmode.addEnumItem("L2post", "post sqrt of square sum");
     this->normmode.addEnumItem("meanpre", "pre mean");
+    this->normmode.addEnumItem("meanpost", "post mean");
     
     this->memoryVector.resize(3);
     for(int i = 0; i < 3; i++)
@@ -151,7 +151,7 @@ public:
     {
       for(unsigned int j = 0; j < num; j++)
       {
-        for(unsigned int i = 0; i < size; i++) //start from 1 because 0 index is for mean value
+        for(unsigned int i = 0; i < size; i++)
         {
           deltaValues[i] = values[i] * gainAdjustment;
             
@@ -162,29 +162,40 @@ public:
           // store value for next passs
           memoryVector[i] = value;
             
-          value = powf(value, this->powerexp.get());
           value = value * gainVal;
+                    
+          if(normMode == L2PostMode)
+            norm += value*value;
+          else if(normMode == MeanPostMode)
+            norm += value;
             
+          value = powf(value, this->powerexp.get());
           if(this->offset.get())
           {
             value -= offsetValue;
             if(value < 0.) value = 0.;
           }
           if(this->clipmax.get() && value > clipMaxValue) value = clipMaxValue;
-            
-          if(normMode == L2PostMode)
-            norm += value*value;
-          else if(normMode == MeanPostMode)
-            norm += value;
-            
           outVector[j*size + i] = value;
         }
         
-        if(normMode == L2PostMode)
-          outVector[j*size] = sqrt(norm);
-        else if(normMode == MeanPostMode)
-          outVector[j*size] = norm/size;
-        
+        if(normMode == L2PostMode || normMode == MeanPostMode)
+        {
+          double normValue = values[j*size];
+          if(normMode == L2PostMode)
+            normValue = sqrt(norm);
+          else if(normMode == MeanPostMode)
+            normValue = norm/size;
+          
+          normValue = powf(normValue, this->powerexp.get());
+          if(this->offset.get())
+          {
+            normValue -= offsetValue;
+            if(normValue < 0.) normValue = 0.;
+          }
+          if(this->clipmax.get() && normValue > clipMaxValue) normValue = clipMaxValue;
+          outVector[j*size] = normValue;
+        }
         values += size;
       }
       
@@ -258,7 +269,7 @@ public:
     intensity.gain.set(defaultGain);
     intensity.cutfrequency.set(defaultCutFrequency);
     intensity.mode.set(PiPoInnerIntensity::AbsMode);
-    intensity.normmode.set(PiPoInnerIntensity::L2PostMode);
+    intensity.normmode.set(PiPoInnerIntensity::L2PreMode);
     intensity.powerexp.set(1.);
     intensity.offset.set(false);
     intensity.offsetvalue.set(0.);
