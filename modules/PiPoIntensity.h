@@ -151,7 +151,7 @@ public:
     {
       for(unsigned int j = 0; j < num; j++)
       {
-        for(unsigned int i = 1; i < size; i++) //start from 1 because 0 index is for mean value
+        for(unsigned int i = 0; i < size; i++)
         {
           deltaValues[i] = values[i] * gainAdjustment;
             
@@ -176,24 +176,26 @@ public:
             if(value < 0.) value = 0.;
           }
           if(this->clipmax.get() && value > clipMaxValue) value = clipMaxValue;
-
           outVector[j*size + i] = value;
         }
         
-        double normValue = values[j*size];
-        if(normMode == L2PostMode)
-          normValue = sqrt(norm);
-        else if(normMode == MeanPostMode)
-          normValue = norm/size;
-        normValue = powf(normValue, this->powerexp.get());
-        if(this->offset.get())
+        if(normMode == L2PostMode || normMode == MeanPostMode)
         {
-          normValue -= offsetValue;
-          if(normValue < 0.) normValue = 0.;
+          double normValue = values[j*size];
+          if(normMode == L2PostMode)
+            normValue = sqrt(norm);
+          else if(normMode == MeanPostMode)
+            normValue = norm/size;
+          
+          normValue = powf(normValue, this->powerexp.get());
+          if(this->offset.get())
+          {
+            normValue -= offsetValue;
+            if(normValue < 0.) normValue = 0.;
+          }
+          if(this->clipmax.get() && normValue > clipMaxValue) normValue = clipMaxValue;
+          outVector[j*size] = normValue;
         }
-        if(this->clipmax.get() && normValue > clipMaxValue) normValue = clipMaxValue;
-        outVector[j*size] = normValue;
-        
         values += size;
       }
       
