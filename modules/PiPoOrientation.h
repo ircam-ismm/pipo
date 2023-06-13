@@ -141,13 +141,9 @@ public:
         }
         else //DeviceMotionFormat
         {
-          float x = values[0];
-          float y = values[1];
-          float z = values[2];
-          
-          accVector[0] = -y/9.81;
-          accVector[1] = x/9.81;
-          accVector[2] = z/9.81;
+          accVector[0] = values[1]/9.81;
+          accVector[1] = -values[0]/9.81;
+          accVector[2] = values[2]/9.81;
         }
         if(size >= 6)
         {
@@ -284,12 +280,24 @@ public:
           break;
       }
             
-      outVector[0] = accEstimate[0];
-      outVector[1] = accEstimate[1];
-      outVector[2] = accEstimate[2];
-      outVector[3] = pitch;
-      outVector[4] = roll;
-      outVector[5] = tilt;
+      if(inFormat == RiotBitalinoFormat)
+      {
+        outVector[0] = accEstimate[0];
+        outVector[1] = accEstimate[1];
+        outVector[2] = accEstimate[2];
+        outVector[3] = pitch;
+        outVector[4] = roll;
+        outVector[5] = tilt;
+      }
+      else // DeviceMotionFormat
+      {
+        outVector[0] = accEstimate[1];
+        outVector[1] = accEstimate[0];
+        outVector[2] = accEstimate[2];
+        outVector[3] = pitch;
+        outVector[4] = roll;
+        outVector[5] = tilt;
+      }
       
       int ret = this->propagateFrames(time, weight, &this->outVector[0], 6, 1);
       if(ret != 0)
