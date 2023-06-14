@@ -1,15 +1,15 @@
 /**
  * @file PiPoIntensity.h
  * @author ISMM Team @IRCAM
- * 
+ *
  * @brief PiPo for analysis of data stream from RIoT for quantification of acceleration related intensity
- * 
+ *
  * @ingroup pipomodules
  *
  * @copyright
  * Copyright (C) 2020 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 
 #include "PiPo.h"
 #include "PiPoSequence.h"
+#include "PiPoMvavrg.h"
 #include "PiPoDelta.h"
 #include "PiPoScale.h"
 
@@ -53,57 +54,71 @@ using namespace std;
 const double toDeg = 180. / M_PI;
 const double toRad = M_PI / 180.;
 
+#define samplingRateRef 100.
+#define defaultCutFrequency 10.
+#define defaultfeedback 0.9
+#define defaultGain 1.
+#define gainAdjustment 0.01
+#define defaultDeltaSize 3
+#define defaultMovingAverageSize 1
+
 class PiPoInnerIntensity : public PiPo
 {
 private:
   bool normSum;
   // compute on double precision, to minimize accumulation of errors
-  double deltaValues[3];
+  vector<double> deltaValues;
   // normalize gyro order and direction according to R-ioT
-  double memoryVector[3];
+  vector<double> memoryVector;
   
-  float outVector[4];
+  vector<float> output;
+  double feedBack;
+  double rate;
   
-  //double inputScaleFactor;
-  //double inputScaleOffset;
 public:
-  enum IntensityModeE { AbsMode = 0, PosMode = 1, NegMode = 2};
+  enum IntensityModeE {AbsMode = 0, PosMode = 1, NegMode = 2, SquareMode = 3};
+  enum NormModeE {L2PreMode = 0, L2PostMode = 1, MeanPreMode = 2 , MeanPostMode = 3};
 
-  /*PiPoScalarAttr<bool> clip;
-  PiPoScalarAttr<double> scaleinmin;
-  PiPoScalarAttr<double> scaleinmax;
-  PiPoScalarAttr<double> scaleoutmin;
-  PiPoScalarAttr<double> scaleoutmax;
-  PiPoScalarAttr<double> power;*/
   PiPoScalarAttr<double> gain;
-  PiPoScalarAttr<double> feedback;
+  PiPoScalarAttr<double> cutfrequency;
   PiPoScalarAttr<PiPo::Enumerate> mode;
-  
+  PiPoScalarAttr<PiPo::Enumerate> normmode;
+  PiPoScalarAttr<bool> offset;
+  PiPoScalarAttr<bool> clipmax;
+  PiPoScalarAttr<double> offsetvalue;
+  PiPoScalarAttr<double> clipmaxvalue;
+  PiPoScalarAttr<double> powerexp;
+    
   PiPoInnerIntensity(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  /*clip(this, "clip", "Clip Values", true, false),
-  scaleinmin(this, "scaleinmin", "Scale input minimun", true, 0.),
-  scaleinmax(this, "scaleinmax", "Scale input maximum", true, 1.),
-  scaleoutmin(this, "scaleoutmin", "Scale output minimum", true, 0.),
-  scaleoutmax(this, "scaleoutmax", "Scale output maxmimum", true, 1.),
-  power(this, "pow", "Power exponent on values", false, 1.),*/
-  gain(this, "gain", "Overall gain", false, 0.1),
-  feedback(this, "feedback", "Feedback (integration)", false, 0.9),
-  mode(this, "mode", "Input values mode", false, AbsMode)
+  gain(this, "gain", "Overall gain", false, defaultGain),
+  cutfrequency(this, "cutfrequency", "Cut  Frequency (Hz)", true, defaultCutFrequency),
+  mode(this, "mode", "Input values mode", false, AbsMode),
+  normmode(this, "normmode", "Normalisation mode", false, L2PreMode),
+  offset(this, "offset", "Remove offset value", false, false),
+  clipmax(this, "clipmax", "Clip at max value", false, false),
+  offsetvalue(this, "offsetvalue", "Offset value", false, 0.),
+  clipmaxvalue(this, "clipmaxvalue", "Maximum clip value", false, 1.),
+  powerexp(this, "powerexp", "Power exponent on values", false, 1.)
   {
     this->mode.addEnumItem("abs", "absolute value");
     this->mode.addEnumItem("pos", "positive part of value");
     this->mode.addEnumItem("neg", "negative part of value");
-        
-    //this->inputScaleFactor = 1.0;
-    //this->inputScaleOffset = 0.0;
-    //setupScale();
+    this->mode.addEnumItem("square", "square of value");
     
-    // delta.size
-    //this->filter_size_param.set(3);
+    this->normmode.addEnumItem("L2pre", "pre sqrt of square sum");
+    this->normmode.addEnumItem("L2post", "post sqrt of square sum");
+    this->normmode.addEnumItem("meanpre", "pre mean");
+    this->normmode.addEnumItem("meanpost", "post mean");
     
+    this->memoryVector.resize(3);
     for(int i = 0; i < 3; i++)
-      this->memoryVector[i] = 0;
+      this->memoryVector[i] = 0.;
+    this->output.resize(4);
+    this->deltaValues.resize(3);
+    
+    this->feedBack = defaultfeedback;
+    this->rate = samplingRateRef;
   }
   
   ~PiPoInnerIntensity(void)
@@ -111,74 +126,82 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    //setupScale();
-    
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 4, 1, labels, 0, domain, maxFrames);
+    double normedCutFrequency = this->cutfrequency.get() / rate;
+    this->feedBack = 1. - normedCutFrequency/(normedCutFrequency + 1);
+    this->rate = rate;
+    this->output.resize(width * size * maxFrames);
+    this->deltaValues.resize(width);
+    this->memoryVector.resize(width);
+    for(unsigned int i = 0; i < width; i++)
+      this->memoryVector[i] = 0.;
+                       
+    return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, 0, domain, maxFrames);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    double feedBack = this->feedback.get();
+    NormModeE normMode = (NormModeE)this->normmode.get();
+    double clipMaxValue = this->clipmaxvalue.get();
+    double offsetValue = this->offsetvalue.get();
     double gainVal = this->gain.get();
     double norm = 0;
-    //bool clipValues = this->clip.get();
-    //double powVal = this->power.get();
-    
-    for(unsigned int i = 0; i < num; i++)
+    float *outVector = &(this->output[0]);
+
+    if(size > 0)
     {
-      if(size >= 3)
+      for(unsigned int j = 0; j < num; j++)
       {
-        deltaValues[0] = values[0];
-        deltaValues[1] = values[1];
-        deltaValues[2] = values[2];
-        
-        for(int i = 0; i < 3; i++)
+        for(unsigned int i = 0; i < size; i++)
         {
+          deltaValues[i] = values[i] * gainAdjustment;
+            
           double value = getValueByMode(deltaValues[i]);
-          value = value + feedBack * memoryVector[i];
-
-          // store value for next pass
+          //lowpass order 1
+          value = value * (1. - this->feedBack) + this->feedBack * memoryVector[i];
+          
+          // store value for next passs
           memoryVector[i] = value;
-
+            
           value = value * gainVal;
-          value = value * value;
-          
-          norm += value;
-          
-          //clip value
-          /*if(clipValues)
+                    
+          if(normMode == L2PostMode)
+            norm += value*value;
+          else if(normMode == MeanPostMode)
+            norm += value;
+            
+          value = powf(value, this->powerexp.get());
+          if(this->offset.get())
           {
-            if(value < 0.0) value = 0.0;
-            else if(value > 1.0) value = 1.0;
+            value -= offsetValue;
+            if(value < 0.) value = 0.;
           }
-          // pow of value
-          value = pow(value, powVal);
-          
-          // scale value
-          value = scaleValue(value);*/
-          
-          outVector[i + 1] = value;
+          if(this->clipmax.get() && value > clipMaxValue) value = clipMaxValue;
+          outVector[j*size + i] = value;
         }
         
-        //clip norm
-        /*if(clipValues)
+        if(normMode == L2PostMode || normMode == MeanPostMode)
         {
-          if(norm < 0.0) norm = 0.0;
-          else if(norm > 1.0) norm = 1.0;
-        }*/
-        // pow of norm
-        //norm = pow(norm, powVal);
-        // scale norm
-        //norm = scaleValue(norm);
-        
-        outVector[0] = norm;
-      
-        int ret = this->propagateFrames(time, weight, &this->outVector[0], 4, 1);
-        if(ret != 0)
-          return ret;
-      
+          double normValue = values[j*size];
+          if(normMode == L2PostMode)
+            normValue = sqrt(norm);
+          else if(normMode == MeanPostMode)
+            normValue = norm/size;
+          
+          normValue = powf(normValue, this->powerexp.get());
+          if(this->offset.get())
+          {
+            normValue -= offsetValue;
+            if(normValue < 0.) normValue = 0.;
+          }
+          if(this->clipmax.get() && normValue > clipMaxValue) normValue = clipMaxValue;
+          outVector[j*size] = normValue;
+        }
         values += size;
       }
+      
+      int ret = this->propagateFrames(time, weight, &outVector[0], size, num);
+      if(ret != 0)
+        return ret;
     }
     return 0;
   }
@@ -190,6 +213,9 @@ public:
     switch(valMode)
     {
       default:
+      case SquareMode:
+        retValue = val*val;
+        break;
       case AbsMode:
         retValue = abs(val);
         break;
@@ -202,106 +228,112 @@ public:
     }
     return retValue;
   }
-  
-  /*void setupScale()
-  {
-    double scaleOutMax = this->scaleoutmax.get();
-    double scaleOutMin = this->scaleoutmin.get();
-    double scaleInMax = this->scaleinmax.get();
-    double scaleInMin = this->scaleinmin.get();
-    inputScaleFactor  = ((scaleOutMax - scaleOutMin) / (scaleInMax - scaleInMin));
-    inputScaleOffset =  (scaleOutMin - scaleInMin * inputScaleFactor);
-  }
-  
-  double scaleValue(double val)
-  {
-    double retValue = val;
-    double scaleInMax = this->scaleinmax.get();
-    double scaleInMin = this->scaleinmin.get();
-    
-    if(retValue > scaleInMax) retValue = scaleInMax;
-    else if(retValue < scaleInMin) retValue = scaleInMin;
-    
-    retValue = (retValue * inputScaleFactor + inputScaleOffset);
-    return retValue;
-  }*/
 };
 
 class PiPoIntensity : public PiPoSequence
 {
 public:
+  PiPoMvavrg mvavrg;
   PiPoDelta delta;
   PiPoInnerIntensity intensity;
-  PiPoScale scale;
+  vector<float> output;
  
   PiPoIntensity(PiPo::Parent *parent, PiPo *receiver = NULL)
-  : PiPoSequence(parent),
-    delta(parent), intensity(parent), scale(parent)
+  : PiPoSequence(parent), mvavrg(parent), delta(parent), intensity(parent)
   {
+    this->output.resize(4);
+    
+    this->add(mvavrg);
     this->add(delta);
     this->add(intensity);
-    this->add(scale);
     this->setReceiver(receiver);
-
-    // propagate attributes from member PiPos
-    //this->addAttr(this, "clip", "Clip values", &intensity.clip);
-    //this->addAttr(this, "scaleinmin", "Scale input minimun", &intensity.scaleinmin);
-    //this->addAttr(this, "scaleinmax", "Scale input maximum", &intensity.scaleinmax);
-    //this->addAttr(this, "scaleoutmin", "Scale output minimum", &intensity.scaleoutmin);
-    //this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &intensity.scaleoutmax);
-    //this->addAttr(this, "pow", "Power exponent on values", &intensity.power);
     
     this->addAttr(this, "gain", "Overall gain", &intensity.gain);
-    this->addAttr(this, "feedback", "Feedback (integration)", &intensity.feedback);
+    this->addAttr(this, "cutfrequency", "Cut Frequency (Hz)", &intensity.cutfrequency);
     this->addAttr(this, "mode", "Input values mode", &intensity.mode);
-    
-    this->addAttr(this, "clip", "Clip values", &scale.clip);
-    this->addAttr(this, "scaleinmin", "Scale input minimun", &scale.inMin);
-    this->addAttr(this, "scaleinmax", "Scale input maximum", &scale.inMax);
-    this->addAttr(this, "scaleoutmin", "Scale output minimum", &scale.outMin);
-    this->addAttr(this, "scaleoutmax", "Scale output maxmimum", &scale.outMax);
-    this->addAttr(this, "powerexp", "Power exponent on values", &scale.powerexp);
-    this->addAttr(this, "scalefunc", "Scaling function", &scale.func);
+    this->addAttr(this, "normmode", "Normalisation mode", &intensity.normmode);
+    this->addAttr(this, "offset", "Remove offset value", &intensity.offset);
+    this->addAttr(this, "offsetvalue", "Offset value", &intensity.offsetvalue);
+    this->addAttr(this, "clipmax", "Clip at max value", &intensity.clipmax);
+    this->addAttr(this, "maxclipvalue", "Maximum clip value", &intensity.clipmaxvalue);
+    this->addAttr(this, "powerexp", "Power exponent on values", &intensity.powerexp);
+    this->addAttr(this, "deltasize", "Window size for derivation", &delta.filter_size_param);
+    this->addAttr(this, "movingaveragesize", "Moving average filter size", &mvavrg.size);
     
     // init attributes
-    delta.filter_size_param.set(3);
+    mvavrg.size.set(defaultMovingAverageSize);
+    delta.filter_size_param.set(defaultDeltaSize);
+    delta.use_frame_rate.set(true);
+    delta.normalize.set(true);
     
-    scale.func.set(PiPoScale::ScalePow);
-    scale.inMin.setSize(4);
-    scale.inMax.setSize(4);
-    scale.outMin.setSize(4);
-    scale.inMax.setSize(4);
-    for(int i = 0; i < 4; i++)
-    {
-      scale.inMin.set(i, 0.0);
-      scale.inMax.set(i, 1.0);
-      scale.outMin.set(i, 0.0);
-      scale.outMax.set(i, 1.0);
-    }
-    scale.clip.set(0);
-    scale.powerexp.set(1.0);
-    
-    /*intensity.clip.set(0);
-    intensity.scaleinmin.set(0.);
-    intensity.scaleinmax.set(1.);
-    intensity.scaleoutmin.set(0.);
-    intensity.scaleoutmax.set(1.); // adapt to slice size and sr
-    intensity.power.set(1.);*/
-    intensity.gain.set(0.1);
-    intensity.feedback.set(0.9);
+    intensity.gain.set(defaultGain);
+    intensity.cutfrequency.set(defaultCutFrequency);
     intensity.mode.set(PiPoInnerIntensity::AbsMode);
+    intensity.normmode.set(PiPoInnerIntensity::L2PreMode);
+    intensity.powerexp.set(1.);
+    intensity.offset.set(false);
+    intensity.offsetvalue.set(0.);
+    intensity.clipmax.set(false);
+    intensity.clipmaxvalue.set(1.);
   }
 
-/*  virtual ~PiPoIntensity ()
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    //printf("•••••••• %s: DESTRUCTOR\n", __PRETTY_FUNCTION__); //db
+    this->output.resize((width+1) * size * maxFrames);
+    
+    int old_numframes = delta.filter_size_param.get();
+    
+    int deltaNumframes = old_numframes;
+    if((deltaNumframes & 1) == 0) deltaNumframes++;// must be odd
+    if(deltaNumframes != old_numframes)
+      delta.filter_size_param.set(deltaNumframes, true);
+
+    return mvavrg.streamAttributes(hasTimeTags, rate, offset, width+1, size, labels, hasVarSize, domain, maxFrames);
   }
-*/
+  
+  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  {
+    PiPoInnerIntensity::NormModeE normMode = (PiPoInnerIntensity::NormModeE)intensity.normmode.get();
+    float *outVector = &(this->output[0]);
+
+    if(size > 0)
+    {
+      double value = 0.0;
+      double norm = 0;
+      for(unsigned int j = 0; j < num; j++)
+      {
+        for(unsigned int i = 0; i < size; i++)
+        {
+          value = values[i];
+          if(normMode == PiPoInnerIntensity::L2PreMode)
+            norm += value*value;
+          else if(normMode == PiPoInnerIntensity::MeanPreMode)
+            norm += value;
+          
+          outVector[j*size + i + 1] = value;
+        }
+        
+        if(normMode == PiPoInnerIntensity::L2PreMode)
+          outVector[j*size] = sqrt(norm);
+        else if(normMode == PiPoInnerIntensity::MeanPreMode)
+          outVector[j*size] = norm/size;
+        else
+          outVector[j*size] = 0.;
+            
+        values += size;
+      }
+      
+      int ret = mvavrg.frames(time, weight, &outVector[0], size+1, num);
+      if(ret != 0)
+        return ret;
+    }
+    return 0;
+  }
   
 private:
   PiPoIntensity (const PiPoIntensity &other)
   : PiPoSequence(other.parent),
-    delta(other.parent), intensity(other.parent), scale(other.parent)
+  mvavrg(parent), delta(other.parent), intensity(other.parent)
   {
     //printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
   }
