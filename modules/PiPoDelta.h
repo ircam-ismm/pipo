@@ -74,11 +74,11 @@ public:
   PiPoDelta (Parent *parent, PiPo *receiver = NULL) 
   : PiPo(parent, receiver),
     buffer(), weights(), frame(), 
-  filter_size(0), input_size(0), missing_inputs(0), normalization_factor(1),
-  filter_size_param(this, "size", "Filter Size", true, 7),
-  normalize(this, "normalize", "Normalize Output", false, true),
-  absolute(this, "absolute", "Output Absolute Delta Value", false, false),
-  use_frame_rate(this, "useframerate", "Delta Values * framerate", false, false)
+    filter_size(0), input_size(0), missing_inputs(0), normalization_factor(1),
+    filter_size_param(this, "size", "Filter Size", true, 7),
+    normalize(this, "normalize", "Normalize Output", false, true),
+    absolute(this, "absolute", "Output Absolute Delta Value", false, false),
+    use_frame_rate(this, "useframerate", "Delta Values * framerate", false, false)
   {
     this->framerate = 1000.0;
   }
@@ -87,9 +87,9 @@ public:
   { }
   
   int streamAttributes (bool hasTimeTags, double rate, double offset, 
-			unsigned int width, unsigned int size, 
-			const char **labels, bool hasVarSize, double domain, 
-			unsigned int maxFrames)
+                        unsigned int width, unsigned int size, 
+                        const char **labels, bool hasVarSize, double domain, 
+                        unsigned int maxFrames)
   {
     // 0 for later check
     unsigned int filtsize = std::max(0, filter_size_param.get());
