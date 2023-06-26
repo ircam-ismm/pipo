@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP 0
+#define DEBUG_CHOP 1 // DEBUG * 1
 #define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  -1  :  (t))
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
 
@@ -164,8 +164,8 @@ private:
         
         if (i < chopduration_.size())
         { // clip duration between 0 and next segment start
-          if (chopduration_[i] < 0)
-            chopduration_[i] = 0;
+          if (chopduration_[i] <= 0)
+            chopduration_[i] = segduration;
           else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
             chopduration_[i] = segduration;
         }
