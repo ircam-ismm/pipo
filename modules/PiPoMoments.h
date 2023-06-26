@@ -212,7 +212,7 @@ public:
                 case None:
                     break;
                 case Domain:
-                    for (int ord=0; ord<2; ord++) {
+                    for (int ord = 0; ord < std::min(2, maxorder); ord++) {
                         this->moments[ord] *= std::pow(static_cast<float>(domain) / (size-1), ord+1);
                     }
                     break;
