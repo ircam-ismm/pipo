@@ -14,13 +14,13 @@ extern "C" {
 TEST_CASE ("chop-list", "[seg]")
 {
   const int    n_expected = 5;
-  const double t_expected[]  = { 0, 100, 200, 300, 400 }; // expected chop times
-  const double v_expected1[] = { 45, 145, 245, 345, 445 }; // expected chop mean values
-  const double v_expected2[] = {  5, 145, 225, 345, 445 }; // expected chop mean values
+  const std::vector<double> t_expected  = { 0, 100, 200, 300, 400 }; // expected chop times
+  const std::vector<double> v_expected1 = { 45, 145, 245, 345, 445 }; // expected chop mean values
+  const std::vector<double> v_expected2 = {  5, 145, 225, 345, 445 }; // expected chop mean values
 
-  const double t_durations0[] = { 100, 100, 100, 100, 100 };   // given segdurations
-  const double t_durations1[] = { -1, 100, 0, 100, -1 };   // given segdurations
-  const double t_durations2[] = { 20, -1, 50, -99, 1000 };   // given segdurations
+  const std::vector<double> t_durations0 = { 100, 100, 100, 100, 100 };   // given segdurations
+  const std::vector<double> t_durations1 = { -1, 100, 0, 100, -1 };   // given segdurations
+  const std::vector<double> t_durations2 = { 20, -1, 50, -99, 1000 };   // given segdurations
 
   int n_samp = 50;
   int t_samp = 500;	// time of last input sample
@@ -66,6 +66,11 @@ TEST_CASE ("chop-list", "[seg]")
     host.reset(); // clear stored received frames
     host.setAttr("chop.segtimes",     t_expected);
     host.setAttr("chop.segdurations", t_durations0);
+
+    PiPo::Attr *segt = host.getAttr("chop.segtimes");
+    REQUIRE(segt != NULL);
+    CHECK(segt->getSize() == n_expected);
+
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
