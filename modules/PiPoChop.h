@@ -52,7 +52,7 @@ extern "C" {
 
 // keep quiet!
 #define DEBUG_CHOP 1 // DEBUG * 1
-#define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  -1  :  (t))
+// for dbprint
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
 
 class PiPoChop : public PiPo
@@ -176,8 +176,12 @@ private:
       }
       
 #if DEBUG_CHOP
+#     define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
       for (size_t i = 0; i < choptimes_.size(); i++)
+      {
+	char tm[32];
         printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
+      }
 #endif
     }
     
@@ -198,7 +202,7 @@ private:
       { // use chop time list
         if (segment_index_ < choptimes_.size())
         { // we're still waiting for the end of a segment
-          if (endtime > choptimes_[segment_index_] + offset_)
+          if (endtime >= choptimes_[segment_index_] + offset_)
           { // segment has started: return passed duration
             duration = endtime - (choptimes_[segment_index_] + offset_);
           }
@@ -264,8 +268,10 @@ private:
         { // next time is end of next segment
           next_time_ = choptimes_[segment_index_] + offset_ + chopduration_[segment_index_]; // chop time list is shifted by offset
         }
-        else // end of list, signal no more segmentation
+        else 
+	{ // end of list, signal no more segmentation
           next_time_ = DBL_MAX;
+	}
       }
     } // end advance()
     
@@ -429,8 +435,7 @@ public:
         outValues[0] = duration;
       
       /* get temporal modelling */
-      if (outsize > 1)
-        tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
+      tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
       
       /* report segment */
       return this->propagateFrames(inputEnd - duration, 0.0, &outValues[0], outsize, 1);
