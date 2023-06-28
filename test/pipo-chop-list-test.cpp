@@ -21,9 +21,18 @@ TEST_CASE ("chop-list", "[seg]")
   const std::vector<double> t_durations1 = {  -1, 100,   0, -99 };      // given neg. segdurations
   const std::vector<double> t_durations2 = {  20,  50,  -1, -99 };      // given shorter segdurations
 
-  const std::vector<double> v_expected0  = {  95, 245, 345, 445 };	// expected chop mean values for dur.0/1
-  const std::vector<double> v_expected1  = {  95, 245, 345, 445 };   // expected chop mean values for dur.0/1
-  const std::vector<double> v_expected2  = {   5, 225, 345, 445 };   // expected chop mean values for dur.2
+  const std::vector<double> v_expected0  = {  95, 245, 345, 445 };	// expected chop mean values for dur.0
+  const std::vector<double> v_expected1  = {  95, 245, 345, 445 };      // expected chop mean values for dur.1
+  const std::vector<double> v_expected2  = {   5, 220, 345, 445 };      // expected chop mean values for dur.2
+
+  const std::vector<double> t_segtimes3  = { 100, 300 };	// given and expected chop times not starting at 0
+  const std::vector<double> t_durations3 = { 100, 100 };	// given segdurations
+  const std::vector<double> v_expected3  = { 145, 345 };	// expected chop mean values
+
+  const std::vector<double> t_segtimes4  = { -200, -50, 400 };	// given chop times starting before 0
+  const std::vector<double> t_durations4 = {  100, 100, 200 };	// given segdurations
+  const std::vector<double> t_expected4  = {         0, 400 };	// expected chop times: 1st seg is dropped, 2nd clipped
+  const std::vector<double> v_expected4  = {        45, 445 };	// expected chop mean values
 
 
   int n_samp = 50;
@@ -136,6 +145,56 @@ TEST_CASE ("chop-list", "[seg]")
       {
 	CHECK(host.received_times_[i]   == t_segtimes[i]);
 	CHECK(host.receivedFrames[i][0] == v_expected2[i]);
+      }
+    }
+  }
+
+  WHEN ("with seglist starting late")
+  {
+    host.reset(); // clear stored received frames
+    host.setAttr("chop.segtimes",     t_segtimes3);
+    host.setAttr("chop.segdurations", t_durations3);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    PiPo::Attr *segt = host.getAttr("chop.segtimes");
+    REQUIRE(segt != NULL);
+    CHECK(segt->getSize() == t_segtimes3.size());
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      REQUIRE(host.receivedFrames.size() == t_segtimes3.size());
+      for (unsigned int i = 0; i < host.receivedFrames.size(); ++i)
+      {
+	CHECK(host.received_times_[i]   == t_segtimes3[i]);
+	CHECK(host.receivedFrames[i][0] == v_expected3[i]);
+      }
+    }
+  }
+
+  WHEN ("with seglist larger than data (starting before zero)")
+  {
+    host.reset(); // clear stored received frames
+    host.setAttr("chop.segtimes",     t_segtimes4);
+    host.setAttr("chop.segdurations", t_durations4);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    PiPo::Attr *segt = host.getAttr("chop.segtimes");
+    REQUIRE(segt != NULL);
+    CHECK(segt->getSize() == t_segtimes4.size());
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      REQUIRE(host.receivedFrames.size() == t_expected4.size());
+      for (unsigned int i = 0; i < host.receivedFrames.size(); ++i)
+      {
+	CHECK(host.received_times_[i]   == t_expected4[i]);
+	CHECK(host.receivedFrames[i][0] == v_expected4[i]);
       }
     }
   }
