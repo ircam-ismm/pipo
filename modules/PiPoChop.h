@@ -51,8 +51,9 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP 1 // DEBUG * 1
+#define DEBUG_CHOP 2 // DEBUG * 1
 // for dbprint
+#define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
 
 class PiPoChop : public PiPo
@@ -84,13 +85,13 @@ private:
     std::vector<double> choptimes_;     // cleaned list of chop.at times
     std::vector<double> chopduration_;  // duration list corresponding to cleaned chop.at times
     
-    // managed by reset/advanceNextTime():
-    double last_start_;     // LAST segmentation time
-    double next_time_;     // NEXT segmentation time
-    size_t segment_index_;    // next external segmentation time list index,
+    // managed by reset/advance():
+    double last_start_;       // LAST segment START time
+    double next_time_;        // NEXT segmentation time = end of pending segment
+    size_t segment_index_;    // NEXT external segmentation time list index (if segments are exhausted, next_time_ is DBL_MAX)
     
-    double segment_start_;    // LAST segmentation time
-    double segment_duration_; // LAST segment duration
+    double segment_start_;    // LAST segment start time for reporting to downstream pipos
+    double segment_duration_; // LAST segment duration for reporting to downstream pipos
     
   public:
     Segmenter (PiPoChop &chop) : chop(chop) { reset(); }
@@ -127,7 +128,7 @@ private:
         last_start_ = choptimes_[0] + offset_; // first segment start
         next_time_  = last_start_ + chopduration_[0]; // first segment end
       }
-    }
+    } // end reset()
     
     // set, clean, and normalize chop.at and chop.duration lists:
     // remove repeating and non-monotonous elements from times, generate normalized durations even when empty
@@ -176,14 +177,10 @@ private:
       }
       
 #if DEBUG_CHOP
-#     define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
       for (size_t i = 0; i < choptimes_.size(); i++)
-      {
-	char tm[32];
         printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
-      }
 #endif
-    }
+    } // end settimes()
     
     // called in offline mode by finalize to determine duration of last pending segment until endtime of file
     // (and start of last segment as endtime - duration)
@@ -211,8 +208,9 @@ private:
       }
       
       return duration;
-    }
-    
+    } // end getLastDuration()
+
+    // at each frame: check if time has crossed segment boundary
     bool isSegment (double time)
     {
       if (time < next_time_)
@@ -229,24 +227,43 @@ private:
         advance(time);
       
       return true;
-    }
+    } // end isSegment()
     
     // return true if time is within the duration of a segment
     // (time is always before the end time of the currently awaited segment)
     bool isOn (double time)
     {
-      return time >= last_start_; // start time of pending segment
+      bool seg_is_on;
+      double segstart = DBL_MAX, segend = DBL_MAX; // init only for debug (compiler will optimise, hopefully)
+      
+      if (choptimes_.size() == 0)
+	seg_is_on = time >= last_start_; // start time of pending segment
+      else
+      { // using segtimes, we need to check segdurations
+	segstart  =  segment_index_ < choptimes_.size()  ?  choptimes_[segment_index_] + offset_      :   DBL_MAX;
+	segend    =  segment_index_ < choptimes_.size()  ?  segstart + chopduration_[segment_index_]  :  -DBL_MAX;
+	seg_is_on = time >= segstart  &&  time < segend; // time is within extent of pending segment
+      }	
+
+#if DEBUG_CHOP > 1      
+      printf("isOn %4g last %4g next %4g  segind %d/%d cur start %4g end %4g  last start %4g dur %4g --> %d\n", time, last_start_, NICE_TIME(next_time_), segment_index_, choptimes_.size(), NICE_TIME(segstart), NICE_TIME(segend), NICE_TIME(segment_start_), segment_duration_, seg_is_on);
+#endif
+
+      return seg_is_on;
     }
     
   private:
-    // advance to next chop time or infinity when not chopping, and the last segment's duration
+    // advance is called when curtime >= next_time_ (next segment end has been passed)
+    // it advances to next chop time (or infinity when not chopping), and the last segment's duration
+    // sets next_time_ to time of next segment start
+    // sets segment_start_, segment_duration_ from current segment
     void advance (double curtime)
     {
       if (choptimes_.size() == 0)
       { // chop.at list is empty, use chop.size
         segment_start_    = last_start_;  // store current segment start for querying
         segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
-        last_start_       = next_time_;
+        last_start_       = next_time_;   // NB: with regular chop, segment start is end of next segment
         
         double chopsize = chop.chopSizeA.get();
         if (chopsize > 0)
@@ -257,9 +274,9 @@ private:
       }
       else
       { // use chop.at list
-        last_start_       = next_time_;
         segment_start_    = choptimes_[segment_index_] + offset_;  // store current segment start for querying
         segment_duration_ = chopduration_[segment_index_];
+        last_start_       = segment_start_;
         
         // we have passed segment_index_ (end of current segment) and are waiting for the *end* of the next segment
         segment_index_++;
@@ -415,7 +432,7 @@ public:
     }
     
     return 0;
-  }
+  } // end frames()
   
   int finalize (double inputEnd)
   { // inputEnd is the actual end of the sound file, can be after the last frame time
@@ -442,8 +459,8 @@ public:
     }
     
     return 0;
-  }
-};
+  } // end finalize()
+}; // end class PiPoChop
 
 /** EMACS **
  * Local variables:
