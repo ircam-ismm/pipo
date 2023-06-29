@@ -148,7 +148,7 @@ public:
 private:
   void reset_onset()
   {
-    if (this->startisonset.get())
+    if (this->startisonset.get()  &&  !odfoutput.get())
     { // start with a segment at 0
       this->lastFrameWasOnset = true;
       this->onsetTime = -this->offset;	// first marker will be at 0
