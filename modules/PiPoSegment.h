@@ -64,15 +64,15 @@ private:
   RingBuffer<PiPoValue> buffer;	// ring buffer for median calculation
   std::vector<PiPoValue> temp;  // unrolled ring buffer
   std::vector<PiPoValue> lastFrame;
-  unsigned int filterSize;
-  unsigned int inputSize;
+  unsigned int filterSize = 0;
+  unsigned int inputSize  = 0;
   std::vector<unsigned int> columns;
-  double offset;
-  double frameperiod;
-  bool lastFrameWasOnset;
-  double onsetTime; // time of last onset or -DBL_MAX if none yet
-  bool odfoutput_;
-  bool segIsOn;
+  double offset = 0.0;
+  double frameperiod = 1.;
+  bool lastFrameWasOnset = false;
+  double onsetTime = -DBL_MAX; // time of last onset or -DBL_MAX if none yet
+  bool odfoutput_ = false;
+  bool segIsOn = false;
   int keepFirstSegment = 0; // 0: off, 1: wait for first frame (force onset), 2: in first segment
   
 public:
@@ -91,35 +91,24 @@ public:
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     buffer(), temp(), lastFrame(), 
-    columns_attr_(this, "columns", "List of Names or Indices of Columns Used for Onset Calculation", true),
-    fltsize_attr_(this, "filtersize", "Filter Size", true, 3),
-    threshold_attr_(this, "threshold", "Onset Threshold", false, 5),
-    onsetmode_attr_(this, "onsegmetric", "Onset Detection Calculation Mode", true, MeanOnset),
-    mininter_attr_(this, "mininter", "Minimum Onset Interval", false, 50.0),
+    columns_attr_     (this, "columns",      "List of Names or Indices of Columns Used for Onset Calculation", true),
+    fltsize_attr_     (this, "filtersize",   "Filter Size", true, 3),
+    threshold_attr_   (this, "threshold",    "Onset Threshold", false, 5),
+    onsetmode_attr_   (this, "onsegmetric",  "Onset Detection Calculation Mode", true, MeanOnset),
+    mininter_attr_    (this, "mininter",     "Minimum Onset Interval", false, 50.0),
     startisonset_attr_(this, "startisonset", "Place Marker at Start of Buffer", false, false),
-    durthresh_attr_(this, "durthresh", "Duration Threshold", false, 0.0),
-    offthresh_attr_(this, "offthresh", "Segment End Threshold", false, -80.0),
-    maxsegsize_attr_(this, "maxsize", "Maximum Segment Duration", false, 0.0),
-    odfoutput_attr_(this, "odfoutput", "Output only onset detection function", true, false),
-    offset_attr_(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
+    durthresh_attr_   (this, "durthresh",    "Duration Threshold", false, 0.0),
+    offthresh_attr_   (this, "offthresh",    "Segment End Threshold", false, -80.0),
+    maxsegsize_attr_  (this, "maxsize",      "Maximum Segment Duration", false, 0.0),
+    odfoutput_attr_   (this, "odfoutput",    "Output only onset detection function", true, false),
+    offset_attr_      (this, "offset",       "Time Offset Added To Onsets [ms]", false, 0)
   {
-    this->filterSize = 0;
-    this->inputSize = 0;
-    
-    this->offset = 0.0;
-    this->frameperiod = 1.;
-    this->lastFrameWasOnset = false;
-    this->onsetTime = -DBL_MAX;
-    
-    this->odfoutput_ = false;
-    this->segIsOn = false;
-    
-    this->onsetmode_attr_.addEnumItem("mean", "Mean");
-    this->onsetmode_attr_.addEnumItem("absmean", "Absolute Mean");
-    this->onsetmode_attr_.addEnumItem("negmean", "Mean with Inverted Peaks");
-    this->onsetmode_attr_.addEnumItem("square", "Mean Square");
-    this->onsetmode_attr_.addEnumItem("rms", "Root of Mean Square");
-    this->onsetmode_attr_.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
+    onsetmode_attr_.addEnumItem("mean", "Mean");
+    onsetmode_attr_.addEnumItem("absmean", "Absolute Mean");
+    onsetmode_attr_.addEnumItem("negmean", "Mean with Inverted Peaks");
+    onsetmode_attr_.addEnumItem("square", "Mean Square");
+    onsetmode_attr_.addEnumItem("rms", "Root of Mean Square");
+    onsetmode_attr_.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
   }
   
   ~PiPoSegment (void)
