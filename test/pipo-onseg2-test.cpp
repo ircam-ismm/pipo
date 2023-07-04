@@ -89,4 +89,31 @@ TEST_CASE ("onseg2", "[seg]")
       CHECK(host.receivedFrames[1][0] == Approx(t_duration2 + t_win).epsilon(0.01)); 
     }
   }
+    
+  WHEN ("with startisonset 1")
+  {
+    host.reset(); // clear stored received frames
+    host.setAttr("onseg.duration", 1);
+    host.setAttr("onseg.startisonset", 1);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+      CHECK(sa.dims[0] == 1);
+      CHECK(sa.dims[1] == 1); // expect duration column
+
+      REQUIRE(host.receivedFrames.size() == 3);
+      CHECK(host.received_times_[0] == 0); // Approx(t_win / 2).epsilon(0.01)); // expect first frame as onsete timetagged at middle of window
+      CHECK(host.received_times_[1] == Approx(t_expected(t_onset1)).epsilon(0.1));
+      CHECK(host.received_times_[2] == Approx(t_expected(t_onset2)).epsilon(0.1));
+      CHECK(host.receivedFrames[0][0] == Approx(t_expected(t_onset1)).epsilon(0.05)); // duration is enlarged by ~~ 1 window
+      CHECK(host.receivedFrames[1][0] == Approx(t_duration1 + t_win).epsilon(0.01));
+      CHECK(host.receivedFrames[2][0] == Approx(t_duration2 + t_win).epsilon(0.01)); 
+    }
+  }
 }
