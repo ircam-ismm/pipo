@@ -152,11 +152,11 @@ public:
     if (this->odfoutput_)
     { // we output the onset detection function (and segment() calls)
       const char *outlab[1] = { "ODF" };
-      return this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
+      return this->propagateStreamAttributes(hasTimeTags, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
     else
     { // normal mode: we pass through the input data, for subsequent temporal modeling modules
-      return this->propagateStreamAttributes(true, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+      return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, 1);
     }
   } // end streamAttributes
 
@@ -377,7 +377,7 @@ public:
       if (this->odfoutput_)
       { // output odf for each frame
 	PiPoValue odfval = odf;
-	ret &= this->propagateFrames(this->offset + time, weight, &odfval, 1, 1);
+	ret &= this->propagateFrames(time, weight, &odfval, 1, 1);
       }
       else
       { // segment mode: signal segment end by calling segment()
