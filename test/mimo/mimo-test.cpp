@@ -16,7 +16,9 @@ TEST_CASE("mimo")
   stats.setReceiver(&rx);
 
   const int numframes = 3, numcols = 3;
-  float data[numframes * numcols] = { 1, 4, 7, 2, 5, 8, 3, 6, 9 };
+  float data[numframes * numcols] = { 1, 4, 7,
+				      2, 5, 8,
+				      3, 6, 9 };
 
   SECTION("setup")
   {
@@ -60,6 +62,11 @@ TEST_CASE("mimo")
 	  printl(min, "%f");
 	  printl(max, "%f");
 
+	  // expected std with normalization by N (matlab: std([1, 2, 3], 1))
+	  CHECK(res.std[0] == Approx(0.8165));
+	  CHECK(res.std[1] == Approx(0.8165));
+	  CHECK(res.std[2] == Approx(0.8165));
+	    
 	  THEN("model as json is")
 	  {
 	    mimo_model_data *model = stats.getmodel();
@@ -98,10 +105,10 @@ TEST_CASE("mimo")
 		CHECK(rx.prx.count_frames == numframes);
 		REQUIRE(rx.prx.values != NULL);
 
-		// last frame is mean + 1
-		CHECK(rx.prx.values[0] == Approx(1 / 1.63299322));
-		CHECK(rx.prx.values[1] == Approx(1 / 4.54606056));
-		CHECK(rx.prx.values[2] == Approx(1 / 7.52772665));
+		// last input frame value is mean + 1, i.e. value - mean == 1. We expect (value - mean) / std
+		CHECK(rx.prx.values[0] == Approx(1 / 0.816497));
+		CHECK(rx.prx.values[1] == Approx(1 / 0.816497));
+		CHECK(rx.prx.values[2] == Approx(1 / 0.816497));
 		rx.zero();
 	      }
 	    }
