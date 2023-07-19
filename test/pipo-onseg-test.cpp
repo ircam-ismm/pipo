@@ -135,7 +135,9 @@ TEST_CASE ("onseg", "[seg]")
     REQUIRE(host.setGraph("mfcc<onseg,thru>")); // undefined: onseg not in sync with thru frames from mfcc
     REQUIRE(host.setAttr("onseg.columns", 0));
     REQUIRE(host.setAttr("onseg.duration", 1));
+    REQUIRE(host.setInputStreamAttributes(sa) != 0); // this should fail, calling frames is illegal 
 
+    // calling frames is now illegal, but shouldn't crash
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 

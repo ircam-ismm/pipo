@@ -55,7 +55,7 @@ private:
   {
     count_error++;
     last_error = errorMsg;
-    printf("error: PiPoTestHost::signalError: %s\n", errorMsg.c_str());
+    printf("\n!!!!!!!!!! ERROR !!!!!!!!!! PiPoTestHost::signalError: %s\n", errorMsg.c_str());
   }
 
   /** called by pipo to signal warning in parameters */
@@ -63,7 +63,7 @@ private:
   {
     count_warning++;
     last_warning = errorMsg;
-    printf("warning: PiPoTestHost::signalWarning: %s\n", errorMsg.c_str());
+    printf("\n!!!!!!!!!! WARNING !!!!!!!!!! PiPoTestHost::signalWarning: %s\n", errorMsg.c_str());
   }
 
 public:

@@ -34,6 +34,7 @@ TEST_CASE ("chop-list", "[seg]")
   const std::vector<double> t_expected4  = {         0, 400 };	// expected chop times: 1st seg is dropped, 2nd clipped
   const std::vector<double> v_expected4  = {        45, 445 };	// expected chop mean values
 
+  //TODO: test segments shorter than 1 frame (no data), after end
 
   int n_samp = 50;
   int t_samp = 500;	// time of last input sample

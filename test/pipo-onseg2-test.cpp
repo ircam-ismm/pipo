@@ -108,7 +108,7 @@ TEST_CASE ("onseg2", "[seg]")
       CHECK(sa.dims[1] == 1); // expect duration column
 
       REQUIRE(host.receivedFrames.size() == 3);
-      CHECK(host.received_times_[0] == 0); // Approx(t_win / 2).epsilon(0.01)); // expect first frame as onsete timetagged at middle of window
+      CHECK(host.received_times_[0] == 0); // Approx(t_win / 2).epsilon(0.01)); // expect first frame as onset timetagged at middle of window
       CHECK(host.received_times_[1] == Approx(t_expected(t_onset1)).epsilon(0.1));
       CHECK(host.received_times_[2] == Approx(t_expected(t_onset2)).epsilon(0.1));
       CHECK(host.receivedFrames[0][0] == Approx(t_expected(t_onset1)).epsilon(0.05)); // duration is enlarged by ~~ 1 window

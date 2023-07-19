@@ -65,7 +65,6 @@ TEST_CASE ("segment", "[seg]")
     REQUIRE(host.setAttr("segment.columns", "Loudness"));
     REQUIRE(host.setInputStreamAttributes(sa) == 0);
 
-    host.setAttr("segment.duration", 1);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -132,7 +131,7 @@ TEST_CASE ("segment", "[seg]")
       CHECK(sa.dims[1] == 1); // expect duration column
 
       REQUIRE(host.receivedFrames.size() > 0);
-      CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onsete timetagged at middle of window
+      CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onset timetagged at middle of window
       CHECK(host.receivedFrames[0][0] == Approx(t_expected - t_hop).epsilon(0.1)); // duration until first true segment
     }
   }

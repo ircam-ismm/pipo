@@ -43,6 +43,7 @@ TEST_CASE ("chop", "[seg]")
   {
     host.setAttr("chop.duration", 0);
     host.setAttr("chop.mean", 0);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
     
@@ -66,6 +67,7 @@ TEST_CASE ("chop", "[seg]")
     host.reset(); // clear stored received frames
     host.setAttr("chop.duration", 0);
     host.setAttr("chop.mean", 1);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -86,6 +88,7 @@ TEST_CASE ("chop", "[seg]")
   {
     host.reset(); // clear stored received frames
     host.setAttr("chop.duration", 1);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -134,6 +137,7 @@ TEST_CASE ("chop", "[seg]")
     host.setAttr("chop.size", 200);
     host.setAttr("chop.duration", 0);
     host.setAttr("chop.mean", 1);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -158,6 +162,7 @@ TEST_CASE ("chop", "[seg]")
     host.setAttr("chop.size", 0);
     host.setAttr("chop.duration", 0);
     host.setAttr("chop.mean", 1);
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -180,7 +185,9 @@ TEST_CASE ("chop", "[seg]")
     REQUIRE(host.setGraph("mfcc<chop,thru>")); // undefined: chop not in sync with thru frames from mfcc
     REQUIRE(host.setAttr("chop.size", 100));
     REQUIRE(host.setAttr("chop.duration", 1));
+    REQUIRE(host.setInputStreamAttributes(sa) != 0); // this should fail, calling frames is illegal 
 
+    // calling frames is now illegal, but shouldn't crash
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
     REQUIRE(host.finalize(t_samp) == 0);
 
@@ -188,5 +195,6 @@ TEST_CASE ("chop", "[seg]")
     {
       REQUIRE(host.receivedFrames.size() > 0);
     }
+
   }
 }
