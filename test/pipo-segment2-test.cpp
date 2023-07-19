@@ -13,6 +13,13 @@ extern "C" {
 
 TEST_CASE ("segment2", "[seg]")
 {
+  // define test audio input: 2 x silence / noise segments:
+  //     ________________                        _______________
+  // ____|              |________________________|             |_________________________
+  // :   :              :                        :             :                         :
+  // :   t_onset1       t_onset1 + t_duration1   t_onset2      t_onset2 + t_duration2    t_samp
+  // 0   100            300                      500           900                       1000
+  
 # define t_expected(t) ((t) - (t_win / 2 + t_hop))	// expected reported onset (- framesize etc.)
   const double t_onset1    = 100;
   const double t_duration1 = 200; // 1st segment end at 300 ms
@@ -34,11 +41,11 @@ TEST_CASE ("segment2", "[seg]")
 
   std::vector<float> vals(n_samp); // init with zeros
   
-  // generate test audio with 2 x silence / noise
+  // generate test audio with 2 x silence / noise:
   for (unsigned int i = n_onset1; i < n_offset1; ++i)
-    vals[i] = std::rand() / static_cast<float>(RAND_MAX);
+    vals[i] = std::rand() / static_cast<float>(RAND_MAX) - 0.5;
   for (unsigned int i = n_onset2; i < n_offset2; ++i)
-    vals[i] = std::rand() / static_cast<float>(RAND_MAX);
+    vals[i] = std::rand() / static_cast<float>(RAND_MAX) - 0.5;
 
   PiPoTestHost host;
   host.setGraph("descr:segment:segmarker");
@@ -114,14 +121,48 @@ TEST_CASE ("segment2", "[seg]")
       CHECK(sa.dims[0] == 1);
       CHECK(sa.dims[1] == 1); // expect duration column
 
-      REQUIRE(host.receivedFrames.size() >= 4); //== 6);
+      REQUIRE(host.receivedFrames.size() >= 4); //????? == 6);
       CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onset timetagged at middle of window
       CHECK(host.received_times_[1] == Approx(t_expected(t_onset1)).epsilon(0.1));
       CHECK(host.received_times_[2] == Approx(t_expected(t_onset2)).epsilon(0.1));
-      CHECK(host.received_times_[3] == Approx(t_expected(t_samp)).epsilon(0.1)); //???
+      CHECK(host.received_times_[3] == Approx(t_expected(t_samp)).epsilon(0.1)); //??? why is end time reported?
       CHECK(host.receivedFrames[0][0] == Approx(t_expected(t_onset1) - t_win / 2).epsilon(0.1));
       CHECK(host.receivedFrames[1][0] == Approx(t_duration1 + t_win).epsilon(0.01)); // duration is enlarged by ~~ 1 window
       CHECK(host.receivedFrames[2][0] == Approx(t_duration2 + t_win).epsilon(0.01)); 
+      CHECK(host.receivedFrames[3][0] == Approx(t_samp - host.received_times_[3])); //??? what's this duration?
+    }
+  }
+
+  WHEN ("check loudness values")
+  {
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("descr:segment:<segduration,segmean>"));
+    REQUIRE(host.setAttr("segment.startisonset", 1));
+    REQUIRE(host.setAttr("segment.columns", "Loudness"));
+    REQUIRE(host.setAttr("segmean.columns", "Loudness")); // we just want loudness in dB
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+      CHECK(sa.dims[0] == 2); // duration and loudness
+      CHECK(sa.dims[1] == 1); // expect duration column
+
+      REQUIRE(host.receivedFrames.size() == 3); // why not 4 as above???
+      CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onset timetagged at middle of window
+      CHECK(host.received_times_[1] == Approx(t_expected(t_onset1)).epsilon(0.1));
+      CHECK(host.received_times_[2] == Approx(t_expected(t_onset2)).epsilon(0.1));
+      CHECK(host.receivedFrames[0][0] == Approx(t_expected(t_onset1) - t_win / 2).epsilon(0.1));
+      CHECK(host.receivedFrames[1][0] == Approx(t_duration1 + t_win).epsilon(0.01)); // duration is enlarged by ~~ 1 window
+      CHECK(host.receivedFrames[2][0] == Approx(t_duration2 + t_win).epsilon(0.01)); 
+
+      CHECK(host.receivedFrames[0][1] < -99); // silence
+      CHECK(host.receivedFrames[1][1] > -6);  // noise
+      CHECK(host.receivedFrames[2][1] > -6);
     }
   }
 }
