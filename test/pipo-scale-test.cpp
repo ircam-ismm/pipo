@@ -382,7 +382,7 @@ public:
 
 
 
-TEST_CASE ("PiPoScale")
+TEST_CASE ("scale")
 {
   PiPoTestHost host;
   host.setGraph("scale");
@@ -536,8 +536,8 @@ TEST_CASE ("PiPoScale")
 #	    define scale_log_0_1(x, base) ((/*outscale*/ 1 / logf(base)) * logf((x) * (/*inscale*/ (base - 1.)) + (/*inoffs*/ 1)) + (/*outoffs*/ 0))
 
             std::vector<std::vector<PiPoValue> > values = {
-              {-1.,   defMinLogVal },
-              { 0.,   defMinLogVal },
+              {-1.,   log10f(defMinLogVal) }, // -24
+              { 0.,   scale_log_0_1(0, 10) }, // == 0 (after scaling, x = 0 is > 0)
               { 0.1,  scale_log_0_1(0.1, 10) },
               { 0.5,  scale_log_0_1(0.5, 10) },
               { 0.9,  scale_log_0_1(0.9, 10) },
@@ -567,9 +567,6 @@ TEST_CASE ("PiPoScale")
       } // height
     } // width
   } // sampleRate
-
-  
-
   
 } // PiPoScale test case
 
