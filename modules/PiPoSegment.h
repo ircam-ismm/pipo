@@ -58,7 +58,8 @@ extern "C" {
 class PiPoSegment : public PiPo
 {
 public:
-  enum OnsetMode { MeanOnset, AbsMeanOnset, NegativeMeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
+  enum OnsetMode  { MeanOnset, AbsMeanOnset, NegativeMeanOnset, MeanSquareOnset, RootMeanSquareOnset, KullbackLeiblerOnset };
+  enum OutputMode { OutputOff, OutputThru, OutputODF };
   
 private:
   RingBuffer<PiPoValue> buffer;	// ring buffer for median calculation
@@ -71,7 +72,7 @@ private:
   double frameperiod = 1.;
   bool lastFrameWasOnset = false;
   double onsetTime = -DBL_MAX; // time of last onset or -DBL_MAX if none yet
-  bool odfoutput_ = false;
+  bool outputmode_ = 1;
   bool segIsOn = false;
   int keepFirstSegment = 0; // 0: off, 1: wait for first frame (force onset), 2: in first segment
   std::vector<double> choptimes_;     // cleaned list of chop.at times
@@ -87,7 +88,8 @@ public:
   PiPoScalarAttr<double> durthresh_attr_;
   PiPoScalarAttr<double> offthresh_attr_;
   PiPoScalarAttr<double> maxsegsize_attr_;
-  PiPoScalarAttr<bool> odfoutput_attr_;
+  PiPoScalarAttr<bool> odfoutput_attr_; // deprecated, replaced by outputmode_attr_
+  PiPoScalarAttr<PiPo::Enumerate> outputmode_attr_;
   PiPoScalarAttr<double> offset_attr_;
   PiPoVarSizeAttr<double> chopTimesA;
   PiPoVarSizeAttr<double> chopDurationA;
@@ -104,7 +106,8 @@ public:
     durthresh_attr_   (this, "durthresh",    "Duration Threshold", false, 0.0),
     offthresh_attr_   (this, "offthresh",    "Segment End Threshold", false, -80.0),
     maxsegsize_attr_  (this, "maxsize",      "Maximum Segment Duration", false, 0.0),
-    odfoutput_attr_   (this, "odfoutput",    "Output only onset detection function", true, false),
+    odfoutput_attr_   (this, "odfoutput",    "Output only onset detection function [DEPRECATED]", true, false),
+    outputmode_attr_  (this, "outputmode",   "Choose output: nothing, passthru (default), onset detection function", true, outputmode_),
     offset_attr_      (this, "offset",       "Time Offset Added To Onsets [ms]", false, 0),
     chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides onseg detection", false),
     chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false)
@@ -115,6 +118,10 @@ public:
     onsetmode_attr_.addEnumItem("square", "Mean Square");
     onsetmode_attr_.addEnumItem("rms", "Root of Mean Square");
     onsetmode_attr_.addEnumItem("kullbackleibler", "Kullback Leibler Divergence");
+
+    outputmode_attr_.addEnumItem("off",  "Off");
+    outputmode_attr_.addEnumItem("thru", "Passthrough");
+    outputmode_attr_.addEnumItem("odf",  "Onset Detection Function");
   }
   
   ~PiPoSegment (void)
@@ -147,16 +154,20 @@ public:
     reset_segment();
     
     // in segment mode, input data is passed through
-    this->odfoutput_ = this->odfoutput_attr_.get();
+    outputmode_ = odfoutput_attr_.get()  ?  OutputODF  :  outputmode_attr_.getInt();
     
-    if (this->odfoutput_)
-    { // we output the onset detection function (and segment() calls)
-      const char *outlab[1] = { "ODF" };
-      return this->propagateStreamAttributes(hasTimeTags, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
-    }
-    else
-    { // normal mode: we pass through the input data, for subsequent temporal modeling modules
-      return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, 1);
+    switch (outputmode_)
+    {
+      case OutputOff:	// silent mode: we don't pass any input data, just call segment()
+	return this->propagateStreamAttributes(hasTimeTags, rate, offset, 0, 0, NULL, hasVarSize, domain, 1);
+
+      case OutputThru:
+      default:	// normal mode: we pass through the input data, for subsequent temporal modeling modules
+	return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, 1);
+
+      case OutputODF:// we output the onset detection function (and segment() calls)
+	const char *outlab[1] = { "ODF" };
+	return this->propagateStreamAttributes(hasTimeTags, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
     }
   } // end streamAttributes
 
@@ -290,7 +301,7 @@ public:
     double durationThreshold = this->durthresh_attr_.get();
     double offThreshold = this->offthresh_attr_.get();
     enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode_attr_.get();
-    int ret = 1;
+    int ret = 0;
     
     if (size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
@@ -374,10 +385,10 @@ public:
 		 onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
 #endif
       
-      if (this->odfoutput_)
+      if (this->outputmode_ == OutputODF)
       { // output odf for each frame
 	PiPoValue odfval = odf;
-	ret &= this->propagateFrames(time, weight, &odfval, 1, 1);
+	ret = this->propagateFrames(time, weight, &odfval, 1, 1);
       }
       else
       { // segment mode: signal segment end by calling segment()
@@ -400,7 +411,7 @@ public:
 	  else if (keepFirstSegment == 2  &&  frameIsOnset)
 	    keepFirstSegment = 0; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
 
-          ret &= propagateSegment(this->offset + time, frameIsOnset);
+          ret = propagateSegment(this->offset + time, frameIsOnset);
         }
         
         /* segment on/off (segment has at least one frame) */
@@ -414,9 +425,13 @@ public:
           this->segIsOn = false;
 
 	this->lastFrameWasOnset = frameIsOnset;
-	
-	// pass through frames one by one for subsequent temporal modeling modules
-	ret &= this->propagateFrames(time, weight, values, size, 1);
+
+	if (outputmode_ == OutputOff)
+	  // pass 0 size frame to trigger merger
+	  ret |= this->propagateFrames(time, weight, NULL, 0, 1);
+	else
+	  // pass through frames one by one for subsequent temporal modeling modules
+	  ret |= this->propagateFrames(time, weight, values, size, 1);
       }
       
       }
