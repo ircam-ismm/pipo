@@ -42,6 +42,7 @@
 
 #include "PiPo.h"
 #include "RingBuffer.h"
+#include "segmenter.h"
 
 extern "C" {
 #include "rta_configuration.h"
@@ -53,6 +54,13 @@ extern "C" {
 
 
 #define DEBUG_SEGMENT (DEBUG * 2)
+// keep quiet!
+#define DEBUG_CHOP 2 // DEBUG * 1
+
+// for dbprint
+#undef NEXT_TIME
+#define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
+#define NEXT_TIME(seg) NICE_TIME(seg->getNextTime())
 
 
 class PiPoSegment : public PiPo
@@ -62,6 +70,7 @@ public:
   enum OutputMode { OutputOff, OutputThru, OutputODF };
   
 private:
+  Segmenter		*seg = NULL;	// if NULL, use onseg, otherwise this segmenter
   RingBuffer<PiPoValue> buffer;	// ring buffer for median calculation
   std::vector<PiPoValue> temp;  // unrolled ring buffer
   std::vector<PiPoValue> lastFrame;
@@ -91,8 +100,8 @@ public:
   PiPoScalarAttr<bool> odfoutput_attr_; // deprecated, replaced by outputmode_attr_
   PiPoScalarAttr<PiPo::Enumerate> outputmode_attr_;
   PiPoScalarAttr<double> offset_attr_;
-  PiPoVarSizeAttr<double> chopTimesA;
-  PiPoVarSizeAttr<double> chopDurationA;
+  PiPoVarSizeAttr<double> choptimes_attr_;
+  PiPoVarSizeAttr<double> chopdurations_attr_;
 
   PiPoSegment (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
@@ -109,8 +118,8 @@ public:
     odfoutput_attr_   (this, "odfoutput",    "Output only onset detection function [DEPRECATED]", true, false),
     outputmode_attr_  (this, "outputmode",   "Choose output: nothing, passthru (default), onset detection function", true, outputmode_),
     offset_attr_      (this, "offset",       "Time Offset Added To Onsets [ms]", false, 0),
-    chopTimesA(this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides onseg detection", false),
-    chopDurationA(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false)
+    choptimes_attr_   (this, "segtimes",  "Fixed Segmentation Times [ms, offset is added], overrides onseg detection", false),
+    chopdurations_attr_(this, "segdurations",  "Fixed Segment Durations [ms], used with chop.segtimes, optional", false)
   {
     onsetmode_attr_.addEnumItem("mean", "Mean");
     onsetmode_attr_.addEnumItem("absmean", "Absolute Mean");
@@ -174,9 +183,13 @@ public:
   
   void reset_segment ()
   {
-    //settimes(chop.chopTimesA, chop.chopDurationA); // set and clean time/duration lists
+    if (choptimes_attr_.getSize() > 0)
+    {
+      seg = new FixedSegmenter(choptimes_attr_, chopdurations_attr_);
+      seg->set_offset(offset);
+    }
       
-    if (choptimes_.size() == 0)
+    if (seg == NULL)
     { // use regular chop size
       if (this->startisonset_attr_.get())
       { // start with a segment at 0
@@ -195,8 +208,7 @@ public:
     }
     else
     { // use chop times list (is shifted by offset)
-      //last_start_ = choptimes_[0] + offset_; // first segment start
-      //next_time_  = last_start_ + chopduration_[0]; // first segment end
+      seg->reset();
     }
   } // reset_segment
 
@@ -209,59 +221,7 @@ public:
     return this->propagateReset();
   };
 
-  
-  // set, clean, and normalize chop.at and chop.duration lists:
-  // remove repeating and non-monotonous elements from times, generate normalized durations even when empty
-  void settimes (PiPoVarSizeAttr<double> &times, PiPoVarSizeAttr<double> &durations)
-  {
-    chopduration_.reserve(times.getSize());
-    chopduration_.assign (durations.getPtr(), durations.getPtr() + durations.getSize());
-    choptimes_.assign    (times.getPtr(),     times.getPtr()     + times.getSize());
-      
-    // check and clean times
-    for (size_t i = 0; i < choptimes_.size(); i++)
-    {
-      // clip negative times to 0
-      if (choptimes_[i] < 0)
-	choptimes_[i] = 0;
-        
-      // check strictly monotonous sequence
-      if (i > 0  &&  choptimes_.size() > 1)
-	if (choptimes_[i] <= choptimes_[i - 1])
-	{ // remove times that don't advance (and corresponding duration entries)
-	  choptimes_.erase(choptimes_.begin() + i);
-            
-	  // remove corresponding entry in duration list
-	  if (i < chopduration_.size())
-	    chopduration_.erase(chopduration_.begin() + i);
-	}
-    }
-      
-    // generate normalized durations: clip and fill up to end
-    for (size_t i = 0; i < choptimes_.size(); i++)
-    {
-      // inter-segment-onset time, "inf" end time for last segment (will be clipped to file length)
-      double segduration = (i + 1 < choptimes_.size()  ?  choptimes_[i + 1]  :  DBL_MAX) - choptimes_[i];
-        
-      if (i < chopduration_.size())
-      { // clip duration between 0 and next segment start
-	if (chopduration_[i] <= 0)
-	  chopduration_[i] = segduration;
-	else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
-	  chopduration_[i] = segduration;
-      }
-      else
-      { // duration list shorter than times list, fill with segment duration
-	chopduration_.push_back(segduration);
-      }
-    }
-      
-#if DEBUG_CHOP
-    for (size_t i = 0; i < choptimes_.size(); i++)
-      printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
-#endif
-  } // end settimes()
-    
+ 
   template<typename MetricFuncType>
   void calc_onseg_metric (const PiPoValue *values, const unsigned int size, const int filterSize, double &odf, double &energy, MetricFuncType func)
   {
@@ -311,7 +271,7 @@ public:
     for (unsigned int i = 0; i < num; i++)
     { // for all frames
 
-      if (choptimes_.size() == 0)
+      if (seg == NULL)
       {
       double odf, energy;
       PiPoValue scale = 1.0;
@@ -437,7 +397,23 @@ public:
       }
       else
       { // chop segtimes
-	
+	// check for crossing of segment time, store cur. segment data, advance to next segment time
+	if (seg->isSegment(time))
+	{
+#if DEBUG_CHOP
+	  printf("   segmenttime! start %f duration %f at input time %f  nextTime %f\n",
+		 seg->getSegmentStart(), seg->getSegmentDuration(), time, NEXT_TIME(seg));
+#endif
+
+	  /* report segment at precise last chop time */
+	  ret = propagateSegment(seg->getSegmentStart(), seg->isOn(time));
+	}
+
+	// pass through frames for subsequent temporal modeling modules
+	if (outputmode_ == OutputOff)
+	  ret |= this->propagateFrames(time, weight, NULL, 0, 1);
+	else
+	  ret |= this->propagateFrames(time, weight, values, size, 1);
       }
       
       if (ret != 0)
@@ -453,24 +429,47 @@ public:
   
   int finalize (double inputEnd) override
   {
-    double durationThreshold = this->durthresh_attr_.get();
-    double duration = inputEnd - this->onsetTime;
-    //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
+    if (seg == NULL)
+    {
+      double durationThreshold = this->durthresh_attr_.get();
+      double duration = inputEnd - this->onsetTime;
+      //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
     
-    if (this->segIsOn  &&  duration >= durationThreshold)
-    { // end of segment (new onset or below off threshold): propagate last segment end
+      if (this->segIsOn  &&  duration >= durationThreshold)
+      { // end of segment (new onset or below off threshold): propagate last segment end
 #if DEBUG_SEGMENT
-	  printf("PiPoSegment::finalize @ %f  seg on %d  dur %f  --> segment %f %d\n", inputEnd, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration, this->offset + inputEnd, false);
+	printf("PiPoSegment::finalize @ %f  seg on %d  dur %f  --> segment %f %d\n", inputEnd, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration, this->offset + inputEnd, false);
 #endif
-      return propagateSegment(this->offset + inputEnd, false);
+	/*return*/ propagateSegment(this->offset + inputEnd, false);
+      }
+#if DEBUG_SEGMENT
+      else
+	printf("PiPoSegment::finalize @ %f  seg on %d  dur %f\n", inputEnd, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration);
+#endif
     }
-#if DEBUG_SEGMENT
     else
-      printf("PiPoSegment::finalize @ %f  seg on %d  dur %f\n", inputEnd, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration);
+    { // inputEnd is the actual end of the sound file, can be after the last frame time
+      double duration = seg->getLastDuration(inputEnd);
+    
+#if DEBUG_CHOP
+      printf("PiPoChop finalize endtime %f  duration %f  segment_index_ %d\n", inputEnd, duration, seg->getSegmentIndex());
 #endif
+    
+      if (duration < DBL_MAX) // there is a pending segment (TODO: want last smaller segment? duration >= chopSizeA.get())
+      {
+	bool segison =  seg->isOn(inputEnd - duration);
+	
+	/* report segment, and end it if it was started  */
+	propagateSegment(inputEnd - duration, segison);
+	// don't end segment here, that is the choice of downstream finalize
+	// if (segison)	  propagateSegment(inputEnd, false);
+      }
+    
+    }
 
-    return this->propagateFinalize(inputEnd);
-  } // finalize
+    return propagateFinalize(inputEnd);
+  } // end PiPoSegment::finalize ()
+  
 }; // end class PiPoSegment
 
 /** EMACS **

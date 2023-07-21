@@ -45,6 +45,8 @@
 #include <vector>
 #include <string>
 
+#define TEMPMOD_DEBUG (DEBUG * 1)
+
 template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false, bool DURATION = false>
 class PiPoTemporalModeling : public PiPo
 {
@@ -169,6 +171,9 @@ public:
   // upstream segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
   int segment (double time, bool start) override
   {
+#if TEMPMOD_DEBUG
+    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d\n", MIN, MAX, MEAN, STD, DURATION, time, start, seg_is_on_);
+#endif
     int ret = 0;
      
     if (marker_only_)
