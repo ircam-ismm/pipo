@@ -26,7 +26,7 @@ public:
   double getSegmentDuration() { return segment_duration_; }
   virtual double getLastDuration (double endtime) = 0;
 
-#if DEBUG_CHOP
+#if DEBUG
   double getLastTime()	{ return last_start_; } // debug only
   double getNextTime()	{ return next_time_; } // debug only
   unsigned int getSegmentIndex()	{ return segment_index_; } // debug only

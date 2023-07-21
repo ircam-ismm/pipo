@@ -55,7 +55,7 @@ extern "C" {
 
 #define DEBUG_SEGMENT (DEBUG * 2)
 // keep quiet!
-#define DEBUG_CHOP 2 // DEBUG * 1
+#define DEBUG_CHOP (DEBUG * 2)
 
 // for dbprint
 #undef NEXT_TIME
