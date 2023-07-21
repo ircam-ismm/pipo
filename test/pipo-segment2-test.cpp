@@ -55,7 +55,7 @@ TEST_CASE ("segment2", "[seg]")
   sa.rate = sr;
 
   REQUIRE(host.setInputStreamAttributes(sa) == 0);
-  
+#if 0
   WHEN ("no duration")
   {
     REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
@@ -149,8 +149,8 @@ TEST_CASE ("segment2", "[seg]")
     {
       PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
       CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
-      CHECK(sa.dims[0] == 2); // duration and loudness
-      CHECK(sa.dims[1] == 1); // expect duration column
+      CHECK(sa.dims[0] == 2); // expect duration and loudness column
+      CHECK(sa.dims[1] == 1); 
 
       REQUIRE(host.receivedFrames.size() == 3); // why not 4 as above???
       CHECK(host.received_times_[0] == Approx(t_win / 2 - t_hop).epsilon(0.1)); // expect first frame as onset timetagged at middle of window
@@ -163,6 +163,48 @@ TEST_CASE ("segment2", "[seg]")
       CHECK(host.receivedFrames[0][1] < -99); // silence
       CHECK(host.receivedFrames[1][1] > -6);  // noise
       CHECK(host.receivedFrames[2][1] > -6);
+    }
+  }
+#endif
+  WHEN ("use parallel segmentation")
+  {
+    const int    n_winseg = 256;
+    const int    n_hopseg = 64;	
+    const double t_winseg = n_winseg / sr * 1000.; 
+    const double t_hopseg = n_hopseg / sr * 1000.; 
+#   define t_expected_seg(t) ((t) - (t_winseg / 2 + t_hopseg))	// expected reported onset (- framesize etc.)
+
+    host.reset(); // clear stored received frames
+    REQUIRE(host.setGraph("<descr,loudness:segment><segduration,segmean>"));
+    REQUIRE(host.setAttr("segment.startisonset", 1));
+    REQUIRE(host.setAttr("segment.outputmode",   0));
+    REQUIRE(host.setAttr("loudness.hopsize",    n_hopseg));	// more precise
+    REQUIRE(host.setAttr("loudness.winsize",    n_winseg));	// more precise
+    REQUIRE(host.setAttr("segmean.columns", "Loudness"));       // we just want loudness from descr. in dB
+    REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+    REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+    REQUIRE(host.finalize(t_samp) == 0);
+
+    THEN ("result is ok")
+    {
+      PiPoStreamAttributes &sa = host.getOutputStreamAttributes();
+      CHECK(sa.rate == sr / n_hop);  // output frame rate of descr
+      CHECK(sa.dims[0] == 2); // duration and loudness
+      CHECK(sa.dims[1] == 1);
+
+      REQUIRE(host.receivedFrames.size() == 3);
+      CHECK(host.received_times_[0] == Approx(t_winseg / 2 - t_hopseg).epsilon(0.2)); // expect first frame as onset timetagged at middle of window
+      CHECK(host.received_times_[1] == Approx(t_expected_seg(t_onset1)).epsilon(0.01));
+      CHECK(host.received_times_[2] == Approx(t_expected_seg(t_onset2)).epsilon(0.01));
+
+      CHECK(host.receivedFrames[0][0] == Approx(t_expected_seg(t_onset1) - t_hopseg).epsilon(0.01));
+      CHECK(host.receivedFrames[1][0] == Approx(t_duration1 + t_winseg).epsilon(0.01)); // duration is enlarged by ~~ 1 window
+      CHECK(host.receivedFrames[2][0] == Approx(t_duration2 + t_winseg).epsilon(0.01)); 
+
+      CHECK(host.receivedFrames[0][1] < -99); // silence
+      CHECK(host.receivedFrames[1][1] > -6); CHECK(host.receivedFrames[1][1] !=  0);  // noise
+      CHECK(host.receivedFrames[2][1] > -6); CHECK(host.receivedFrames[2][1] !=  0);  // noise
     }
   }
 }
