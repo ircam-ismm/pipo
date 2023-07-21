@@ -262,7 +262,7 @@ public:
     {
       const char *outlab[1] = { "ODF" };
       if (ret == 0)
-	ret = this->propagateStreamAttributes(true, rate, 0.0, 1, 1, outlab, false, 0.0, 1);
+	ret = this->propagateStreamAttributes(hasTimeTags, rate, 0.0, 1, 1, outlab, false, 0.0, 1); // odf output at same rate/form as input
     }
     else // real-time mode: output marker immediately, no data
       if (ret == 0)
@@ -403,8 +403,9 @@ public:
                             &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
 #if DEBUG_ONSEG
-      printf("PiPoOnseg::frames(%5.1f)  en %6.1f  odf %6.1f  dur %6.1f  onset %d  last %d  offset %d  segIsOn %d\n", time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
-	     frameIsOnset, lastFrameWasOnset, energy < offThreshold ||  keepFirstSegment, segIsOn);
+      printf("PiPoOnseg::frames(%5.1f) ener %5g odf %5g  dur %6.1f  onset %d  last %d  offset %d  seg on %d\n",
+	     time, energy, odf, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime),
+	     frameIsOnset, lastFrameWasOnset, energy < offThreshold && !keepFirstSegment, segIsOn);
 #endif
       
       if (!this->segmentmode)
