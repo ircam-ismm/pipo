@@ -4,6 +4,10 @@
 #ifndef _SEGMENTER_H_
 #define _SEGMENTER_H_
 
+#define DEBUG_SEGMENTER (DEBUG * 2)
+#undef  NICE_TIME
+#define NICE_TIME(t)   (((t) < DBL_MAX * 0.5  &&  (t) > -DBL_MAX * 0.5)  ?  (t)  :  -1)
+
 class Segmenter
 {
 protected:
@@ -40,17 +44,10 @@ public:
   }
   
   // at each frame: check if time has crossed segment boundary
-  bool isSegment (double time)
+  virtual bool isSegment (double time)
   {
     if (time < next_time_)
-    { // segment time not yet reached
-      if (next_time_ == DBL_MAX) // &&  chopsize_ > 0  &&  choptimes_.size() == 0)
-        // BUT: when chop.size was 0, we need to check if it was reset
-        // TODO: add a changed flag to pipo::attr, or a callback
-        next_time_ = time;	// go to Segmenter::advance() immediately and return true
-      else
-        return false;
-    }
+      return false;  // segment time not yet reached
       
     while (time >= next_time_) // catch up with current time
       advance(time);
@@ -140,7 +137,7 @@ public:
       }
     }
       
-#if DEBUG_CHOP
+#if DEBUG_SEGMENTER
     for (size_t i = 0; i < choptimes_.size(); i++)
       printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
 #endif
@@ -164,7 +161,7 @@ public:
       
     return duration;
   } // end FixedSegmenter::getLastDuration ()
-  
+
   // return true if time is within the duration of a segment
   // (time is always before the end time of the currently awaited segment)
   bool isOn (double time)
@@ -177,8 +174,9 @@ public:
     segend    =  segment_index_ < choptimes_.size()  ?  segstart + chopduration_[segment_index_]  :  -DBL_MAX;
     seg_is_on = time >= segstart  &&  time < segend; // time is within extent of pending segment
 
-#if DEBUG_CHOP > 1      
-    printf("isOn %4g last %4g next %4g  segind %d/%d cur start %4g end %4g  last start %4g dur %4g --> %d\n", time, last_start_, NICE_TIME(next_time_), segment_index_, choptimes_.size(), NICE_TIME(segstart), NICE_TIME(segend), NICE_TIME(segment_start_), segment_duration_, seg_is_on);
+#if DEBUG_SEGMENTER > 1      
+    printf("isOn@ %4g last %4g next %4g  cur start %4g end %4g  last start %4g dur %4g --> %d\n",
+           time, last_start_, NICE_TIME(next_time_), NICE_TIME(segstart), NICE_TIME(segend), NICE_TIME(segment_start_), NICE_TIME(segment_duration_), seg_is_on);
 #endif
 
     return seg_is_on;
@@ -250,6 +248,25 @@ public:
     return duration;
   } // end ChopSegmenter::getLastDuration ()
 
+  // at each frame: check if time has crossed segment boundary
+  bool isSegment (double time) override
+  {
+    if (time < next_time_)
+    { // segment time not yet reached
+      if (next_time_ == DBL_MAX  &&  chopsize_ > 0)
+        // BUT: when chop.size was 0, we need to check if it was reset
+        // TODO: add a changed flag to pipo::attr, or a callback
+        next_time_ = time;	// go to Segmenter::advance() immediately and return true
+      else
+        return false;
+    }
+      
+    while (time >= next_time_) // catch up with current time
+      advance(time);
+      
+    return true;
+  } // end ChopSegmenter::isSegment()
+
   // return true if time is within the duration of a segment
   // (time is always before the end time of the currently awaited segment)
   bool isOn (double time) override
@@ -259,7 +276,7 @@ public:
       
     seg_is_on = time >= last_start_; // start time of pending segment
 	
-#if DEBUG_CHOP > 1      
+#if DEBUG_SEGMENTER > 1      
     printf("isOn %4g last %4g next %4g  cur start %4g end %4g  last start %4g dur %4g --> %d\n",
            time, last_start_, NICE_TIME(next_time_), NICE_TIME(segstart), NICE_TIME(segend), NICE_TIME(segment_start_), segment_duration_, seg_is_on);
 #endif
