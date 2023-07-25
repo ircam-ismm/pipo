@@ -54,12 +54,10 @@ extern "C" {
 
 
 #define DEBUG_SEGMENT (DEBUG * 2)
-// keep quiet!
-#define DEBUG_CHOP (DEBUG * 2)
 
 // for dbprint
 #undef NEXT_TIME
-#define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
+#define NICE_TIME(t)   (((t) < DBL_MAX * 0.5  &&  (t) > -DBL_MAX * 0.5)  ?  (t)  :  -1)
 #define NEXT_TIME(seg) NICE_TIME(seg->getNextTime())
 
 
@@ -185,7 +183,7 @@ public:
   {
     if (choptimes_attr_.getSize() > 0)
     {
-      seg = new FixedSegmenter(choptimes_attr_, chopdurations_attr_);
+      seg = new ListSegmenter(choptimes_attr_, chopdurations_attr_);
       seg->set_offset(offset);
     }
       
@@ -262,7 +260,11 @@ public:
     double offThreshold = this->offthresh_attr_.get();
     enum OnsetMode onset_mode = (enum OnsetMode) this->onsetmode_attr_.get();
     int ret = 0;
-    
+
+#if DEBUG_SEGMENT >= 2
+    printf("PiPoSegment frames time %f (last %f, next %f)  size %d  num %d\n", time, NICE_TIME(seg->getLastTime()), NEXT_TIME(seg), size, num);
+#endif
+
     if (size > this->buffer.width)
       size = this->buffer.width; //FIXME: values += size at the end of the loop can be wrong
 
@@ -272,45 +274,45 @@ public:
     { // for all frames
 
       if (seg == NULL)
-      {
-      double odf, energy;
-      PiPoValue scale = 1.0;
+      { // onset segmentation
+	double odf, energy;
+	PiPoValue scale = 1.0;
       
-      /* normalize sum to one for Kullback Leibler divergence */
-      if (onset_mode == KullbackLeiblerOnset)
-      {
-        PiPoValue normSum = 0.0;
+	/* normalize sum to one for Kullback Leibler divergence */
+	if (onset_mode == KullbackLeiblerOnset)
+	{
+	  PiPoValue normSum = 0.0;
         
-        for (unsigned int j = 0; j < numcols; j++)
-          normSum += values[columns[j]];
+	  for (unsigned int j = 0; j < numcols; j++)
+	    normSum += values[columns[j]];
         
-        scale = 1.0 / normSum;
-      }
+	  scale = 1.0 / normSum;
+	}
       
-      /* input frame */
-      int filterSize = this->buffer.input(values, size, scale);
-      this->temp = this->buffer.vector;
+	/* input frame */
+	int filterSize = this->buffer.input(values, size, scale);
+	this->temp = this->buffer.vector;
       
-      switch (onset_mode)
-      {
+	switch (onset_mode)
+	{
         case MeanOnset: // identity metric func
 	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x; });
-        break;
+	  break;
         
         case AbsMeanOnset:
 	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return fabs(x); });
-        break;
+	  break;
           
         case MeanSquareOnset:
 	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
-        break;
+	  break;
 
         case RootMeanSquareOnset:
 	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
 
 	  odf    = sqrt(odf);
 	  energy = sqrt(energy);
-        break;
+	  break;
           
         case KullbackLeiblerOnset:
 	  odf = 0;
@@ -329,84 +331,83 @@ public:
           
           odf /= numcols;
           energy /= numcols;
-	break;
-      } // end switch(onset_mode)
+	  break;
+	} // end switch(onset_mode)
       
-      /* get onset */
-      double maxsize = maxsegsize_attr_.get();
-      bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
-                             &&  !this->lastFrameWasOnset    // avoid double trigger
-                             &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
-	                 || keepFirstSegment == 1	     // force immediate first segment be detected
-                         || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
+	/* get onset */
+	double maxsize = maxsegsize_attr_.get();
+	bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
+			       &&  !this->lastFrameWasOnset    // avoid double trigger
+			       &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+	  || keepFirstSegment == 1	     // force immediate first segment be detected
+	  || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
 #if DEBUG_SEGMENT > 1
-	  printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep %d  onset time %6.1f dur %6.1f\n",
-		 time, energy, odf, frameIsOnset, lastFrameWasOnset, segIsOn, keepFirstSegment, 
-		 onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
+	printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep %d  onset time %6.1f dur %6.1f\n",
+	       time, energy, odf, frameIsOnset, lastFrameWasOnset, segIsOn, keepFirstSegment, 
+	       onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
 #endif
       
-      if (this->outputmode_ == OutputODF)
-      { // output odf for each frame
-	PiPoValue odfval = odf;
-	ret = this->propagateFrames(time, weight, &odfval, 1, 1);
-      }
-      else
-      { // segment mode: signal segment end by calling segment()
-        double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
-        bool   frameIsOffset =   energy < offThreshold  // end of segment content
-			     &&  keepFirstSegment == 0;  // override with startisonset: keep silent first segment
-
-        if ((frameIsOnset  	               // new trigger
-	     || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
-            &&  duration >= durationThreshold) // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
-        { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
-          // switch off first segment special status
-#if DEBUG_SEGMENT
-	  printf("PiPoSegment::frames@ %6.1f  onset %d  seg on %d  dur %6.1f  --> segment %f %d\n",
-		 time, frameIsOnset, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration,
-		 this->offset + time, frameIsOnset);
-#endif
-	  if (keepFirstSegment == 1)
-	    keepFirstSegment = 2; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
-	  else if (keepFirstSegment == 2  &&  frameIsOnset)
-	    keepFirstSegment = 0; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
-
-          ret = propagateSegment(this->offset + time, frameIsOnset);
-        }
-        
-        /* segment on/off (segment has at least one frame) */
-        if (frameIsOnset)
-        {
-	  if (keepFirstSegment != 1) // (when in first segment, frameIsOnset is forced to true on every frame, don't set start time)
-	    this->onsetTime = time; // remember start time of segment
-          this->segIsOn = true;
-        }
-        else if (frameIsOffset) // offset detected: signal below threshold
-          this->segIsOn = false;
-
-	this->lastFrameWasOnset = frameIsOnset;
-
-	if (outputmode_ == OutputOff)
-	  // pass 0 size frame to trigger merger
-	  ret |= this->propagateFrames(time, weight, NULL, 0, 1);
+	if (this->outputmode_ == OutputODF)
+	{ // output odf for each frame
+	  PiPoValue odfval = odf;
+	  ret = this->propagateFrames(time, weight, &odfval, 1, 1);
+	}
 	else
-	  // pass through frames one by one for subsequent temporal modeling modules
-	  ret |= this->propagateFrames(time, weight, values, size, 1);
-      }
-      
+	{ // segment mode: signal segment end by calling segment()
+	  double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
+	  bool   frameIsOffset =   energy < offThreshold  // end of segment content
+					    &&  keepFirstSegment == 0;  // override with startisonset: keep silent first segment
+
+	  if ((frameIsOnset  	               // new trigger
+	       || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
+	      &&  duration >= durationThreshold) // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
+	  { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
+	    // switch off first segment special status
+#if DEBUG_SEGMENT
+	    printf("PiPoSegment::frames@ %6.1f  onset %d  seg on %d  dur %6.1f  --> segment %f %d\n",
+		   time, frameIsOnset, this->segIsOn, onsetTime == -DBL_MAX  ?  -1  :  duration,
+		   this->offset + time, frameIsOnset);
+#endif
+	    if (keepFirstSegment == 1)
+	      keepFirstSegment = 2; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
+	    else if (keepFirstSegment == 2  &&  frameIsOnset)
+	      keepFirstSegment = 0; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
+
+	    ret = propagateSegment(this->offset + time, frameIsOnset);
+	  }
+        
+	  /* segment on/off (segment has at least one frame) */
+	  if (frameIsOnset)
+	  {
+	    if (keepFirstSegment != 1) // (when in first segment, frameIsOnset is forced to true on every frame, don't set start time)
+	      this->onsetTime = time; // remember start time of segment
+	    this->segIsOn = true;
+	  }
+	  else if (frameIsOffset) // offset detected: signal below threshold
+	    this->segIsOn = false;
+
+	  this->lastFrameWasOnset = frameIsOnset;
+
+	  if (outputmode_ == OutputOff)
+	    // pass 0 size frame to trigger merger
+	    ret |= this->propagateFrames(time, weight, NULL, 0, 1);
+	  else
+	    // pass through frames one by one for subsequent temporal modeling modules
+	    ret |= this->propagateFrames(time, weight, values, size, 1);
+	}
       }
       else
       { // chop segtimes
 	// check for crossing of segment time, store cur. segment data, advance to next segment time
 	if (seg->isSegment(time))
 	{
-#if DEBUG_CHOP
-	  printf("   segmenttime! start %f duration %f at input time %f  nextTime %f\n",
-		 seg->getSegmentStart(), seg->getSegmentDuration(), time, NEXT_TIME(seg));
+#if DEBUG_SEGMENT
+	  printf("   segment chop@%4g start %f duration %f  nextTime %f\n",
+                 time, seg->getSegmentStart(), NICE_TIME(seg->getSegmentDuration()), NEXT_TIME(seg));
 #endif
 
-	  /* report segment at precise last chop time */
-	  ret = propagateSegment(seg->getSegmentStart(), seg->isOn(time));
+	  // report segment start or stop
+	  ret = propagateSegment(time, seg->isOn(time));
 	}
 
 	// pass through frames for subsequent temporal modeling modules
@@ -451,20 +452,18 @@ public:
     { // inputEnd is the actual end of the sound file, can be after the last frame time
       double duration = seg->getLastDuration(inputEnd);
     
-#if DEBUG_CHOP
-      printf("PiPoChop finalize endtime %f  duration %f  segment_index_ %d\n", inputEnd, duration, seg->getSegmentIndex());
+#if DEBUG_SEGMENT
+      printf("PiPoSegment list finalize endtime %f  duration %f\n", inputEnd, NICE_TIME(duration));
 #endif
     
       if (duration < DBL_MAX) // there is a pending segment (TODO: want last smaller segment? duration >= chopSizeA.get())
       {
-	bool segison =  seg->isOn(inputEnd - duration);
+	bool segison =  seg->isOn(inputEnd);
 	
 	/* report segment, and end it if it was started  */
-	propagateSegment(inputEnd - duration, segison);
-	// don't end segment here, that is the choice of downstream finalize
-	// if (segison)	  propagateSegment(inputEnd, false);
+	if (segison)
+          propagateSegment(inputEnd, segison); ///HERE????? or in tempmod??????
       }
-    
     }
 
     return propagateFinalize(inputEnd);
