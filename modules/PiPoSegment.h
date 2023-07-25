@@ -262,7 +262,7 @@ public:
     int ret = 0;
 
 #if DEBUG_SEGMENT >= 2
-    printf("PiPoSegment frames time %f (last %f, next %f)  size %d  num %d\n", time, NICE_TIME(seg->getLastTime()), NEXT_TIME(seg), size, num);
+    printf("PiPoSegment frames time %f (last %f, next %f)  size %d  num %d\n", time, seg ? NICE_TIME(seg->getLastTime()) : -99, seg ? NEXT_TIME(seg) : -99, size, num);
 #endif
 
     if (size > this->buffer.width)
@@ -462,7 +462,7 @@ public:
 	
 	/* report segment, and end it if it was started  */
 	if (segison)
-          propagateSegment(inputEnd, segison); ///HERE????? or in tempmod??????
+          propagateSegment(inputEnd, false); ///HERE????? or in tempmod??????
       }
     }
 
