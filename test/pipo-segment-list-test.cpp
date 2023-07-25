@@ -11,6 +11,40 @@ extern "C" {
 #include "catch.hpp"
 #include "PiPoTestHost.h"
 
+void test_seglist (PiPoTestHost &host, // host with pipo chain
+		   PiPoStreamAttributes sa,
+		   std::vector<float> &vals, // input samples
+		   int t_samp,	// time of last input sample
+		   const std::vector<double> &t_segtimes,   // given and expected chop times
+		   const std::vector<double> &t_durations,  // given segdurations
+		   const std::vector<double> &t_expected,   // expected chop times
+		   const std::vector<double> &v_expected)   // expected chop mean values for regular seg.
+{
+  int n_samp = vals.size();
+
+  host.reset(); // clear stored received frames
+  host.setAttr("segment.segtimes",     t_segtimes);
+  host.setAttr("segment.segdurations", t_durations);
+  REQUIRE(host.setInputStreamAttributes(sa) == 0);
+
+  PiPo::Attr *segt = host.getAttr("segment.segtimes");
+  REQUIRE(segt != NULL);
+  CHECK(segt->getSize() == t_segtimes.size());
+
+  REQUIRE(host.frames(0, 1, &vals[0], 1, n_samp) == 0);
+  REQUIRE(host.finalize(t_samp) == 0);
+
+  THEN ("result is ok")
+  {
+    REQUIRE(host.receivedFrames.size() == t_segtimes.size());
+    for (unsigned int i = 0; i < host.receivedFrames.size(); ++i)
+    {
+      CHECK(host.received_times_[i]   == t_segtimes[i]);
+      CHECK(host.receivedFrames[i][0] == v_expected[i]);
+    }
+  }
+}
+
 TEST_CASE ("segment-list", "[seg]")
 {
   const std::vector<double> t_expected  = {  0, 100, 200, 300, 400 };   // expected chop times
@@ -72,6 +106,30 @@ TEST_CASE ("segment-list", "[seg]")
     }
   }
   */
+  WHEN ("test_seglist minimal")
+  {
+    const int n_sampmin = 9; // end after last segment
+    const int t_sampmin = n_sampmin * 10;
+    std::vector<float> valsmin(vals.begin(), vals.begin() + n_sampmin);
+
+    const int n_sampmin2 = 6; // end on last segment
+    const int t_sampmin2 = n_sampmin2 * 10;
+    std::vector<float> valsmin2(vals.begin(), vals.begin() + n_sampmin2);
+
+    const std::vector<double> t_segtimesmin  = {  0, 30 }; // given and expected chop times
+    const std::vector<double> t_durationsmin = { 30, 30 }; // given segdurations
+    const std::vector<double> v_expectedmin  = { 10, 40 }; // expected chop mean values for regular seg.
+    
+    test_seglist(host, sa, valsmin,  t_sampmin,  t_segtimesmin, t_durationsmin, t_segtimesmin, v_expectedmin);
+
+    test_seglist(host, sa, valsmin2, t_sampmin2, t_segtimesmin, t_durationsmin, t_segtimesmin, v_expectedmin);
+  }
+  
+  WHEN ("test_seglist with regular segdurations")
+  {
+    test_seglist(host, sa, vals, t_samp, t_segtimes, t_durations0, t_segtimes, v_expected0);
+  }
+  
   WHEN ("with regular segdurations")
   {
     host.reset(); // clear stored received frames
