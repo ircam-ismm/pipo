@@ -11,13 +11,10 @@
 class Segmenter
 {
 protected:
-  double		offset_;	// cached offset
+  double offset_;	// cached offset
   
   // managed by reset/advance():
-  double last_start_;       // LAST segment START time
   double next_time_;        // NEXT segmentation time = end of pending segment
-  size_t segment_index_;    // NEXT external segmentation time list index (if segments are exhausted, next_time_ is DBL_MAX)
-  
   double segment_start_;    // LAST segment start time for reporting to downstream pipos
   double segment_duration_; // LAST segment duration for reporting to downstream pipos
 
@@ -31,9 +28,8 @@ public:
   virtual double getLastDuration (double endtime) = 0;
 
 #if DEBUG
-  double getLastTime()	{ return last_start_; } // debug only
-  double getNextTime()	{ return next_time_; } // debug only
-  unsigned int getSegmentIndex()	{ return segment_index_; } // debug only
+  virtual double getLastTime() = 0; // debug only
+  double         getNextTime()	{ return next_time_; } // debug only
 #endif
 
   // reset Segmenter: return first chop time or infinity when not chopping
@@ -50,9 +46,9 @@ public:
       return false;  // segment time not yet reached
       
     while (time >= next_time_) // catch up with current time
-      advance(time);
+      next_time_ = advance(time);
       
-    return true;
+    return true; // next segment start or end time has been passed
   } // end Segmenter::isSegment()
 
   // return true if time is within the duration of a segment
@@ -64,33 +60,30 @@ private:
   // it advances to next segment time (or infinity when not chopping), and the last segment's duration
   // sets next_time_ to time of next segment start
   // sets segment_start_, segment_duration_ from current segment for later querying in frames()
-  virtual void advance (double curtime) = 0;
-};
+  virtual double advance (double curtime) = 0;
+}; // end virtual class Segmenter
 
-class FixedSegmenter : public Segmenter
+
+class ListSegmenter : public Segmenter
 {
 private:
   std::vector<double> choptimes_;     // cleaned list of chop.at times
   std::vector<double> chopduration_;  // duration list corresponding to cleaned chop.at times
+  size_t segment_index_;    // NEXT external segmentation time list index (if segments are exhausted, next_time_ is DBL_MAX)
+
+#if DEBUG
+  double       getLastTime()   override { return segment_start_; } // debug only
+  unsigned int getSegmentIndex()	{ return segment_index_; } // debug only
+#endif
 
 public:
-  FixedSegmenter (PiPoVarSizeAttr<double> times, PiPoVarSizeAttr<double> durs)
+  ListSegmenter (PiPoVarSizeAttr<double> times, PiPoVarSizeAttr<double> durs)
   : Segmenter()
   {
     settimes(times, durs);
     reset();
   }
   
-  void reset () override
-  {
-    Segmenter::reset(); // call base class method
-
-    // use chop times list (is shifted by offset)
-    last_start_ = choptimes_[0] + offset_; // first segment start
-    next_time_  = last_start_ + chopduration_[0]; // first segment end
-    segment_index_ = 0; // for chop list
-  } // end reset()
-    
   // set, clean, and normalize chop.at and chop.duration lists:
   // remove repeating and non-monotonous elements from times, generate normalized durations even when empty
   void settimes (PiPoVarSizeAttr<double> &times, PiPoVarSizeAttr<double> &durations)
@@ -141,8 +134,17 @@ public:
     for (size_t i = 0; i < choptimes_.size(); i++)
       printf("%s\t%ld: %6f %6f\n", i == 0 ? "settimes" : "\t", i, NICE_TIME(choptimes_[i]), NICE_TIME(chopduration_[i]));
 #endif
-  } // end FixedSegmenter::settimes()
+  } // end ListSegmenter::settimes ()
+ 
+  void reset () override
+  {
+    Segmenter::reset(); // call base class method
 
+    // use chop times list (is shifted by offset), garanteed to be not empty
+    next_time_     = choptimes_[0] + offset_; // wait for first segment start to signal it to temp.mod
+    segment_index_ = 0;
+  } // end ListSegmenter::reset ()
+    
   // called in offline mode by finalize to determine duration of last pending segment until endtime of file
   // (and start of last segment as endtime - duration)
   double getLastDuration (double endtime) override
@@ -160,59 +162,65 @@ public:
     }
       
     return duration;
-  } // end FixedSegmenter::getLastDuration ()
+  } // end ListSegmenter::getLastDuration ()
 
   // return true if time is within the duration of a segment
   // (time is always before the end time of the currently awaited segment)
   bool isOn (double time)
   {
-    bool seg_is_on;
-    double segstart = DBL_MAX, segend = DBL_MAX; // init only for debug (compiler will optimise, hopefully)
-      
-    // using segtimes, we need to check segdurations
-    segstart  =  segment_index_ < choptimes_.size()  ?  choptimes_[segment_index_] + offset_      :   DBL_MAX;
-    segend    =  segment_index_ < choptimes_.size()  ?  segstart + chopduration_[segment_index_]  :  -DBL_MAX;
-    seg_is_on = time >= segstart  &&  time < segend; // time is within extent of pending segment
+    double segend  = segment_start_ + segment_duration_;
+    bool seg_is_on = time >= segment_start_  &&  time < segend; // time is within extent of current/last segment
 
 #if DEBUG_SEGMENTER > 1      
-    printf("isOn@ %4g last %4g next %4g  cur start %4g end %4g  last start %4g dur %4g --> %d\n",
-           time, last_start_, NICE_TIME(next_time_), NICE_TIME(segstart), NICE_TIME(segend), NICE_TIME(segment_start_), NICE_TIME(segment_duration_), seg_is_on);
+    printf("isOn@ %4g next %4g  cur start %4g end %4g --> %d\n",
+           time, NICE_TIME(next_time_), NICE_TIME(segment_start_), NICE_TIME(segend), seg_is_on);
 #endif
 
     return seg_is_on;
-  } // end FixedSegmenter::isOn ()
+  } // end ListSegmenter::isOn ()
 
 private:
     // advance is called when curtime >= next_time_ (next segment end has been passed)
     // it advances to next chop time (or infinity when not chopping), and the last segment's duration
     // sets next_time_ to time of next segment start
     // sets segment_start_, segment_duration_ from current segment for later querying in frames()
-    void advance (double curtime) override
+    double advance (double curtime) override
     {
-      segment_start_    = choptimes_[segment_index_] + offset_;  // store current segment start for querying
+      segment_start_    = choptimes_[segment_index_] + offset_;  // store current segment start for querying (before advancing segment_index_)
       segment_duration_ = chopduration_[segment_index_];
-      last_start_       = segment_start_;
-        
-      // we have passed segment_index_ (end of current segment) and are waiting for the *end* of the next segment
-      segment_index_++;
-        
-      if (segment_index_ < choptimes_.size())
-      { // next time is end of next segment
-        next_time_ = choptimes_[segment_index_] + offset_ + chopduration_[segment_index_]; // chop time list is shifted by offset
+      double segend  = segment_start_ + segment_duration_;
+
+      if (curtime >= segment_start_  &&  curtime < segend) // time is within extent of current segment (same check as in isOn(curtime))
+      { // we're within current segment, next trigger time is end of it
+        return segment_start_ + segment_duration_;
       }
-      else 
-      { // end of list, signal no more segmentation
-        next_time_ = DBL_MAX;
+      else
+      { // we have passed segment_index_ (end of current segment) and are waiting for the *start* of the next segment
+        segment_index_++;
+        
+        if (segment_index_ < choptimes_.size())
+        { // next time is start of next segment
+          return choptimes_[segment_index_] + offset_; // chop time list is shifted by offset
+        }
+        else 
+        { // end of list, signal no more segmentation
+          return DBL_MAX;
+        }
       }
-    } // end FixedSegmenter::advance()
-}; // end class FixedSegmenter
+    } // end ListSegmenter::advance()
+}; // end class ListSegmenter
 
 
 class ChopSegmenter : public Segmenter
 {
 private:
   double chopsize_;
+  double last_start_;       // LAST segment START time
 
+#if DEBUG
+  double getLastTime() override	{ return last_start_; } // debug only
+#endif
+  
 public:
   ChopSegmenter (double size)
   : Segmenter(), chopsize_(size)
@@ -262,7 +270,7 @@ public:
     }
       
     while (time >= next_time_) // catch up with current time
-      advance(time);
+      next_time_ = advance(time);
       
     return true;
   } // end ChopSegmenter::isSegment()
@@ -289,17 +297,17 @@ private:
     // it advances to next chop time (or infinity when not chopping), and the last segment's duration
     // sets next_time_ to time of next segment start
     // sets segment_start_, segment_duration_ from current segment for later querying in frames()
-    void advance (double curtime) override
+    double advance (double curtime) override
     {
       segment_start_    = last_start_;  // store current segment start for querying in getSegmentStart()
       segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
       last_start_       = next_time_;   // NB: with regular chop, segment end is start of previous segment
       
       if (chopsize_ > 0)
-        // at first crossing of offset, nextTime == offset + duration
-        next_time_ = (next_time_ < DBL_MAX  ?  next_time_  :  curtime) + chopsize_;
+        // at first crossing of offset, next_time_ == offset + duration
+        return (next_time_ < DBL_MAX  ?  next_time_  :  curtime) + chopsize_;
       else
-        next_time_ = DBL_MAX;
+        return DBL_MAX;
     } // end ChopSegmenter::advance()
     
 }; // end class ChopSegmenter
