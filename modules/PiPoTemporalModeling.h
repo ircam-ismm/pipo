@@ -172,7 +172,8 @@ public:
   int segment (double time, bool start) override
   {
 #if TEMPMOD_DEBUG
-    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d\n", MIN, MAX, MEAN, STD, DURATION, time, start, seg_is_on_);
+    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d  --> output %d\n", MIN, MAX, MEAN, STD, DURATION, time, start, seg_is_on_,
+           start == false || seg_is_on_);
 #endif
     int ret = 0;
      
@@ -205,8 +206,10 @@ public:
   
   int finalize (double inputend) override
   {
-    // treat end of input like last segment end
-    int ret = segment(inputend, false);
+    int ret = 0;
+    if (seg_is_on_)
+      // if we have a running segment, treat end of input like last segment end //TBD: here or handled by segmenter??????
+      ret = segment(inputend, false);
     return ret  &&  propagateFinalize(inputend);
   } // finalize
 }; // end template class PiPoTemporalModeling
