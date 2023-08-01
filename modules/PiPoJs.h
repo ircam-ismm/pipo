@@ -309,8 +309,11 @@ public:
       size_t	  expr_len = strlen(expr_str);
 
       if (expr_len == 0)
-	// no expression given
-	throw std::logic_error("no expr given");
+      { // no expression given: don't throw error but add pass-through default expr (easier than to add a flag and code for direct pass-through)
+	//throw std::logic_error("no expr given");
+	expr_str = "a"; // expression that passes input array 'a' through as output
+	expr_len = 1;
+      }
       
       jerry_port_set_current_context(jscontext_);
 
@@ -476,7 +479,7 @@ public:
     catch (std::exception &e)
     {
       printf("streamAttributes caught: %s\n", e.what());
-      signalError(e.what());
+      signalError("pipo.javascript: " + std::string(e.what()));
       return -1;
     }
     
@@ -586,13 +589,13 @@ public:
     catch (std::exception &e)
     {
       printf("frames method caught: %s\n", e.what());
-      signalError(e.what());
+      signalError("pipo.javascript: " + std::string(e.what()));
       return -1;
     }
     catch (...)
     {
       printf("frames method caught unknown exception\n");
-      signalError("unknown exception");
+      signalError("pipo.javascript: unknown exception");
       return -1;
     }
     
