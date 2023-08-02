@@ -55,13 +55,14 @@ private:
   std::vector<PiPoValue> buffer_;              // output buffer
   unsigned int           inframesize_  = 0;    // cache max input frame size
   unsigned int           outframesize_ = 0;    // frame size to be produced
+  double	         inframeperiod_  = 0;  // input frame period
   jerry_context_t	*jscontext_;
   jerry_value_t		 global_object_;
   jerry_value_t		 parsed_expr_;
   typedef enum { scalar, array, typedarray, other } output_type_t;
   output_type_t		 output_type_;	// return type of parsed_expr_
 
-  //jerry_value_t	 input_frame_;	// data frame object to be input to script
+  jerry_value_t		 input_time_;   // value for input data frame's time
   jerry_value_t		 input_array_;  // array object "a" for input data frame when using expr
   jerry_value_t		 param_array_;  // array object "p" for external params when using expr
   jerry_value_t		 labels_obj_;   // object "c" for input data column labels
@@ -106,6 +107,7 @@ public:
 
       // init js objects to undefined
       parsed_expr_ = jerry_create_error(JERRY_ERROR_TYPE, (const jerry_char_t *) "no expression");
+      input_time_  = jerry_create_undefined();
       input_array_ = jerry_create_undefined();
       param_array_ = jerry_create_undefined();
       labels_obj_  = jerry_create_undefined();
@@ -156,6 +158,7 @@ public:
     /* Releasing the Global object */
     jerry_release_value(global_object_);    
     jerry_release_value(parsed_expr_);
+    jerry_release_value(input_time_);
     jerry_release_value(input_array_);
     jerry_release_value(param_array_);
     jerry_release_value(labels_obj_);
@@ -173,7 +176,7 @@ public:
  */
 
 private:
-  void set_property (jerry_value_t obj, const char *name, jerry_value_t prop) throw()
+  void set_property (jerry_value_t obj, const char *name, jerry_value_t prop) throw (...)
   {
     jerry_value_t prop_name  = jerry_create_string((const jerry_char_t *) name);
     jerry_value_t set_result = jerry_set_property(obj, prop_name, prop);
@@ -186,7 +189,7 @@ private:
   }
 
   // create array and set as obj.name
-  jerry_value_t create_array (jerry_value_t obj, const char *name, size_t size) throw()
+  jerry_value_t create_array (jerry_value_t obj, const char *name, size_t size) throw (...)
   {
     jerry_value_t a_arr = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, (unsigned int) size);
     set_property(obj, name, a_arr);
@@ -194,7 +197,7 @@ private:
   }
 
   // set values of float array object from pointer
-  void set_array (jerry_value_t arr, size_t size, PiPoValue *data) throw()
+  void set_array (jerry_value_t arr, size_t size, PiPoValue *data) throw (...)
   {
     // set using arraybuffer
     jerry_length_t bytelength = 0;
@@ -298,7 +301,8 @@ public:
 	   PiPoStreamAttributes(hasTimeTags, rate, offset, width, height,
 	   labels, hasVarSize, domain, maxFrames).to_string().c_str()); */
 
-    inframesize_ = width * height; // we need to store the max frame size in case hasVarSize is true
+    inframesize_   = width * height; // we need to store the max frame size in case hasVarSize is true
+    inframeperiod_ = 1000. / rate;
     unsigned int outwidth = width, outheight = height;
     bool outlabels_given = false;       // default: pass labels through
     std::vector<const char *> outlabelarr; // output labels pointer array, if changed
@@ -404,6 +408,11 @@ public:
 	outlabels_given = true;
       } // end label expr
 		
+      // create js value "time" for pipo input, set to undefined for first run
+      jerry_release_value(input_time_); // have to release previous value
+      input_time_ = jerry_create_undefined();
+      set_property(global_object_, "time", input_time_);
+
       // create js array "a" for pipo input, set to 0
       jerry_release_value(input_array_); // have to release previous value
       input_array_ = create_array(global_object_, "a", inframesize_);
@@ -492,15 +501,22 @@ public:
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
-    PiPoValue *outptr = &buffer_[0];
+    double outtime = time;
+    int    outnum  = num;
 
     try {
+      PiPoValue *outptr = &buffer_[0];
       jerry_port_set_current_context(jscontext_);
       
       for (unsigned int i = 0; i < num; i++)
       {
 	if (!jerry_value_is_error(parsed_expr_))
 	{ // evaluate single expression
+	  // set number "time" for current input frame time
+	  jerry_release_value(input_time_); // have to release previous value
+	  input_time_ = jerry_create_number(time);
+	  set_property(global_object_, "time", input_time_);
+
 	  // set arr "a" from frame input
 	  set_array(input_array_, size, values);
 
@@ -519,72 +535,83 @@ public:
 
 	  // run expr
 	  jerry_value_t ret_value = jerry_run(parsed_expr_);
-	  
-	  switch (output_type_)
-	  {
-	    case array:
-	    {
-#if DEBUG
-	      // paranoid check:
-	      if (jerry_get_array_length(ret_value) != outframesize_)
-	      {
-		char msg[1024];
-		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
-		jerry_release_value(ret_value);
-		throw std::runtime_error(msg);
-	      }
-#endif     
-	      for (unsigned int j = 0; j < outframesize_; j++)
-	      {
-		jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
-		
-		if (jerry_value_is_number(elem))
-		  outptr[j] = jerry_get_number_value(elem);
-		else
-		  outptr[j] = 0;
 
-		jerry_release_value(elem);
-	      }
-	    }
-	    break;
-	  
-	    case typedarray:
+	  if (!jerry_value_is_undefined(ret_value))
+	  {
+	    switch (output_type_)
 	    {
-	      jerry_length_t bytelength = 0;
-	      jerry_length_t byteoffset = 0;
-#if DEBUG
-	      // paranoid check:
-	      if (jerry_get_typedarray_length(ret_value) != outframesize_)
+	      case array:
 	      {
-		char msg[1024];
-		snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_typedarray_length(ret_value), outframesize_);
-		jerry_release_value(ret_value);
-		throw std::runtime_error(msg);
-	      }
+#if DEBUG
+		// paranoid check:
+		if (jerry_get_array_length(ret_value) != outframesize_)
+		{
+		  char msg[1024];
+		  snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_array_length(ret_value), outframesize_);
+		  jerry_release_value(ret_value);
+		  throw std::runtime_error(msg);
+		}
 #endif     
-	      jerry_value_t buffer = jerry_get_typedarray_buffer(ret_value, &byteoffset, &bytelength);
-	      jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
-	      jerry_release_value(buffer);
-	    }
-	    break;
-	  
-	    case scalar:
-	    {
-	      outptr[0] = jerry_get_number_value(ret_value);
-	    }
-	    break;
-	  
-	    default: // error
-	      jerry_release_value(ret_value);
-	      throw std::runtime_error("wrong expr return type");
+		for (unsigned int j = 0; j < outframesize_; j++)
+		{
+		  jerry_value_t elem = jerry_get_property_by_index(ret_value, j);
+		  
+		  if (jerry_value_is_number(elem))
+		    outptr[j] = jerry_get_number_value(elem);
+		  else
+		    outptr[j] = 0;
+		  
+		  jerry_release_value(elem);
+		}
+	      }
 	      break;
+	  
+	      case typedarray:
+	      {
+		jerry_length_t bytelength = 0;
+		jerry_length_t byteoffset = 0;
+#if DEBUG
+		// paranoid check:
+		if (jerry_get_typedarray_length(ret_value) != outframesize_)
+		{
+		  char msg[1024];
+		  snprintf(msg, 1023, "read: unexpected array size %d instead of %u", jerry_get_typedarray_length(ret_value), outframesize_);
+		  jerry_release_value(ret_value);
+		  throw std::runtime_error(msg);
+		}
+#endif     
+		jerry_value_t buffer = jerry_get_typedarray_buffer(ret_value, &byteoffset, &bytelength);
+		jerry_arraybuffer_read(buffer, byteoffset, (uint8_t *) outptr, bytelength);
+		jerry_release_value(buffer);
+	      }
+	      break;
+	  
+	      case scalar:
+	      {
+		outptr[0] = jerry_get_number_value(ret_value);
+	      }
+	      break;
+	  
+	      default: // error
+		jerry_release_value(ret_value);
+		throw std::runtime_error("wrong expr return type");
+	      break;
+	    } // end switch (output_type_)
+	    
+	    outptr += outframesize_; //  advance in output buffer_
+	  } // end if (!undefined)
+	  else 
+	  { // undefined return from expr means: no output, skip this frame
+	    outnum--;
+            printf("js skip output %d / %d  outnum %d\n", i, num, outnum);
 	  }
+	  
 	  jerry_release_value(ret_value);
-	}
+	} // end if error 
 	
-	outptr += outframesize_;
 	values += size;
-      } // end for 
+	time   += inframeperiod_;
+      } // end for frames
     }
     catch (std::exception &e)
     {
@@ -598,8 +625,11 @@ public:
       signalError("pipo.javascript: unknown exception");
       return -1;
     }
-    
-    return propagateFrames(time, weight, &buffer_[0], outframesize_, num);
+
+    if (outnum == 0)
+      return 0; // HACK: workaround error returned by pipoproc
+    else
+      return propagateFrames(outtime, weight, &buffer_[0], outframesize_, outnum);
   } // frames
 };
 
