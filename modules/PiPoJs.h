@@ -536,7 +536,7 @@ public:
 	  // run expr
 	  jerry_value_t ret_value = jerry_run(parsed_expr_);
 
-	  if (!jerry_value_is_undefined(ret_value))
+	  if (!jerry_value_is_undefined(ret_value)  &&  !jerry_value_is_null(ret_value))
 	  {
 	    switch (output_type_)
 	    {
