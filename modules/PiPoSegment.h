@@ -275,52 +275,52 @@ public:
 
       if (seg == NULL)
       { // onset segmentation
-	double odf, energy;
-	PiPoValue scale = 1.0;
+        double odf, energy;
+        PiPoValue scale = 1.0;
       
-	/* normalize sum to one for Kullback Leibler divergence */
-	if (onset_mode == KullbackLeiblerOnset)
-	{
-	  PiPoValue normSum = 0.0;
+        /* normalize sum to one for Kullback Leibler divergence */
+        if (onset_mode == KullbackLeiblerOnset)
+        {
+          PiPoValue normSum = 0.0;
         
-	  for (unsigned int j = 0; j < numcols; j++)
-	    normSum += values[columns[j]];
+          for (unsigned int j = 0; j < numcols; j++)
+            normSum += values[columns[j]];
         
-	  scale = 1.0 / normSum;
-	}
+          scale = 1.0 / normSum;
+        }
       
-	/* input frame */
-	int filterSize = this->buffer.input(values, size, scale);
-	this->temp = this->buffer.vector;
+        /* input frame */
+        int filterSize = this->buffer.input(values, size, scale);
+        this->temp = this->buffer.vector;
       
-	switch (onset_mode)
-	{
+        switch (onset_mode)
+        {
         case MeanOnset: // identity metric func
-	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x; });
-	  break;
+          calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x; });
+          break;
         
         case AbsMeanOnset:
-	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return fabs(x); });
-	  break;
+          calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return fabs(x); });
+          break;
           
         case MeanSquareOnset:
-	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
-	  break;
+          calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
+          break;
 
         case RootMeanSquareOnset:
-	  calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
+          calc_onseg_metric(values, size, filterSize, odf, energy, [] (const PiPoValue x) -> PiPoValue { return x * x; });
 
-	  odf    = sqrt(odf);
-	  energy = sqrt(energy);
-	  break;
+          odf    = sqrt(odf);
+          energy = sqrt(energy);
+          break;
           
         case KullbackLeiblerOnset:
-	  odf = 0;
-	  energy = 0;
-	  
+          odf = 0;
+          energy = 0;
+          
           for (int j = 0; j < numcols; j++)
           {
-	    const int k = columns[j];
+            const int k = columns[j];
             if (values[k] != 0.0  &&  this->lastFrame[k] != 0.0)
               odf += log(this->lastFrame[k] / values[k]) * this->lastFrame[k];
             
@@ -331,37 +331,37 @@ public:
           
           odf /= numcols;
           energy /= numcols;
-	  break;
-	} // end switch(onset_mode)
+          break;
+        } // end switch(onset_mode)
       
-	/* get onset */
-	double maxsize = maxsegsize_attr_.get();
-	bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
-			       &&  !this->lastFrameWasOnset    // avoid double trigger
-			       &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
-	  || keepFirstSegment == 1	     // force immediate first segment be detected
-	  || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
-	
+        /* get onset */
+        double maxsize = maxsegsize_attr_.get();
+        bool frameIsOnset  =  (odf > onsetThreshold      // onset detected
+                               &&  !this->lastFrameWasOnset    // avoid double trigger
+                               &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
+          || keepFirstSegment == 1           // force immediate first segment be detected
+          || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
+        
 #if DEBUG_SEGMENT > 1
-	printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep1st %d  onset time %6.1f dur %6.1f\n",
-	       time, energy, odf, frameIsOnset, lastFrameWasOnset, segIsOn, keepFirstSegment, 
-	       onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
+        printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep1st %d  onset time %6.1f dur %6.1f\n",
+               time, energy, odf, frameIsOnset, lastFrameWasOnset, segIsOn, keepFirstSegment, 
+               onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
 #endif
       
-	if (this->outputmode_ == OutputODF)
-	{ // output odf for each frame
-	  PiPoValue odfval = odf;
-	  ret = this->propagateFrames(time, weight, &odfval, 1, 1);
-	}
-	else
-	{ // segment mode: signal segment end by calling segment()
-	  double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
-	  bool   frameIsOffset =  energy < offThreshold  // end of segment content
-			       && keepFirstSegment == 0;  // override with startisonset: keep silent first segment
+        if (this->outputmode_ == OutputODF)
+        { // output odf for each frame
+          PiPoValue odfval = odf;
+          ret = this->propagateFrames(time, weight, &odfval, 1, 1);
+        }
+        else
+        { // segment mode: signal segment end by calling segment()
+          double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
+          bool   frameIsOffset =  energy < offThreshold  // end of segment content
+                               && keepFirstSegment == 0;  // override with startisonset: keep silent first segment
 
-	  if ((frameIsOnset  	               // new trigger
-	       || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
-	      &&  (duration >= durationThreshold  ||  keepFirstSegment == 1)) // keep only long enough segments, unless forced 1st segment  //NOT: || !segIsOn (when seg is off, no length condition)
+          if ((frameIsOnset                    // new trigger
+               || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
+ 	      &&  (duration >= durationThreshold  ||  keepFirstSegment == 1)) // keep only long enough segments, unless forced 1st segment  //NOT: || !segIsOn (when seg is off, no length condition)
 	  { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
 	    // switch off first segment special status
 #if DEBUG_SEGMENT
