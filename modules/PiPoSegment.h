@@ -341,8 +341,9 @@ public:
 			       &&  time >= this->onsetTime + minimumInterval) // avoid too short inter-onset time
 	  || keepFirstSegment == 1	     // force immediate first segment be detected
 	  || (maxsize > 0  &&  time >= this->onsetTime + maxsize); // when maxsize given, chop unconditionally when segment is longer than maxsize
+	
 #if DEBUG_SEGMENT > 1
-	printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep %d  onset time %6.1f dur %6.1f\n",
+	printf("PiPoSegment::frames(%5.1f) ener %6.1f odf %6.1f  onset %d  last %d  seg on %d  keep1st %d  onset time %6.1f dur %6.1f\n",
 	       time, energy, odf, frameIsOnset, lastFrameWasOnset, segIsOn, keepFirstSegment, 
 	       onsetTime == -DBL_MAX  ?  -1  :  onsetTime, time - (onsetTime == -DBL_MAX  ?  0  :  onsetTime));
 #endif
@@ -355,12 +356,12 @@ public:
 	else
 	{ // segment mode: signal segment end by calling segment()
 	  double duration = time - this->onsetTime; // duration since last onset (or start of buffer)
-	  bool   frameIsOffset =   energy < offThreshold  // end of segment content
-					    &&  keepFirstSegment == 0;  // override with startisonset: keep silent first segment
+	  bool   frameIsOffset =  energy < offThreshold  // end of segment content
+			       && keepFirstSegment == 0;  // override with startisonset: keep silent first segment
 
 	  if ((frameIsOnset  	               // new trigger
 	       || (segIsOn  &&  frameIsOffset))  // end of segment content (detect only when we're within a running segment)
-	      &&  duration >= durationThreshold) // keep only long enough segments //NOT: || !segIsOn (when seg is off, no length condition)
+	      &&  (duration >= durationThreshold  ||  keepFirstSegment == 1)) // keep only long enough segments, unless forced 1st segment  //NOT: || !segIsOn (when seg is off, no length condition)
 	  { // end of segment (new onset or energy below off threshold): propagate segment (on or off)
 	    // switch off first segment special status
 #if DEBUG_SEGMENT
@@ -373,7 +374,7 @@ public:
 	    else if (keepFirstSegment == 2  &&  frameIsOnset)
 	      keepFirstSegment = 0; // reset special first segment status after first true onset TODO: what if immediate onset by jump of noise floor level?
 
-	    ret = propagateSegment(this->offset + time, frameIsOnset);
+	    ret = propagateSegment(this->offset + time, frameIsOnset);	// send segmentation command on to downstream temporal modeling pipos
 	  }
         
 	  /* segment on/off (segment has at least one frame) */
@@ -395,7 +396,7 @@ public:
 	    // pass through frames one by one for subsequent temporal modeling modules
 	    ret |= this->propagateFrames(time, weight, values, size, 1);
 	}
-      }
+      } // end if onset segmentation
       else
       { // chop segtimes
 	// check for crossing of segment time, store cur. segment data, advance to next segment time
@@ -407,7 +408,7 @@ public:
 #endif
 
 	  // report segment start or stop
-	  ret = propagateSegment(time, seg->isOn(time));
+	  ret = propagateSegment(time, seg->isOn(time));	// send segmentation command on to downstream temporal modeling pipos
 	}
 
 	// pass through frames for subsequent temporal modeling modules
