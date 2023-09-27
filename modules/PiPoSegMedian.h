@@ -51,6 +51,8 @@ extern "C" {
 #include <vector>
 #include <algorithm>
 
+#define DEBUG_MEDIAN (DEBUG * 2)
+
 class PiPoSegMedian : public PiPo
 {
   double	     onset_time_ = 0; // last segment start or end time
@@ -148,6 +150,10 @@ public:
   
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num) override
   {
+#if DEBUG_MEDIAN
+    printf("segmedian frames %5.0f  seg on %d\n", time, seg_is_on_);
+#endif
+    
     for (unsigned int i = 0; i < num; i++)
     { 
       if (seg_is_on_)
@@ -160,6 +166,7 @@ public:
 	this->buffer_.input(time, values, size, outputtime);
       }
       values += size;
+      //todo: time += period;
     }
     
     return 0;
@@ -168,8 +175,11 @@ public:
   // upstream segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
   int segment (double time, bool start) override
   {
+#if DEBUG_MEDIAN
+    printf("segmedian segment %5.0f  start %d  seg on %d\n", time, start, seg_is_on_);
+#endif
     int ret = 0;
-     
+
     if ((start == false      // end of segment
 	 || seg_is_on_)      // restart segment
 	&& buffer_.size > 0) // we have collected data
@@ -194,8 +204,12 @@ public:
   
   int finalize (double inputend) override
   {
+#if DEBUG_MEDIAN
+    printf("segmedian finalize %5.0f  seg on %d\n", inputend, seg_is_on_);
+#endif
+
     // treat end of input like last segment end
-    int ret = segment(inputend, false);
+    int ret = segment(inputend, false); // handle segment //TODO: necessary?  shouldn't the closing segment end be sent by the segmenter's finalize anyway?
     return ret  &&  propagateFinalize(inputend);
   } // end finalize()
 };
