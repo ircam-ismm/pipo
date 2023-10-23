@@ -66,7 +66,7 @@
 #include "PiPoOnseg.h"
 #include "PiPoPeaks.h"
 #include "PiPoPsy.h"
-// #include "PiPoRms.h"
+#include "PiPoRms.h"
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
 #include "PiPoSegment.h"
