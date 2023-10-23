@@ -391,6 +391,26 @@ TEST_CASE ("pipo.js")
       }
     }
   }
+
+  SECTION ("Setup expr with undefined")
+  { // always returns undefined !@#$%^&*(:
+    // function x(a) { a ? 1 : undefined; }
+    js.expr_attr_.set("time === undefined || a[0] > 0.5 ? a : undefined;");
+    
+    int ret = js.streamAttributes(false, 1000, 0, inframesize, 1, labels_scalar, 0, 0, 100);
+    CHECK_STREAMATTRIBUTES(ret, rx, false, 1000, 0, outframesize, 1, labels_scalar, 0, 0, 100);
+
+    SECTION ("filtered expr data")
+    {
+      const int numframes = 3;
+      float vals[numframes] = { 0.1, 10, 0.2};
+
+      int ret2 = js.frames(0, 1, vals, inframesize, numframes);
+      CHECK_FRAMES(ret2, rx, 0, outframesize, 1); // num output frames == 1; 2 should be ignored
+      CHECK(rx.values[0] == 10);
+      rx.zero();
+    }
+  }
 }
 
 /** EMACS **
