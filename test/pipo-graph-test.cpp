@@ -203,7 +203,8 @@ TEST_CASE ("pipo-graph", "[seg]")
 
   WHEN ("Instantiate complex parallel pipo graph with segment <descr,slice:yin:segment><thru,scale>")
   {
-    PiPo *graph = PiPoCollection::create("<descr,slice:yin:segment><thru,scale>"); // a graph with complex module descr
+    //PiPo *graph = PiPoCollection::create("<descr,slice:yin:segment><thru,scale>"); // a graph with complex module descr
+    PiPo *graph = PiPoCollection::create("<descr,loudness:segment><thru,scale>"); // a graph with complex module descr
     REQUIRE(graph != NULL);    // chains / modules are not null
     CHECK(graph->getNumAttrs() > 0);
 
