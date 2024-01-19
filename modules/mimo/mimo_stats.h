@@ -171,11 +171,11 @@ public:
  *
  */
 
-class mimo_stats : public Mimo
+class MimoStats : public Mimo
 {
 public:
   // constructor
-  mimo_stats (PiPo::Parent *parent, Mimo *receiver = NULL)
+  MimoStats (PiPo::Parent *parent, Mimo *receiver = NULL)
   : Mimo(parent, receiver),
     distance_(0.0),
     alpha(this, "alpha", "Normalization step factor for training iteration", false, 0.1)

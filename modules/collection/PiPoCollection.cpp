@@ -54,6 +54,7 @@
 #include "PiPoFiniteDif.h"
 #include "PiPoGate.h"
 #include "PiPoLpc.h"
+#include "PiPoLoudness.h"
 // #include "PiPoMaximChroma.h" // << Maximilian is required to compile this
 // #include "PiPoMeanStddev.h"
 #include "PiPoMedian.h"
@@ -65,13 +66,15 @@
 #include "PiPoOnseg.h"
 #include "PiPoPeaks.h"
 #include "PiPoPsy.h"
-// #include "PiPoRms.h"
+#include "PiPoRms.h"
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
 #include "PiPoSegment.h"
+#include "PiPoSegFirst.h"
 #include "PiPoTemporalModeling.h"
 #include "PiPoSlice.h"
 #include "PiPoSum.h"
+#include "PiPoThru.h"
 // #include "PiPoWavelet.h" // << boost is required to compile this
 #include "PiPoYin.h"
 
@@ -130,6 +133,7 @@ public:
     include("fft", new PiPoCreator<PiPoFft>);
     include("finitedif", new PiPoCreator<PiPoFiniteDif>);
     include("gate", new PiPoCreator<PiPoGate>);
+    include("loudness", new PiPoCreator<PiPoLoudness>);
     include("lpc", new PiPoCreator<PiPoLpc>);
     // include("chroma", new PiPoCreator<PiPoMaximChroma>); // << needs Maximilian
     // include("meanstddev", new PiPoCreator<PiPoMeanStddev>);
@@ -146,15 +150,19 @@ public:
     include("scale", new PiPoCreator<PiPoScale>);
     include("select", new PiPoCreator<PiPoSelect>);
     include("segment", new PiPoCreator<PiPoSegment>);
+    include("segduration", new PiPoCreator<PiPoSegDuration>);
+    include("segfirst", new PiPoCreator<PiPoSegFirst>);
+    include("segmarker", new PiPoCreator<PiPoSegMarker>);
     include("segmean", new PiPoCreator<PiPoSegMean>);
     include("segstddev", new PiPoCreator<PiPoSegStd>);
     include("segmeanstd", new PiPoCreator<PiPoSegMeanStd>);
     include("segmin", new PiPoCreator<PiPoSegMin>);
     include("segmax", new PiPoCreator<PiPoSegMax>);
     include("segminmax", new PiPoCreator<PiPoSegMinMax>);
-    include("segduration", new PiPoCreator<PiPoSegDuration>);
+    include("segstats", new PiPoCreator<PiPoSegStats>);
     include("slice", new PiPoCreator<PiPoSlice>);
     include("sum", new PiPoCreator<PiPoSum>);
+    include("thru", new PiPoCreator<PiPoThru>);
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
     include("yin", new PiPoCreator<PiPoYin>);
   }
@@ -167,10 +175,14 @@ public:
   PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module, PiPo::Parent *parent)
   {
       pipoMap::iterator it = map.find(pipoName);
-      if (it == map.end()) return NULL;
-      PiPo *ret = it->second->create();
-      module = new PiPoPoolModule(ret);
-      return ret;
+      if (it == map.end())
+	  return NULL;
+      else
+      {
+	  PiPo *ret = it->second->create();
+	  module = new PiPoPoolModule(ret);
+	  return ret;
+      }
   }
 
 private:

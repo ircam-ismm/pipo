@@ -4,9 +4,8 @@
 
 #include "../catch.hpp"
 #include <stdlib.h>
-#include "mimo-test-receiver.h"
+#include "MimoTestReceiver.h"
 #include "mimo_order.h"
-
 
 
 TEST_CASE("mimo-order")

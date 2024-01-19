@@ -30,6 +30,7 @@
 #include <string>
 #include <algorithm>
 
+using namespace std; // for cout, etc.
 
 // overload function in mimo_pca.h to work for std::vector
 std::vector<float> xTranspose (std::vector<float> &in, int m, int n)
@@ -217,16 +218,29 @@ bool vecIsAbsAprox(float* left, float* right, unsigned long leftsize)
 
 bool vecIsAbsAprox(const std::vector<float>& left, const std::vector<float>& right)
 {
+    if (left.size() != right.size())
+    {
+	cout << "size mismatch " << left.size() << " vs. " << right.size() << endl;
+	return false;
+    }
+    
     for(unsigned int i = 0; i < left.size(); ++i)
     {
         float epsilon = fabs(fabs(left[i]) - (fabs(right[i])));
-        if(epsilon > 0.01)
+        if (epsilon > 0.01)
+	{
+	    cout << "mismatch at index " << i << " of " << left.size() << ": " << epsilon << endl;
+	    for (size_t j = 0; j < left.size(); j++)
+		cout << (j == 0 ? "[" : " ") << left[j] << (j == left.size() - 1  ?  "]"  :  "") << endl;
+	    for (size_t j = 0; j < right.size(); j++)
+		cout << (j == 0 ? "[" : " ") << right[j] << (j == right.size() - 1  ?  "]"  :  "") << endl;	    
             return false;
+	}
     }
     return true;
 }
 
-TEST_CASE("MiMo-PCA")
+TEST_CASE("mimo-pca")
 {
     PiPoTestReceiver parent(NULL);
     

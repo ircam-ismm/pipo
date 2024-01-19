@@ -38,29 +38,25 @@
  */
 
 #ifndef _PIPO_TEMPMOD_
-#define _PIPO_TEMPMOD__
+#define _PIPO_TEMPMOD_
 
 #include "PiPo.h"
-
-extern "C" {
-#include "rta_configuration.h"
-#include "rta_selection.h"
-}
-
 #include "TempMod.h"
 #include <vector>
 #include <string>
+
+#define TEMPMOD_DEBUG (DEBUG * 1)
 
 template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false, bool DURATION = false>
 class PiPoTemporalModeling : public PiPo
 {
 private:
-  double onsettime;
-  bool reportduration;
-  bool segison;
+  double onset_time_   = 0;
+  bool   seg_is_on_    = false;
+  bool   marker_only_  = false;
+  int    input_width_  = 0;
+  bool   pass_input_   = true;
   TempModArray tempmod_;
-  int input_width_ = 0;
-  bool pass_input_ = true;
   std::vector<unsigned int> input_columns_;
   std::vector<PiPoValue> selected_values_;
   std::vector<PiPoValue> output_values_;
@@ -71,11 +67,7 @@ public:
   PiPoTemporalModeling (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     columns_attr_(this, "columns", "List of Column Names or Indices to Use (empty for all)", true, 0)
-  {
-    this->onsettime = 0;
-    this->reportduration = false;
-    this->segison = false;
-  }
+  { }
   
   ~PiPoTemporalModeling (void)
   { }
@@ -109,33 +101,34 @@ public:
       }
     }
     
-    this->onsettime = 0;
-    this->reportduration = DURATION;
+    onset_time_ = 0;
     
     /* resize temporal models */
-    tempmod_.enable(MIN, MAX, MEAN, STD);
     tempmod_.resize(input_width_);
-      
+    tempmod_.enable(MIN, MAX, MEAN, STD); // todo: templatize TempModArray
+
     /* get output size */
-    unsigned int outputsize = tempmod_.getNumValues();
-      
+    unsigned int numtempmod  = tempmod_.getNumValues();
+    unsigned int outputwidth = numtempmod + DURATION;
+    marker_only_ = outputwidth == 0;
+
     /* alloc output vector for duration and temporal modelling output */
-    output_values_.resize(outputsize + this->reportduration);
+    output_values_.resize(outputwidth);
       
     /* get labels */
-    char *mem = new char[outputsize * 64 + 64];
-    char **outlabels = new char*[outputsize + 1];
+    char *mem = new char[outputwidth * 64];
+    char **outlabels = new char*[outputwidth];
       
-    for (unsigned int i = 0; i <= outputsize; i++)
+    for (unsigned int i = 0; i < outputwidth; i++)
       outlabels[i] = mem + i * 64;
       
-    if (this->reportduration)
+    if (DURATION)
       snprintf(outlabels[0], 64, "Duration");
-    tempmod_.getLabels(labels, input_width_, &outlabels[this->reportduration], 64, outputsize);
-      
-    int ret = this->propagateStreamAttributes(true, rate, 0.0, outputsize + this->reportduration, 1,
-					      (const char **) &outlabels[0],
-					      false, 0.0, 1);
+    tempmod_.getLabels(labels, input_width_, &outlabels[DURATION], 64, numtempmod);
+     
+    int ret = propagateStreamAttributes(true, rate, 0.0, outputwidth, outputwidth > 0,
+					(const char **) &outlabels[0],
+					false, 0.0, 1);
       
     delete [] mem;
     delete [] outlabels;
@@ -145,11 +138,11 @@ public:
   
   int reset (void) override
   {
-    this->onsettime = 0;
-    this->segison = false;
+    onset_time_ = 0;
+    seg_is_on_  = false;
     tempmod_.reset();
     
-    return this->propagateReset();
+    return propagateReset();
   } // reset
 
   // receives descriptor data to calculate stats on (until segment() is received)
@@ -157,7 +150,7 @@ public:
   {
     for (unsigned int i = 0; i < num; i++)
     { // for all frames: feed temporal modelling when within segment (is on)
-      if (this->segison)
+      if (seg_is_on_)
       {
 	if (pass_input_)
 	  tempmod_.input(values, size);
@@ -175,35 +168,51 @@ public:
     return 0;
   } // frames
 
-  // segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
+  // upstream segmenter decided start/end of segment: output current stats, if frames have been sent since last segment() call
   int segment (double time, bool start) override
-  { 
-    if (DURATION)
-      output_values_[0] = time - this->onsettime;
+  {
+#if TEMPMOD_DEBUG
+    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d  --> output %d\n", MIN, MAX, MEAN, STD, DURATION, time, start, seg_is_on_,
+           start == false || seg_is_on_);
+#endif
+    int ret = 0;
+     
+    if (marker_only_)
+    { // immediate marker output, no temporal modeling data: report current segmentation time, no data
+      ret = propagateFrames(time, 0.0, NULL, 0, 1);
+    }
+    else if (start == false   // end of segment
+	     || seg_is_on_)   // restart segment
+    {
+      if (DURATION)
+	output_values_[0] = time - onset_time_;
 
-    long outputsize = output_values_.size();
+      long outputsize = output_values_.size();
           
-    /* get temporal modelling */
-    if (outputsize > 1)
-      tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
+      /* get temporal modelling */
+      if (outputsize - DURATION > 0)
+	tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
+
+      // report segment data, don't pass on segment() call: report segment start time
+      ret = propagateFrames(onset_time_, 0.0, &output_values_[0], outputsize, 1);
+    }
 
     // remember segment status
-    onsettime = time;
-    segison = start;
-    
-    /* report segment data, don't pass on segment() call */
-    int ret = this->propagateFrames(time, 0.0, &output_values_[0], outputsize, 1);
-    
+    onset_time_ = time;
+    seg_is_on_  = start;
+
     return ret;
   } // segment  
   
   int finalize (double inputend) override
   {
-    // treat end of input like last segment end
-    int ret = segment(inputend, false);
-    return ret  &&  this->propagateFinalize(inputend);
+    int ret = 0;
+    if (seg_is_on_)
+      // if we have a running segment, treat end of input like last segment end //TBD: here or handled by segmenter??????
+      ret = segment(inputend, false);
+    return ret  &&  propagateFinalize(inputend);
   } // finalize
-}; // end class PiPoTemporalModeling
+}; // end template class PiPoTemporalModeling
 
 
 // define individual temporal modeling classes
@@ -213,9 +222,10 @@ using PiPoSegMinMax    = PiPoTemporalModeling<1, 1, 0, 0>;
 using PiPoSegMean      = PiPoTemporalModeling<0, 0, 1, 0>;
 using PiPoSegStd       = PiPoTemporalModeling<0, 0, 0, 1>;
 using PiPoSegMeanStd   = PiPoTemporalModeling<0, 0, 1, 1>;
+using PiPoSegMarker    = PiPoTemporalModeling<0, 0, 0, 0, 0>;
 using PiPoSegDuration  = PiPoTemporalModeling<0, 0, 0, 0, 1>;
 using PiPoSegStats     = PiPoTemporalModeling<1, 1, 1, 1, 1>;
-// later: using PiPoSegMedian  = PiPoTemporalModeling<0, 0, 0, 0, 0, 1>;
+// later: define PiPoSegMedian based on class that does buffering of segment data
 
 
 /** EMACS **
@@ -225,4 +235,4 @@ using PiPoSegStats     = PiPoTemporalModeling<1, 1, 1, 1, 1>;
  * End:
  */
 
-#endif
+#endif // _PIPO_TEMPMOD_

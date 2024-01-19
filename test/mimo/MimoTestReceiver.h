@@ -1,4 +1,6 @@
 
+#ifndef _MIMOTESTRECEIVER_H_
+#define _MIMOTESTRECEIVER_H_
 
 #include "mimo.h"
 #include "PiPoTestReceiver.h"
@@ -81,3 +83,5 @@ public:
 
   PiPoTestReceiver prx;
 };
+
+#endif _MIMOTESTRECEIVER_H_

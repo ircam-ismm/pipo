@@ -1,15 +1,15 @@
 /**
- * @file PiPoRms.h
- * @author ISMM Team @ Ircam
- * 
- * @brief RMS PiPo
- * 
+ * @file PiPoThru.h
+ * @author Diemo.Schwarz@ircam.fr
+ *
+ * @brief PiPo module passing data through unchanged
+ *
  * @ingroup pipomodules
  *
  * @copyright
- * Copyright (C) 2023 by ISMM IRCAM – Centre Pompidou, Paris, France.
+ * Copyright (C) 2012 by IMTR IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,76 +37,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPO_RMS_
-#define _PIPO_RMS_
+#ifndef _PIPO_THRU_
+#define _PIPO_THRU_
 
 #include "PiPo.h"
 
-using namespace std;
-
-class PiPoRms : public PiPo
+class PiPoThru : public PiPo
 {
-private:
-  float outputFrame[2];
-  double sumOfSquare;
-  int num;
-
 public:
-  PiPoRms(Parent *parent, PiPo *receiver = NULL):
-  PiPo(parent, receiver)
-  {
-    this->sumOfSquare = 0.0;
-    this->num = 0;    
-  }
-  
-  ~PiPoRms(void)
-  { }
-  
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {
-    const char *rmsLabels[1];
-    rmsLabels[0] = "Rms";
-        
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, rmsLabels, 0, 0.0, 1);
-  }
-  
-  int reset(void) 
-  { 
-    this->sumOfSquare = 0.0;
-    this->num = 0;
-    
-    return this->propagateReset(); 
-  };
-  
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
-  {
-    double norm = 1.0 / size;
-    
-    for(unsigned int i = 0; i < num; i++)
-    {
-      double meanOfSquare = 0.0;
-      
-      for(unsigned int j = 0; j < size; j++)
-      {
-        double x = values[j];
-        meanOfSquare += x * x;
-      }
-      
-      this->sumOfSquare += meanOfSquare;
-      this->num += num;
-      
-      meanOfSquare *= norm;
+  PiPoThru (Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver)
+  {}
 
-      this->outputFrame[0] = sqrt(meanOfSquare);
-
-      int ret = this->propagateFrames(time, weight, this->outputFrame, 2, 1);
-      
-      if(ret != 0)
-        return ret;
-    }
-    
-    return 0;
+  int streamAttributes (bool hasTimeTags, double rate, double offset,
+                        unsigned int width, unsigned int height, const char **labels,
+                        bool hasVarSize, double domain, unsigned int maxframes)
+  {
+    return propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxframes);
   }
+
+  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+  {
+    return propagateFrames(time, weight, values, size, num);
+  }
+
+  // reset(), finalize(), segment() are passed through by PiPo base class
 };
 
-#endif
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */
+
+#endif /* _PIPO_THRU_ */

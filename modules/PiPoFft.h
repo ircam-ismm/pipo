@@ -58,7 +58,7 @@ extern "C" {
 #endif
 
 #define MIN_FFT_SIZE 16
-#define MAX_FFT_SIZE 65536 * 4
+#define MAX_FFT_SIZE 65536 * 16 // up to 24s at 44.1kHz
 #define DB_TO_LIN(x) (exp(0.115129254649702 * x))
 
 static const double itur468Coeffs[21][2] = {
@@ -185,7 +185,7 @@ public:
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {  
     bool                norm               = norm_attr_.get();
-    int                 new_fft_size       = size_attr_.get();
+    long                new_fft_size       = size_attr_.get();
     enum OutputMode     new_output_mode    = (enum OutputMode)    mode_attr_.get();
     enum WeightingMode  new_weighting_mode = (enum WeightingMode) weighting_attr_.get();
     double              new_samplerate     = (double) height / domain;
@@ -196,7 +196,10 @@ public:
     if (new_fft_size <= 0)
       new_fft_size = rta_inextpow2(inputSize);
     else if (new_fft_size > MAX_FFT_SIZE)
+    {
+      signalWarning("Requested FFT size "+ std::to_string(new_fft_size) +" too large, clipping to "+ std::to_string(MAX_FFT_SIZE) +".");
       new_fft_size = MAX_FFT_SIZE;
+    }
     
     if (norm)
       fftScale_ = 1.0 / new_fft_size;

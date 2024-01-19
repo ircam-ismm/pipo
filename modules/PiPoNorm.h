@@ -1,15 +1,15 @@
 /**
  * @file PiPoSum.h
- * @author Norbert.Schnell@ircam.fr
- * 
+ * @author ismm
+ *
  * @brief PiPo sum values of data streams
- * 
+ *
  * @ingroup pipomodules
  *
  * @copyright
  * Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  * License (BSD 3-clause)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPO_SUM_
-#define _PIPO_SUM_
+#ifndef _PIPO_NORM_
+#define _PIPO_NORM_
 
 #include "PiPo.h"
 
@@ -46,58 +46,61 @@
 #include <vector>
 using namespace std;
 
-class PiPoSum : public PiPo
+class PiPoNorm : public PiPo
 {
-private:
-  bool normSum;
-  
+    
 public:
-  PiPoScalarAttr<bool> norm;
-  PiPoScalarAttr<const char *> colname;
-  PiPoScalarAttr<const char *> outcolnames;
-
-  PiPoSum(Parent *parent, PiPo *receiver = NULL)
-  : PiPo(parent, receiver),
-    norm(this, "norm", "Normalize Sum With Size", false, false),
+    PiPoScalarAttr<bool> sizescaled;
+    PiPoScalarAttr<float> powexp;
+    PiPoScalarAttr<const char *> colname;
+    PiPoScalarAttr<const char *> outcolnames;
+    
+    PiPoNorm(Parent *parent, PiPo *receiver = NULL)
+    : PiPo(parent, receiver),
+    sizescaled(this, "sizescaled", "Divide By Size", false, false),
+    powexp(this, "powexp", "pow exponent applied to sum of square", true, 0.5),
     colname(this, "colname", "Output Column Name [DEPRECATED]", true, ""),
     outcolnames(this, "outcolnames", "Output Column Name", true, "")
-  { }
-  
-  ~PiPoSum(void)
-  { }
-  
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {
-    const char *name1 = outcolnames.get();
-    const char *name2 = colname.get();
-    const char **name = (name1 != NULL  &&  *name1 != 0)  ?  &name1  :  (name2 != NULL  &&  *name2 != 0)  ?  &name2  :  NULL;
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name, 0, 0.0, 1);
-  }
-  
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
-  {
-    bool normSum = this->norm.get();
+    { }
     
-    for(unsigned int i = 0; i < num; i++)
+    ~PiPoNorm(void)
+    { }
+    
+    int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-      float sum = 0.0;
-      
-      for(unsigned int j = 0; j < size; j++)
-        sum += values[j];
-      
-      if(normSum)
-        sum /= size;
-      
-      int ret = this->propagateFrames(time, weight, &sum, 1, 1);
-      
-      if(ret != 0)
-        return ret;
-      
-      values += size;
+        const char *name1 = outcolnames.get();
+        const char *name2 = colname.get();
+        const char **name = (name1 != NULL  &&  *name1 != 0)  ?  &name1  :  (name2 != NULL  &&  *name2 != 0)  ?  &name2  :  NULL;
+        return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name, 0, 0.0, 1);
     }
     
-    return 0;
-  }
+    int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+    {
+        bool sizescaled = this->sizescaled.get();
+        double powexp = this->powexp.get();
+        
+        for(unsigned int i = 0; i < num; i++)
+        {
+            float norm = 0.0;
+            
+            for(unsigned int j = 0; j < size; j++)
+                norm += values[j]*values[j];
+            
+            norm = powf(norm, powexp);
+            
+            if(sizescaled)
+                norm /= size;
+            
+            int ret = this->propagateFrames(time, weight, &norm, 1, 1);
+            
+            if(ret != 0)
+                return ret;
+            
+            values += size;
+        }
+        
+        return 0;
+    }
 };
 
 #endif

@@ -131,7 +131,6 @@ class MimoOrder: public Mimo
 {
 public:
   const PiPoStreamAttributes* attr_;
-  enum Direction { Forward = 0, Backward = 1 };
   int numbuffers_, numtracks_, numframestotal_;
   std::vector<int> bufsizes_; // num frames for each buffer
   int m_ = 0, n_ = 0, framesize_ = 0;   // input data vector size (m_, n_)

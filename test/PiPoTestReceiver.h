@@ -1,4 +1,4 @@
-
+// -*- mode: c++; c-basic-offset:2 -*-
 #include <cmath>
 #include "PiPo.h"
 
@@ -134,16 +134,16 @@ public:
     sa.labels = (const char **) malloc(sa.numLabels * sizeof(char *));
     labelstore.resize(sa.numLabels);
     
-       //printf("%i %i\n", sa.dims[0], sa.dims[1]);
-       //printf("%i %i\n", width, height);
+    //printf("%i %i\n", sa.dims[0], sa.dims[1]);
+    //printf("%i %i\n", width, height);
 
-      for (int i = 0; i < sa.numLabels; i++)
+    for (int i = 0; i < sa.numLabels; i++)
     {
       labelstore[i] = std::string(labels[i]);
       sa.labels[i] = labelstore[i].c_str();
-        //printf("%s ", sa.labels[i]);
+      //printf("%s ", sa.labels[i]);
     }
-      //printf("\n");
+    //printf("\n");
     
     return 0;
   }
@@ -157,6 +157,7 @@ public:
       values = (PiPoValue *) realloc(values, size * sizeof(PiPoValue));
     else
       values = (PiPoValue *) malloc(size * sizeof(PiPoValue));
+    assert(values);
     memcpy(values, _values, size * sizeof(PiPoValue));
 
     for (int i = 0; i < size; i++)

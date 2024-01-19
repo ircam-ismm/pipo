@@ -45,6 +45,10 @@
 #include <math.h>
 #include <vector>
 
+#define defaultGyroWeigth 30.0
+#define defaultGyroWeigthLinear 0.9677
+#define defaultRegularisation 0.01
+
 using namespace std;
 
 const double toDeg = 180. / M_PI;
@@ -53,8 +57,8 @@ const double toRad = M_PI / 180.;
 class PiPoOrientation : public PiPo
 {
   enum OutputUnitE { DegreeUnit = 0, RadiansUnit = 1, NormUnit = 2};
-  enum GyroUnitE { DegreePerMillisecondUnit = 0, DegreePerSecondUnit = 1};
   enum RotationNumE { None = 0, One = 1, Two = 2 };
+  enum InputFormatE { RiotBitalinoFormat = 0, DeviceMotionFormat = 1};
 private:
   bool normSum;
   double lastTime;
@@ -78,16 +82,16 @@ public:
   PiPoScalarAttr<double> regularisation;
   PiPoScalarAttr<PiPo::Enumerate> rotation;
   PiPoScalarAttr<PiPo::Enumerate> outputunit;
-  PiPoScalarAttr<PiPo::Enumerate> gyrounit;
+  PiPoScalarAttr<PiPo::Enumerate> inputformat;
   
   PiPoOrientation(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  gyroweight(this, "gyroweight", "Gyroscope Wheight", true, 15.0),
-  gyroweightlin(this, "gyroweightlin", "Linear Gyroscope Wheight", true, 0.9375),
-  regularisation(this, "regularisation", "Limit Instability", false, 0.01),
+  gyroweight(this, "gyroweight", "Gyroscope Wheight", true, defaultGyroWeigth),
+  gyroweightlin(this, "gyroweightlin", "Linear Gyroscope Wheight", true, defaultGyroWeigthLinear),
+  regularisation(this, "regularisation", "Limit Instability", false, defaultRegularisation),
   rotation(this, "rotation", "Axys rotation", false, None),
   outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit),
-  gyrounit(this, "gyrounit", "Gyro input unit", false, DegreePerMillisecondUnit)
+  inputformat(this, "inputformat", "Input data format", false, RiotBitalinoFormat)
   {
     this->rotation.addEnumItem("none", "no rotation");
     this->rotation.addEnumItem("one", "single rotation");
@@ -96,14 +100,14 @@ public:
     this->outputunit.addEnumItem("degree", "Degree angle unit");
     this->outputunit.addEnumItem("radians", "Radians angle unit");
     this->outputunit.addEnumItem("normalise", "normalise 0-1");
-    
-    this->gyrounit.addEnumItem("degree/msec", "Degree per millisecond");
-    this->gyrounit.addEnumItem("degree/sec", "Degree per second");
+        
+    this->inputformat.addEnumItem("riotbitalino", "Riot Bitalino input format");
+    this->inputformat.addEnumItem("devicemotion", "Device motion input format");
     
     lastTime = 0.0;
     firstSample = true;
-    lastGyroWeight = 15.0;
-    lastGyroWeightLinear = 0.9375;
+    lastGyroWeight = defaultGyroWeigth;
+    lastGyroWeightLinear = defaultGyroWeigthLinear;
   }
   
   ~PiPoOrientation(void)
@@ -123,26 +127,43 @@ public:
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
+    PiPoOrientation::InputFormatE inFormat = (PiPoOrientation::InputFormatE)this->inputformat.get();
+    
     for(unsigned int i = 0; i < num; i++)
     {
       if(size >= 3)
       {
-        accVector[0] = values[0];
-        accVector[1] = values[1];
-        accVector[2] = values[2];
+        if(inFormat == RiotBitalinoFormat)
+        {
+          accVector[0] = values[0];
+          accVector[1] = values[1];
+          accVector[2] = values[2];
+        }
+        else //DeviceMotionFormat
+        {
+          accVector[0] = -values[1]/9.81;
+          accVector[1] = values[0]/9.81;
+          accVector[2] = values[2]/9.81;
+        }
         if(size >= 6)
         {
           double inputGyro0 = values[3];
           double inputGyro1 = values[4];
           double inputGyro2 = values[5];
           
-          PiPoOrientation::GyroUnitE gyunit = (PiPoOrientation::GyroUnitE)this->gyrounit.get();
-          double gyrounitparm = (gyunit == DegreePerMillisecondUnit) ? 1000. : 1.;
-          
-          // match R-IoT output
-          gyroVector[0] = -gyrounitparm * inputGyro1; // deg / ms
-          gyroVector[1] =  gyrounitparm * inputGyro0; // deg / ms
-          gyroVector[2] =  gyrounitparm * inputGyro2; // (unused) deg / ms        
+          if(inFormat == RiotBitalinoFormat)
+          {
+            // match R-IoT output
+            gyroVector[0] = -1000. * inputGyro1; // deg / ms
+            gyroVector[1] =  1000. * inputGyro0; // deg / ms
+            gyroVector[2] =  1000. * inputGyro2; // (unused) deg / ms
+          }
+          else //DeviceMotionFormat
+          {
+            gyroVector[0] = -inputGyro1;
+            gyroVector[1] = -inputGyro2;
+            gyroVector[2] = inputGyro0;
+          }
         }
       }
     
@@ -259,12 +280,24 @@ public:
           break;
       }
             
-      outVector[0] = accEstimate[0];
-      outVector[1] = accEstimate[1];
-      outVector[2] = accEstimate[2];
-      outVector[3] = pitch;
-      outVector[4] = roll;
-      outVector[5] = tilt;
+      if(inFormat == RiotBitalinoFormat)
+      {
+        outVector[0] = accEstimate[0];
+        outVector[1] = accEstimate[1];
+        outVector[2] = accEstimate[2];
+        outVector[3] = pitch;
+        outVector[4] = roll;
+        outVector[5] = tilt;
+      }
+      else // DeviceMotionFormat
+      {
+        outVector[0] = accEstimate[1];
+        outVector[1] = accEstimate[0];
+        outVector[2] = accEstimate[2];
+        outVector[3] = pitch;
+        outVector[4] = roll;
+        outVector[5] = tilt;
+      }
       
       int ret = this->propagateFrames(time, weight, &this->outVector[0], 6, 1);
       if(ret != 0)

@@ -50,7 +50,7 @@
 class MiMoNormalize : public Mimo
 {
 private:
-    mimo_stats		stats_;
+    MimoStats		stats_;
     stats_model_data*	model_ = NULL;	 // model_ points to stats_model_data in stats object, or is NULL when invalid
     int			size_ = 0;
     bool		is_var_size_ = false;

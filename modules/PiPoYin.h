@@ -65,12 +65,16 @@ private:
   double	   sr_;		// effective sample rate
   int		   ac_size_;
   float		  *corr_;
+  float defaultPeriodicityGate;
   
 public:
   PiPoScalarAttr<double>	minFreq;
   PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double>	yinThreshold;
   PiPoScalarAttr<bool> old;
+
+  PiPoScalarAttr<double>  yinPeriodicityGate;
+  //DEPRECATED ATTRIBUTES
   PiPoScalarAttr<double>  yinQualityGate;
   
   // constructor
@@ -80,7 +84,8 @@ public:
     downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
     yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
     old(this, "old", "Yin old or new behavior", false, false),
-    yinQualityGate(this, "qualitygate", "Yin Quality Gate", true, 0.),
+    yinPeriodicityGate(this, "periodicitygate", "Yin Periodicity Gate", true, 0.),
+    yinQualityGate(this, "qualitygate", "Yin Quality Gate [DEPRECATED]", true, 0.),
     yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
@@ -89,6 +94,8 @@ public:
     this->downSampling.addEnumItem("2x", "Down sampling by 2");
     this->downSampling.addEnumItem("4x", "Down sampling by 4");
     this->downSampling.addEnumItem("8x", "Down sampling by 8");
+    
+    defaultPeriodicityGate = 0.0;
   }
   
   ~PiPoYin (void)
@@ -117,7 +124,16 @@ public:
     int    downsize = height / down;		// downsampled input frame size
     double minf = minFreq.get();
 
-    // clip quality gate value to (0., 1.)
+    if(yinPeriodicityGate.get() == defaultPeriodicityGate && yinQualityGate.get() != defaultPeriodicityGate)
+      signalWarning(std::string("PiPoYin: qualitygate attribute is deprecated. Use periodicitygate instead!"));
+  
+    // clip periodicity gate value to (0., 1.)
+    if(yinPeriodicityGate.get() < 0.)
+      yinPeriodicityGate.set(0., true);
+    else if(yinPeriodicityGate.get() > 1.)
+      yinPeriodicityGate.set(1., true);
+    
+    // DEPRECATED
     if(yinQualityGate.get() < 0.)
       yinQualityGate.set(0., true);
     else if(yinQualityGate.get() > 1.)
@@ -304,7 +320,10 @@ public:
     energy = sqrt(corr_[0] / (downsize - ac_size_));
     
     float out_0 = (float) sr_ / period;
-    if(periodicity < yinQualityGate.get())
+    float periodicityGate = yinPeriodicityGate.get();
+    if(periodicityGate == defaultPeriodicityGate && yinQualityGate.get() != defaultPeriodicityGate)
+      periodicityGate = yinQualityGate.get();
+    if(periodicity < periodicityGate)
       out_0 = 0;
     
     outvalues[0] = out_0;

@@ -44,7 +44,7 @@ public:
 };
 
 
-TEST_CASE("Test pipo version")
+TEST_CASE("version")
 {
   PiPoCollection::init();
   PiPoCollection::addToCollection("version_test", new PiPoCreator<pipo_version_test>);
