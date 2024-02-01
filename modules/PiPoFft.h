@@ -244,6 +244,13 @@ public:
         outputWidth = 1;
         break;
       }
+      
+      default:
+      {
+        outcolnames[0] = "undefined";
+        outcolnames[1] = "undefined";
+        outwidth = 0;
+      }
     }
     
     if (new_fft_size != fftSize_  ||  new_weighting_mode != weightingMode_  ||  new_samplerate != sampleRate_)
