@@ -235,6 +235,12 @@ public:
         outputWidth = 1;
         break;
       }
+      default:
+      {
+        fftColNames[0] = "undefined";
+        fftColNames[1] = "undefined";
+        outputWidth = 0;
+      }
     }
     
     if(fftSize != this->fftSize || weightingMode != this->weightingMode)
