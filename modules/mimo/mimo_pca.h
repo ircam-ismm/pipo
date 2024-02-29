@@ -409,16 +409,28 @@ private:
       PiPoValue* Vt_ptr = Vt_.data();
             
       //First do the query for worksize
-      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
-            
+      //sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
+      __CLPK_integer M = numframestotal_;
+      __CLPK_integer N = n_;
+      U_.resize(M * M);
+      Vt_.resize(N * N);
+      U_ptr = U_.data();
+      Vt_ptr = Vt_.data();
+
+      // sgesvd_(jobu, jobvt, &ldvt, &n_, traindata.data(), &ldvt, S_ptr, Vt_ptr, &ldvt, U_ptr, &ldu, optimalWorkSize, &lwork, &info);
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_ptr, Vt_ptr, &N, U_ptr, &M, optimalWorkSize, &lwork, &info);
+      
       //Resize accordingly
       lwork = optimalWorkSize[0];
       work.resize(lwork);
 	
       //Do the job
-      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
-            
-      std::swap(U_, Vt_);
+      //sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
+      //std::swap(U_, Vt_); //////??????????????
+
+      // transposed input: swap U and Vt arguments
+      //sgesvd_(jobu, jobvt, &ldvt, &n_, traindata.data(), &ldvt, S_ptr, Vt_ptr, &ldvt, U_ptr, &ldu, work.data(), &lwork, &info);
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_ptr, Vt_ptr, &N, U_ptr, &M, work.data(), &lwork, &info);
       V_ = xTranspose(Vt_.data(), minmn_, n_);
 #else
       PiPoValue* S_ptr = S_.data();
