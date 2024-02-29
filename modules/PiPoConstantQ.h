@@ -221,6 +221,13 @@ public:
         outwidth = 1;
         break;
       }
+
+      default:
+      {
+        outcolnames[0] = "undefined";
+        outcolnames[1] = "undefined";
+        outwidth = 0;
+      }
     }
 
     // set all essentia cqt and internal parameters from pipo attrs
