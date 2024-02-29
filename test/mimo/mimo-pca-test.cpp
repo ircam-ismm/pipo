@@ -185,6 +185,7 @@ std::tuple<std::vector<float>,int,int> bw8 = parseMatrix("pca-matlab-test/output
 std::tuple<std::vector<float>,int,int> bw9 = parseMatrix("pca-matlab-test/output/bw9.txt");
 std::tuple<std::vector<float>,int,int> bw10 = parseMatrix("pca-matlab-test/output/bw10.txt");
 
+
 // **** helper function for generating a pca-setup and first iteration
 
 int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vector<float>,int,int> matrix)
@@ -243,6 +244,45 @@ bool vecIsAbsAprox(const std::vector<float>& left, const std::vector<float>& rig
 TEST_CASE("mimo-pca")
 {
     PiPoTestReceiver parent(NULL);
+
+    GIVEN("4 x 2 matrix lozenge")
+    {
+        MiMoPca pca(&parent);
+        unsigned int rank = 2;
+        pca.rank_attr_.set(rank);
+
+	std::tuple<std::vector<float>,int,int> lozenge   = {{0, 0,  1, 0,  1, 1,  2, 1}, 4, 2};
+	std::tuple<std::vector<float>,int,int> lozenge_v = {{0.8507, -0.5257, 0.5257, 0.8507}, 2, 2}; // U should be n x n loadings, values from loadings_test.m
+	std::tuple<std::vector<float>,int,int> lozenge_s = {{1.6180, 0.6180}, 2, 1};
+	std::tuple<std::vector<float>,int,int> lozenge_fw = {{-1.1135,    0.1004,
+							      -0.2629,   -0.4253,
+							       0.2629,    0.4253,
+							       1.1135,   -0.1004}, 4, 2};
+
+	unsigned int m = std::get<1>(lozenge);
+        unsigned int n = std::get<2>(lozenge);
+        
+        THEN("Decomposition and transformation should rotate matrix")
+        {
+            REQUIRE(decompose(m, n, pca, lozenge));
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_s), pca.S_)); // check s
+
+            pca.setReceiver(&parent);
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
+            pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
+            pca.frames(0, 0, std::get<0>(lozenge).data(), n, 1);
+            CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge_fw).data(), std::get<0>(lozenge_fw).size()));
+           
+            //because our feature space is slightly different we reassign VT from matlab
+            pca.decomposition_.VT = xTranspose(std::get<0>(vlm1), n, rank); //??????
+            pca.forwardbackward_attr_.set(1); // backward transformation
+            pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, 1);
+            pca.frames(0, 0, std::get<0>(bwtest1).data(), rank, 1);
+            CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw1).data(), std::get<0>(bw1).size()));
+        }
+    }
+    return;
     
     GIVEN("A M*N input matrix m1:")
     {
