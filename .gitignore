@@ -14,5 +14,3 @@ doc/pipo_long.doxygen
 doc/html/**
 modules/rta-lib/include/rta_configuration_gathered_bits.h
 DerivedData
-*.o
-build/xcode/libpipo.xcodeproj/project.xcworkspace
