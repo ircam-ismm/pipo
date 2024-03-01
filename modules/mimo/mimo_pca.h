@@ -397,7 +397,7 @@ private:
       __CLPK_integer info = 0;
       __CLPK_integer lwork = -1; //query for optimal size
       float optimalWorkSize[1];
-      char* jobu = (char*)"A";
+      char* jobu = (char*)"A"; //TODO: we don't want U...
       char* jobvt = (char*)"A";
             
       // LAPACK svd calculates in this workspace

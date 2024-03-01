@@ -152,7 +152,7 @@ public:
   {
     count_frames++;
     time   = _time;
-    size   = _size;
+    size   = _size * _num;
     if (values)
       values = (PiPoValue *) realloc(values, size * sizeof(PiPoValue));
     else

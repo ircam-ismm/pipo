@@ -252,7 +252,7 @@ TEST_CASE("mimo-pca")
         pca.rank_attr_.set(rank);
 
 	std::tuple<std::vector<float>,int,int> lozenge   = {{0, 0,  1, 0,  1, 1,  2, 1}, 4, 2};
-	std::tuple<std::vector<float>,int,int> lozenge_v = {{0.8507, -0.5257, 0.5257, 0.8507}, 2, 2}; // U should be n x n loadings, values from loadings_test.m
+	std::tuple<std::vector<float>,int,int> lozenge_v = {{0.8507, -0.5257, 0.5257, 0.8507}, 2, 2}; // V should be n x n loadings, values from loadings_test.m
 	std::tuple<std::vector<float>,int,int> lozenge_s = {{1.6180, 0.6180}, 2, 1};
 	std::tuple<std::vector<float>,int,int> lozenge_fw = {{-1.1135,    0.1004,
 							      -0.2629,   -0.4253,
@@ -264,15 +264,17 @@ TEST_CASE("mimo-pca")
         
         THEN("Decomposition and transformation should rotate matrix")
         {
+	    char buf[2048];
             REQUIRE(decompose(m, n, pca, lozenge));
-            CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check u
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check v
             CHECK(vecIsAbsAprox(std::get<0>(lozenge_s), pca.S_)); // check s
 
             pca.setReceiver(&parent);
             pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); //forward transformation
-            pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, 1);
-            pca.frames(0, 0, std::get<0>(lozenge).data(), n, 1);
-            CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge_fw).data(), std::get<0>(lozenge_fw).size()));
+	    pca.model_attr_.setJson(pca.getmodel()->to_json(buf, 2048)); //forward transformation
+            pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, m);
+            pca.frames(0, 0, std::get<0>(lozenge).data(), n, m);
+            CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge_fw).data(), n * m));
            
             //because our feature space is slightly different we reassign VT from matlab
             pca.decomposition_.VT = xTranspose(std::get<0>(vlm1), n, rank); //??????

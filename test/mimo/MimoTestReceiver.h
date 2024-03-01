@@ -36,7 +36,7 @@ public:
 
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
-    printf("%s: count %d trackindex %d, received %d mimo training output buffers\n%s", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);    
+    printf("%s: count %d trackindex %d, received %d mimo training output buffers\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);    
 
     output_buffers.resize(numbuffers);
     output_data.resize(numbuffers);
@@ -84,4 +84,4 @@ public:
   PiPoTestReceiver prx;
 };
 
-#endif _MIMOTESTRECEIVER_H_
+#endif // _MIMOTESTRECEIVER_H_
