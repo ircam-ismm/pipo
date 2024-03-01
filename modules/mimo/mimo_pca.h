@@ -258,15 +258,16 @@ public:
 	minmn_ = std::min<int>(numframestotal_, n_);
 	S_.resize(minmn_, 0.f);
 
-#ifdef WIN32
-	Vt_.resize(n_ * n_, 0.f);
+#ifndef WIN32
+	// platforms having LAPACK: Apple, Linux
+	// Fortran-based LAPACK uses col-major order so we swap U and VT, spoofing a transposed input matrix
+	Vt_.resize(n_ * n_);
+	U_.resize(numframestotal_ * numframestotal_);
+#else
+	// platforms without LAPACK use native rta svd
+	// unused Vt_.resize(n_ * n_, 0.f);
 	U_.resize(numframestotal_ * numframestotal_, 0.f); /// can be big?????
 	V_.resize(n_ * n_, 0.f);
-#else
-	//Fortran uses col-major order so we swap U and VT, spoofing
-	//a transposed input matrix
-	U_.resize(n_ * n_);
-	Vt_.resize(numframestotal_ * numframestotal_);
 #endif
 
 	// set output stream attributes
@@ -392,54 +393,37 @@ private:
       // do_pca(bufferindex, numframes);
 	    
 #ifndef WIN32
+      // platforms having LAPACK: Apple, Linux
       __CLPK_integer info = 0;
       __CLPK_integer lwork = -1; //query for optimal size
       float optimalWorkSize[1];
-      __CLPK_integer ldu = n_;
-      __CLPK_integer ldvt = numframestotal_;
-      __CLPK_integer lda = n_;
       char* jobu = (char*)"A";
       char* jobvt = (char*)"A";
             
-      //LAPACK svd calculates in-place
+      // LAPACK svd calculates in this workspace
       std::vector<PiPoValue> work;
             
-      PiPoValue* S_ptr = S_.data();
-      PiPoValue* U_ptr = U_.data();
-      PiPoValue* Vt_ptr = Vt_.data();
-            
-      //First do the query for worksize
-      //sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
+      // Fortran-based LAPACK  uses col-major order matrix format so we swap U and VT, spoofing a transposed input matrix
+      // need to correctly swap args and sizes
       __CLPK_integer M = numframestotal_;
       __CLPK_integer N = n_;
-      U_.resize(M * M);
-      Vt_.resize(N * N);
-      U_ptr = U_.data();
-      Vt_ptr = Vt_.data();
 
-      // sgesvd_(jobu, jobvt, &ldvt, &n_, traindata.data(), &ldvt, S_ptr, Vt_ptr, &ldvt, U_ptr, &ldu, optimalWorkSize, &lwork, &info);
-      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_ptr, Vt_ptr, &N, U_ptr, &M, optimalWorkSize, &lwork, &info);
+      //First do the query for worksize
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
       
       //Resize accordingly
       lwork = optimalWorkSize[0];
       work.resize(lwork);
 	
       //Do the job
-      //sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
-      //std::swap(U_, Vt_); //////??????????????
-
-      // transposed input: swap U and Vt arguments
-      //sgesvd_(jobu, jobvt, &ldvt, &n_, traindata.data(), &ldvt, S_ptr, Vt_ptr, &ldvt, U_ptr, &ldu, work.data(), &lwork, &info);
-      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_ptr, Vt_ptr, &N, U_ptr, &M, work.data(), &lwork, &info);
+      // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
+      // in  (jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
       V_ = xTranspose(Vt_.data(), minmn_, n_);
 #else
-      PiPoValue* S_ptr = S_.data();
-      PiPoValue* U_ptr = U_.data();
-      PiPoValue* V_ptr = V_.data();
-	  
       rta_svd_setup_t * svd_setup = nullptr;
-      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframestotal_, n_);
-      rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
+      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
+      rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
 #endif
 	
       int mtxrank = 0;
