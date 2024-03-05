@@ -1,3 +1,4 @@
+format compact
 
 % lozenge
 m = [0, 0,
@@ -45,3 +46,9 @@ end
 
      % Note that the routine returns V**T, not V.
 
+% test forward transform
+MU  = repmat(mean(m, 1), size(m, 1), 1);          % means matrix, expanded over rows
+fw  = (m - MU) * p
+bw  = score * p' + MU
+bws = fw * V' + MU
+err = [ sum(abs(fw - score)), sum(abs(bw - m)), sum(abs(bws - m)) ]
