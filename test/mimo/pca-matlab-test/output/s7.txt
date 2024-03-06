@@ -1,17 +1,6 @@
-# Created by Octave 4.2.1, Tue Dec 05 16:27:07 2017 GMT <unknown@unknown>
+# written by matlab mysave
 # name: s7
-# type: diagonal matrix
-# rows: 10
-# columns: 10
-6.609634084644557
-2.579925170969555e-016
-0
-0
-0
-0
-0
-0
-0
-0
-
-
+# type: matrix
+# rows: 1
+# columns: 1
+   2.9133601e+00

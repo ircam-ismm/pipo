@@ -212,8 +212,12 @@ int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vect
 
 void printvec (const float *left, size_t leftsize)
 {
+  const bool LINES = false;
   for (size_t j = 0; j < leftsize; j++)
-    cout << (j == 0 ? "[" : " ") << left[j] << (j == leftsize - 1  ?  "]"  :  "") << endl;
+      if (LINES)
+	  cout << (j == 0 ? "[" : " ") << left[j] << (j == leftsize - 1  ?  "]"  :  "") << endl;
+      else
+	  cout << (j == 0 ? "[" : " ") << left[j] << (j == leftsize - 1  ?  "]\n"  :  "");
 }
 
 void printvec (const std::vector<float>& left)
@@ -294,7 +298,7 @@ TEST_CASE("mimo-pca")
             pca.streamAttributes(false, 44100, 0, n, 1, NULL, false, 0, m);
             pca.frames(0, 0, std::get<0>(lozenge).data(), n, m);
 	    std::vector<float> fw(parent.values, parent.values + n * m); // copy result of fw transformation
-	    printvec(fw);
+	    //printvec(fw);
             CHECK(vecIsAbsAprox(fw, std::get<0>(lozenge_fw)));
 	    
             //because our feature space is slightly different we reassign VT from matlab
@@ -344,6 +348,7 @@ TEST_CASE("mimo-pca")
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw1).data(), std::get<0>(bw1).size()));
         }
     }
+
     GIVEN("A M*M square input matrix m2:")
     {
         MiMoPca pca(&parent);
@@ -372,6 +377,7 @@ TEST_CASE("mimo-pca")
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(bw2).data(), std::get<0>(bw2).size()));
         }
     }
+    
     GIVEN("A M*M diagonal input matrix m3:")
     {
         //because Octave doesnt include zero's in diagonal matrices we first add those
@@ -599,7 +605,7 @@ TEST_CASE("mimo-pca")
         THEN("Decomposition and transformation should result in")
         {
             REQUIRE(decompose(m, n, pca, zeroes));
-            CHECK(vecIsAbsAprox(pca.S_, std::get<0>(zeroes))); // check s
+            CHECK(vecIsAbsAprox(pca.S_.data(), std::get<0>(zeroes).data(), 10)); // check s is all 0
         }
     }
 }

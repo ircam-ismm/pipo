@@ -93,101 +93,36 @@ M10 = [VM8,
        VM8,
        VM8];
 
-centermat = @(M1) (M1 - repmat(mean(M1), size(M1, 1), 1));
 
 %calculate SVD
-[u1,s1,v1] = svd(M1 - repmat(mean(M1), size(M1, 1), 1)); %taking the svd of D will produce left singularvectors v..
-A=(M1')*(M1);
-[V,D]=eigs(A,10,'lm'); %..which are the same as the eigenvectors of D'*D
-
-[u2,s2,v2] = svd(centermat(M2)); 
-[u3,s3,v3] = svd(centermat(M3)); 
-[u4,s4,v4] = svd(centermat(M4)); 
-[u5,s5,v5] = svd(centermat(M5)); 
-[u6,s6,v6] = svd(centermat(M6));
-[u7,s7,v7] = svd(centermat(M7));
-[u8,s8,v8] = svd(centermat(M8));
-[u9,s9,v9] = svd(centermat(M9));
-[u10,s10,v10] = svd(centermat(M10));
-
-vlm1 = v1(:,1:10); %select the 10 most prominent vectors
-vlm2 = v2(:,1:10); 
-vlm3 = v3(:,1:10); 
-vlm4 = v4(:,1:10); 
-vlm5 = v5(:,1:10); 
-vlm6 = v6(:,1:10);
-vlm7 = v7(:,1:10); 
-vlm8 = v8(:,1:10); 
-vlm9 = v9(:,1:12);
-vlm10 = v10(:,1:10); 
-
-vtlm1 = vlm1'; %calculate transposed matrices
-vtlm2 = vlm2';
-vtlm3 = vlm3';
-vtlm4 = vlm4';
-vtlm5 = vlm5';
-vtlm6 = vlm6';
-vtlm7 = vlm7';
-vtlm8 = vlm8';
-vtlm9 = vlm9';
-vtlm10 = vlm10';
+%[u1,s1,v1] = svd(M1 - repmat(mean(M1), size(M1, 1), 1)); %taking the svd of D will produce left singularvectors v..
+%A=(M1')*(M1);
+%[V,D]=eigs(A,10,'lm'); %..which are the same as the eigenvectors of D'*D
 
 %test decoding stage
 
-vectest1 = reshape(test, 1, 12*8); %generating test vectors
+vectest1 = reshape(test, 1, 12*8); % generating test vectors
 vectest2 = rand(1,10);
 vectest3 = rand(1,10);
 vectest4 = rand(1,10);
-vectest5 = rand(1,13);
+vectest5 = rand(1,13); %!!!
 vectest6 = rand(1,10);
 vectest7 = rand(1,10);
 vectest8 = rand(1,10);
-vectest9 = rand(1,12);
+vectest9 = rand(1,12); %!!!
 vectest10 = rand(1,10);
 
-fw1 = vectest1*vlm1; %forward transformation
-fw2 = vectest2*vlm2;
-fw3 = vectest3*vlm3;
-fw4 = vectest4*vlm4;
-fw5 = vectest5*vlm5;
-fw6 = vectest6*vlm6;
-fw7 = vectest7*vlm7;
-fw8 = vectest8*vlm8;
-fw9 = vectest9*vlm9;
-fw10 = vectest10*vlm10;
+[u1, s1, v1, vtlm1, fw1, bw1, bw1test] = mypca('1', M1, vectest1); 
+[u2, s2, v2, vtlm2, fw2, bw2, bw2test] = mypca('2', M2, vectest2); 
+[u3, s3, v3, vtlm3, fw3, bw3, bw3test] = mypca('3', M3, vectest3); 
+[u4, s4, v4, vtlm4, fw4, bw4, bw4test] = mypca('4', M4, vectest4); 
+[u5, s5, v5, vtlm5, fw5, bw5, bw5test] = mypca('5', M5, vectest5); 
+[u6, s6, v6, vtlm6, fw6, bw6, bw6test] = mypca('6', M6, vectest6); 
+[u7, s7, v7, vtlm7, fw7, bw7, bw7test] = mypca('7', M7, vectest7); 
+[u8, s8, v8, vtlm8, fw8, bw8, bw8test] = mypca('8', M8, vectest8); 
+[u9, s9, v9, vtlm9, fw9, bw9, bw9test] = mypca('9', M9, vectest9, 12); 
+[u10, s10, v10, vtlm10, fw10, bw10, bw10test] = mypca('10', M10, vectest10); 
 
-bw1test = fw1; %generating test vectors
-bw2test = fw2;
-bw3test = fw3;
-bw4test = fw4;
-bw5test = fw5;
-bw6test = fw6;
-bw7test = fw7;
-bw8test = fw8;
-bw9test = fw9;
-bw10test = fw10;
-
-bw1test(1,1) = bw1test(1,1)*rand(); %transforming the first principal feature
-bw2test(1,1) = bw2test(1,1)*rand();
-bw3test(1,1) = bw3test(1,1)*rand();
-bw4test(1,1) = bw4test(1,1)*rand();
-bw5test(1,1) = bw5test(1,1)*rand();
-bw6test(1,1) = bw6test(1,1)*rand();
-bw7test(1,1) = bw7test(1,1)*rand();
-bw8test(1,1) = bw8test(1,1)*rand();
-bw9test(1,1) = bw9test(1,1)*rand();
-bw10test(1,1) = bw10test(1,1)*rand();
-
-bw1 = bw1test * vtlm1; %backward transformation
-bw2 = bw2test * vtlm2;
-bw3 = bw3test * vtlm3;
-bw4 = bw4test * vtlm4;
-bw5 = bw5test * vtlm5;
-bw6 = bw6test * vtlm6;
-bw7 = bw7test * vtlm7;
-bw8 = bw8test * vtlm8;
-bw9 = bw9test * vtlm9;
-bw10 = bw10test * vtlm10;
 
 %------------------------------------------------------------------------------
 %file I/O
