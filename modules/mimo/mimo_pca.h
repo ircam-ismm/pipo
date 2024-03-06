@@ -304,6 +304,7 @@ public:
        @param  right(n, p)
        @return out(m, p)
     */
+  //TODO: use lapack on mac
     static std::vector<float> xMul (float* left, float* right, int m, int n, int p)
     {
       std::vector<float> out(m * p);
@@ -312,15 +313,17 @@ public:
       {
 	for(int j = 0; j < p; ++j)
 	{
-	  out[i*p + j] = 0;
-	  
+	  float sum = 0;
 	  for (int k = 0; k < n; ++k)
-	    out[i*p + j] += left[i*n + k] * right[k*p + j];
+	    sum += left[i*n + k] * right[k*p + j];
+
+	  out[i*p + j] = sum;
 	}
       }
       return out;
     }
         
+  //TODO: use lapack on mac
     static std::vector<float> xTranspose (float* in, int m, int n)
     {
       std::vector<float> out(m * n);
