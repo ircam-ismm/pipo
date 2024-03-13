@@ -195,6 +195,7 @@ public:
   {
     printf("reset\n");
     sg_in_.reset();
+    return this->propagateReset();
   }
   
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
