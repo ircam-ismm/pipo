@@ -115,15 +115,19 @@ inline bool case_insensitive_char_cmp(char a, char b) {
 /**
  * Function object for comparing two strings in a case-insensitive manner.
  */
-struct case_insensitive_str_cmp
+/*struct case_insensitive_str_cmp
   : public std::binary_function<const std::string&, const std::string&, bool> {
   bool operator()(const std::string& str1, const std::string& str2) const {
     return std::lexicographical_compare(str1.begin(), str1.end(),
                                         str2.begin(), str2.end(),
                                         case_insensitive_char_cmp);
   }
-};
+};*/
 
+inline bool case_insensitive_str_cmp(const std::string& str1, const std::string& str2) 
+{
+   return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(), case_insensitive_char_cmp);
+}
 
 template <class T>
 class OrderedMap : public std::vector<std::pair<std::string, T*> > {
