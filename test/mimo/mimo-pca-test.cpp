@@ -188,7 +188,7 @@ std::tuple<std::vector<float>,int,int> bw10 = parseMatrix("pca-matlab-test/outpu
 
 // **** helper function for generating a pca-setup and first iteration
 
-int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vector<float>,int,int> matrix)
+int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vector<float>,int,int> matrix, int startcol = 0, int numcols = -1)
 {
     unsigned int* sizes = new unsigned int(m);
     const PiPoStreamAttributes* testattr = new const PiPoStreamAttributes(false, 44100,0, 1, n, NULL, false, 0, m, false);
@@ -198,6 +198,9 @@ int decompose(unsigned int m, unsigned int n, MiMoPca& pca, std::tuple<std::vect
     testbuffer->varsize = NULL;
     testbuffer->has_timetags = false;
     testbuffer->time.starttime = 0;
+
+    pca.getAttr("startcol")->set(0, startcol);
+    pca.getAttr("numcols")->set(0, numcols);
     pca.setup(1, 1, (int*)sizes, &testattr);
     pca.train(1, 0, 1, testbuffer);
     delete testbuffer;
@@ -270,7 +273,31 @@ TEST_CASE("mimo-pca")
 
     GIVEN("4 x 2 matrix lozenge")
     {
+	char buf[2048];
         MiMoPca pca(&parent);
+
+	THEN("test column selection")
+	{
+	    int n, s;
+	    std::tie(n, s) = pca.get_cols(4, 0, 4);
+	    CHECK(n == 4); CHECK(s == 0);
+
+	    std::tie(n, s) = pca.get_cols(4, 2, 0); // zero
+	    CHECK(n == 0); CHECK(s == 2);
+
+	    std::tie(n, s) = pca.get_cols(4, 2, 99); // n over
+	    CHECK(n == 2); CHECK(s == 2);
+
+	    std::tie(n, s) = pca.get_cols(4, 2, -99); // n underflow
+	    CHECK(n == 0); CHECK(s == 2);
+
+	    std::tie(n, s) = pca.get_cols(4, 99, 3); // s over, TDB: really leave 1 column????
+	    CHECK(n == 1); CHECK(s == 3);
+
+	    std::tie(n, s) = pca.get_cols(4, -99, 3); // s underflow
+	    CHECK(n == 3); CHECK(s == 0);
+	}
+	
         unsigned int rank = 2;
         pca.rank_attr_.set(rank);
 
@@ -287,7 +314,6 @@ TEST_CASE("mimo-pca")
         
         THEN("Decomposition and transformation should rotate matrix")
         {
-	    char buf[2048];
             REQUIRE(decompose(m, n, pca, lozenge));
             CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check v
             CHECK(vecIsAbsAprox(std::get<0>(lozenge_s), pca.S_)); // check s
@@ -310,6 +336,91 @@ TEST_CASE("mimo-pca")
             pca.frames(0, 0, fw.data(), rank, m); // pass result of fw trans: OK
 	    printvec(parent.values, n * m);
             CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge).data(), n * m));
+
+	    parent.zero();
+            pca.frames(0, 0, std::get<0>(lozenge_fw).data(), rank, m); // pass ref of fw trans: NOT???
+            // this does not pass:
+	    // CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge).data(), n * m));
+        }
+
+	// test with column offset
+	std::tuple<std::vector<float>,int,int> lozenge_x = {
+	    {-1, 0, 0, -2,
+	     -3, 1, 0, -4,
+	     -5, 1, 1, -6,
+	     -7, 2, 1, -25}, 4, 4};
+	m = std::get<1>(lozenge_x);
+	int nx = std::get<2>(lozenge_x);
+	
+        THEN("Same results with partial data counting from end")
+        {
+	    int startcol = 1;
+	    int numcols  = -2;
+	    int ncols    = 2; // resulting number of used input cols
+            REQUIRE(decompose(m, nx, pca, lozenge_x, startcol, numcols));
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check v
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_s), pca.S_)); // check s
+	    
+	    // test forward transformation
+            pca.setReceiver(&parent);
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); 
+	    pca.model_attr_.setJson(pca.getmodel()->to_json(buf, 2048));
+            pca.streamAttributes(false, 44100, 0, nx, 1, NULL, false, 0, m);
+            pca.frames(0, 0, std::get<0>(lozenge_x).data(), nx, m); // forward of full input data, startcol/endcol are still set in mimo module
+	    std::vector<float> fw(parent.values, parent.values + ncols * m); // copy result of fw transformation
+	    //printvec(fw);
+            CHECK(vecIsAbsAprox(fw, std::get<0>(lozenge_fw)));
+	    
+	    // test backward transformation
+            //because our feature space is slightly different we reassign VT from matlab
+            //pca.decomposition_.VT = xTranspose(std::get<0>(vlm1), n, rank); //??????
+            pca.forwardbackward_attr_.set(1);
+	    pca.getAttr("startcol")->set(0, 0); // reset sticky column start/num for bw
+	    pca.getAttr("numcols")->set(0, -1);
+            pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, m);
+
+	    parent.zero();
+            pca.frames(0, 0, fw.data(), rank, m); // pass result of fw trans: OK
+	    printvec(parent.values, ncols * m);
+            CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge).data(), ncols * m));
+
+	    parent.zero();
+            pca.frames(0, 0, std::get<0>(lozenge_fw).data(), rank, m); // pass ref of fw trans: NOT???
+            // this does not pass:
+	    // CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge).data(), n * m));
+        }
+
+	THEN("Same results with partial data counting from startcol")
+        {
+	    int startcol = 1;
+	    int numcols  = 2;
+	    int ncols    = 2; // resulting number of used input cols
+            REQUIRE(decompose(m, nx, pca, lozenge_x, startcol, numcols));
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_v), pca.V_)); // check v
+            CHECK(vecIsAbsAprox(std::get<0>(lozenge_s), pca.S_)); // check s
+	    
+	    // test forward transformation
+            pca.setReceiver(&parent);
+            pca.forwardbackward_attr_.set((PiPo::Enumerate) 0); 
+	    pca.model_attr_.setJson(pca.getmodel()->to_json(buf, 2048));
+            pca.streamAttributes(false, 44100, 0, nx, 1, NULL, false, 0, m);
+            pca.frames(0, 0, std::get<0>(lozenge_x).data(), nx, m); // forward of full input data, startcol/endcol are still set in mimo module
+	    std::vector<float> fw(parent.values, parent.values + ncols * m); // copy result of fw transformation
+	    //printvec(fw);
+            CHECK(vecIsAbsAprox(fw, std::get<0>(lozenge_fw)));
+	    
+	    // test backward transformation
+            //because our feature space is slightly different we reassign VT from matlab
+            //pca.decomposition_.VT = xTranspose(std::get<0>(vlm1), n, rank); //??????
+            pca.forwardbackward_attr_.set(1);
+	    pca.getAttr("startcol")->set(0, 0); // reset sticky column start/num for bw
+	    pca.getAttr("numcols")->set(0, -1);
+            pca.streamAttributes(false, 44100, 0, rank, 1, NULL, false, 0, m);
+
+	    parent.zero();
+            pca.frames(0, 0, fw.data(), rank, m); // pass result of fw trans: OK
+	    printvec(parent.values, ncols * m);
+            CHECK(vecIsAbsAprox(parent.values, std::get<0>(lozenge).data(), ncols * m));
 
 	    parent.zero();
             pca.frames(0, 0, std::get<0>(lozenge_fw).data(), rank, m); // pass ref of fw trans: NOT???
