@@ -559,8 +559,9 @@ public:
 	return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
       }
       else
-      {
-	signalWarning("PCA Error.. rank < 1, propagating empty matrix");
+      { // empty or uniform input data
+	if (numframestotal_ > 0)
+	  signalWarning("PCA Error.. rank <= 0, propagating empty matrix");
 	std::vector<mimo_buffer> invalidbuf(numbuffers);
 	return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
       }
@@ -593,7 +594,6 @@ public:
 	    //minmn_[0] = 1;
 	    rank_ = 1;
 	    means_.clear();
-	    signalWarning("PCA not configured yet.");
 	}
         
         fb_ = forwardbackward_attr_.get();
@@ -627,6 +627,7 @@ public:
     {
       if (means_.size() == 0)
       { //model not configured, propagate zero matrix
+        signalWarning("PCA not configured");
         return propagateFrames(time, weight, new float[1](), 1, 1);
       }
       else
