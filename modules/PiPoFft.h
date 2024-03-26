@@ -247,9 +247,9 @@ public:
       
       default:
       {
-        outcolnames[0] = "undefined";
-        outcolnames[1] = "undefined";
-        outwidth = 0;
+        fftColNames[0] = "undefined";
+        fftColNames[1] = "undefined";
+        outputWidth = 0;
       }
     }
     
