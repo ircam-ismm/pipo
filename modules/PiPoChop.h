@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP 2 // DEBUG * 1
+#define DEBUG_CHOP DEBUG * 2
 // for dbprint
 #define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())
@@ -256,14 +256,14 @@ private:
     // advance is called when curtime >= next_time_ (next segment end has been passed)
     // it advances to next chop time (or infinity when not chopping), and the last segment's duration
     // sets next_time_ to time of next segment start
-    // sets segment_start_, segment_duration_ from current segment
+    // sets segment_start_, segment_duration_ from current segment for later querying in frames()
     void advance (double curtime)
     {
       if (choptimes_.size() == 0)
       { // chop.at list is empty, use chop.size
-        segment_start_    = last_start_;  // store current segment start for querying
+        segment_start_    = last_start_;  // store current segment start for querying in getSegmentStart()
         segment_duration_ = next_time_ - segment_start_; // chop size can change dynamically, so we return actual last duration!
-        last_start_       = next_time_;   // NB: with regular chop, segment start is end of next segment
+        last_start_       = next_time_;   // NB: with regular chop, segment end is start of previous segment
         
         double chopsize = chop.chopSizeA.get();
         if (chopsize > 0)
@@ -334,7 +334,7 @@ public:
     frame_period_ = 1000. / rate;
     
     /* resize and clear temporal models */
-    tempMod.resize(width);
+    tempMod.resize(width * height);
     tempMod.reset();
     
     /* enable temporal models */ //TODO: switch at least one on
@@ -351,8 +351,11 @@ public:
     char ** outLabels = new char * [totalOutputSize];
     
     for (unsigned int i = 0; i < totalOutputSize; i++)
+    {
       outLabels[i] = new char[this->maxDescrNameLength];
-    
+      outLabels[i][0] = 0;
+    }
+
     if (reportDuration != 0)
       std::strcpy(outLabels[0], "Duration");
     
