@@ -117,7 +117,7 @@ public:
     firstSample = true;
     lastGyroWeight = defaultGyroWeigth;
     lastGyroWeightLinear = defaultGyroWeigthLinear;
-    timingPeriod = 100.0;
+    timingPeriod = 1.0/1000;
   }
   
   ~PiPoOrientation(void)
@@ -132,7 +132,7 @@ public:
     else if(newGyroWeightLinear != lastGyroWeightLinear)
       setGyroWeightLinear(newGyroWeightLinear);
     
-    timingPeriod = 100000.0/rate;
+    timingPeriod = 1.0/rate;
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, labels, 0, domain, maxFrames);
   }
