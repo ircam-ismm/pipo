@@ -59,6 +59,8 @@ class PiPoOrientation : public PiPo
   enum OutputUnitE { DegreeUnit = 0, RadiansUnit = 1, NormUnit = 2};
   enum RotationNumE { None = 0, One = 1, Two = 2 };
   enum InputFormatE { RiotBitalinoFormat = 0, DeviceMotionFormat = 1};
+  enum TimingModeE { InternalTimingMode = 0, FrameRateTimingMode = 1};
+  
 private:
   bool normSum;
   double lastTime;
@@ -76,6 +78,8 @@ private:
   double lastGyroWeight;
   double lastGyroWeightLinear;
   
+  double timingPeriod;
+  
 public:
   PiPoScalarAttr<double> gyroweight;
   PiPoScalarAttr<double> gyroweightlin;
@@ -83,6 +87,7 @@ public:
   PiPoScalarAttr<PiPo::Enumerate> rotation;
   PiPoScalarAttr<PiPo::Enumerate> outputunit;
   PiPoScalarAttr<PiPo::Enumerate> inputformat;
+  PiPoScalarAttr<PiPo::Enumerate> timingmode;
   
   PiPoOrientation(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
@@ -91,7 +96,8 @@ public:
   regularisation(this, "regularisation", "Limit Instability", false, defaultRegularisation),
   rotation(this, "rotation", "Axys rotation", false, None),
   outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit),
-  inputformat(this, "inputformat", "Input data format", false, RiotBitalinoFormat)
+  inputformat(this, "inputformat", "Input data format", false, RiotBitalinoFormat),
+  timingmode(this, "timingmode", "Timing mode", false, InternalTimingMode)
   {
     this->rotation.addEnumItem("none", "no rotation");
     this->rotation.addEnumItem("one", "single rotation");
@@ -104,10 +110,14 @@ public:
     this->inputformat.addEnumItem("riotbitalino", "Riot Bitalino input format");
     this->inputformat.addEnumItem("devicemotion", "Device motion input format");
     
+    this->timingmode.addEnumItem("internal", "Internal Timing Mode");
+    this->timingmode.addEnumItem("framerate", "PiPo Frame Rate Mode");
+    
     lastTime = 0.0;
     firstSample = true;
     lastGyroWeight = defaultGyroWeigth;
     lastGyroWeightLinear = defaultGyroWeigthLinear;
+    timingPeriod = 1.0/1000;
   }
   
   ~PiPoOrientation(void)
@@ -122,12 +132,15 @@ public:
     else if(newGyroWeightLinear != lastGyroWeightLinear)
       setGyroWeightLinear(newGyroWeightLinear);
     
+    timingPeriod = 1.0/rate;
+    
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, labels, 0, domain, maxFrames);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     PiPoOrientation::InputFormatE inFormat = (PiPoOrientation::InputFormatE)this->inputformat.get();
+    PiPoOrientation::TimingModeE timeMode = (PiPoOrientation::TimingModeE)this->timingmode.get();
     
     for(unsigned int i = 0; i < num; i++)
     {
@@ -167,9 +180,17 @@ public:
         }
       }
     
-      double deltaTime = (time-lastTime)/1000.0;
-      lastTime = time;
-            
+      double deltaTime;
+      if(timeMode == InternalTimingMode)
+      {
+        deltaTime = (time-lastTime)/1000.0;
+        lastTime = time;
+      }
+      else
+      {
+        deltaTime = timingPeriod;
+        lastTime += timingPeriod;
+      }
       normalize(accVector);
       
       if(firstSample)
@@ -299,7 +320,7 @@ public:
         outVector[5] = tilt;
       }
       
-      int ret = this->propagateFrames(time, weight, &this->outVector[0], 6, 1);
+      int ret = this->propagateFrames(lastTime, weight, &this->outVector[0], 6, 1);
       if(ret != 0)
         return ret;
       
