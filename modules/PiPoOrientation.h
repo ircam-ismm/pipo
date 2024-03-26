@@ -59,7 +59,7 @@ class PiPoOrientation : public PiPo
   enum OutputUnitE { DegreeUnit = 0, RadiansUnit = 1, NormUnit = 2};
   enum RotationNumE { None = 0, One = 1, Two = 2 };
   enum InputFormatE { RiotBitalinoFormat = 0, DeviceMotionFormat = 1};
-  enum TimingModeE { SystemTimingMode = 0, FramePeriodTimingMode = 1};
+  enum TimingModeE { InternalTimingMode = 0, FrameRateTimingMode = 1};
   
 private:
   bool normSum;
@@ -97,7 +97,7 @@ public:
   rotation(this, "rotation", "Axys rotation", false, None),
   outputunit(this, "outputunit", "Angle output unit", false, DegreeUnit),
   inputformat(this, "inputformat", "Input data format", false, RiotBitalinoFormat),
-  timingmode(this, "timingmode", "Timing mode", false, SystemTimingMode)
+  timingmode(this, "timingmode", "Timing mode", false, InternalTimingMode)
   {
     this->rotation.addEnumItem("none", "no rotation");
     this->rotation.addEnumItem("one", "single rotation");
@@ -110,14 +110,14 @@ public:
     this->inputformat.addEnumItem("riotbitalino", "Riot Bitalino input format");
     this->inputformat.addEnumItem("devicemotion", "Device motion input format");
     
-    this->timingmode.addEnumItem("system", "System Timing Mode");
-    this->timingmode.addEnumItem("frameperiod", "PiPo Frame Period Mode");
+    this->timingmode.addEnumItem("internal", "Internal Timing Mode");
+    this->timingmode.addEnumItem("framerate", "PiPo Frame Rate Mode");
     
     lastTime = 0.0;
     firstSample = true;
     lastGyroWeight = defaultGyroWeigth;
     lastGyroWeightLinear = defaultGyroWeigthLinear;
-    timingPeriod = 1000.0;
+    timingPeriod = 100.0;
   }
   
   ~PiPoOrientation(void)
@@ -132,7 +132,7 @@ public:
     else if(newGyroWeightLinear != lastGyroWeightLinear)
       setGyroWeightLinear(newGyroWeightLinear);
     
-    timingPeriod = 1000.0/rate;
+    timingPeriod = 100000.0/rate;
     
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, labels, 0, domain, maxFrames);
   }
@@ -181,7 +181,7 @@ public:
       }
     
       double deltaTime;
-      if(timeMode == SystemTimingMode)
+      if(timeMode == InternalTimingMode)
       {
         deltaTime = (time-lastTime)/1000.0;
         lastTime = time;
