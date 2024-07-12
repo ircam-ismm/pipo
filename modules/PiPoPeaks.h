@@ -97,14 +97,14 @@ public:
   : PiPo(parent, receiver), buffer_(),
     max_num_peaks_(16), allocated_peaks_size_(0), domscale_(1.),
     numPeaks_attr_(this, "numpeaks", "Maximum number of peaks to be estimated", true, max_num_peaks_),
-    keep_mode_attr_(this, "keep", "keep first or strongest peaks", true, 0),
-    //downSampling_attr_(this, "downsampling", "Downsampling Exponent", true, 2),
-    threshold_width_attr_(this, "thwidth", "minimum width for peaks [Hz] (indicates sinusoidality)", true, 0.),
-    threshold_height_attr_(this, "thheight", "minimum height for peaks (relative to surrounding troughs)", true, 0.),
-    threshold_dev_attr_(this, "thdev", "peak amplitude threshold relative to mean spectrum amplitude", true, 0.),
-    range_low_attr_(this, "rangelow", "minimum of band where to search for peaks [Hz]", true, 0.),
-    range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks [Hz]", true, ABS_MAX)
-    //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
+    keep_mode_attr_(this, "keep", "keep first or strongest peaks", false, 0),
+    //downSampling_attr_(this, "downsampling", "Downsampling Exponent", false, 2),
+    threshold_width_attr_(this, "thwidth", "minimum width for peaks [Hz] (indicates sinusoidality)", false, 0.),
+    threshold_height_attr_(this, "thheight", "minimum height for peaks (relative to surrounding troughs)", false, 0.),
+    threshold_dev_attr_(this, "thdev", "peak amplitude threshold relative to mean spectrum amplitude", false, 0.),
+    range_low_attr_(this, "rangelow", "minimum of band where to search for peaks [Hz]", false, 0.),
+    range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks [Hz]", false, ABS_MAX)
+    //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", false, -0.5)
   {
     keep_mode_attr_.addEnumItem("strongest", "keep strongest peak");
     keep_mode_attr_.addEnumItem("lowest", "keep first peak");
