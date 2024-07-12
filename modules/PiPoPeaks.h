@@ -99,11 +99,11 @@ public:
     numPeaks_attr_(this, "numpeaks", "Maximum number of peaks to be estimated", true, max_num_peaks_),
     keep_mode_attr_(this, "keep", "keep first or strongest peaks", true, 0),
     //downSampling_attr_(this, "downsampling", "Downsampling Exponent", true, 2),
-    threshold_width_attr_(this, "thwidth", "maximum width for peaks (indicates sinusoidality)", true, 0.),
-    threshold_height_attr_(this, "thheight", "minimum height for peaks", true, 0.),
-    threshold_dev_attr_(this, "thdev", "maximum deviation from mean value", true, 0.),
-    range_low_attr_(this, "rangelow", "minimum of band where to search for peaks", true, 0.),
-    range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks", true, ABS_MAX)
+    threshold_width_attr_(this, "thwidth", "minimum width for peaks [Hz] (indicates sinusoidality)", true, 0.),
+    threshold_height_attr_(this, "thheight", "minimum height for peaks (relative to surrounding troughs)", true, 0.),
+    threshold_dev_attr_(this, "thdev", "peak amplitude threshold relative to mean spectrum amplitude", true, 0.),
+    range_low_attr_(this, "rangelow", "minimum of band where to search for peaks [Hz]", true, 0.),
+    range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks [Hz]", true, ABS_MAX)
     //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", true, -0.5)
   {
     keep_mode_attr_.addEnumItem("strongest", "keep strongest peak");
@@ -125,6 +125,7 @@ public:
     // calculate factor to convert bin to peak freq  WAS: this->domainScale_attr_.get();
     // derive audio sampling rate from fft domain (= frequency range of bins) is peaks_sr = domain * 2. 
     domscale_ = domain / static_cast<double>(width * height); // domscale is max bin's domain value (frequency)
+    //TODO: if domain = 0, use index
     
     const char *peaksColNames[] = { "Frequency", "Amplitude" } ;
 
@@ -145,7 +146,7 @@ public:
     float *peaks_ptr = &buffer_[0];
     int n_found = 0;
     double mean = -ABS_MAX;
-    unsigned int start, end;
+    unsigned int start, end; // start/end bin index
     unsigned int i, j;
     double threshold_dev = threshold_dev_attr_.get();
     double threshold_height = threshold_height_attr_.get();
@@ -167,8 +168,8 @@ public:
     {
       mean = 0.0;
       
-      for (i = 0; i < size; i++)
-          mean += values[i];
+      for (i = 0; i < size; i++) // TODO: shouldn't this respect start/end bins?
+	mean += values[i]; // TODO: check if median would work better than mean?
         
       mean /= size;
     }
@@ -180,7 +181,7 @@ public:
       double right = values[j + 1];
         
       if (center >= left && center > right)
-      {
+      { // bin j is peak with amplitude center
         double a = 0.5 * (right + left) - center;
         double b = 0.5 * (right - left);
         double frac = -b / (2.0 * a);
@@ -191,7 +192,7 @@ public:
           continue;
         
         if (threshold_height > 0.0 || threshold_width > 0.0)
-        {
+        { // filter peak candidate 
           double min_right_amp = center;
           double min_left_amp = center;
           double min_right_index = size;
@@ -236,11 +237,11 @@ public:
           }
           
           if (max_amp - min_right_amp < threshold_height || max_amp - min_left_amp < threshold_height)
-            continue;
+            continue; // discard peak candidate
           
           if (min_right_index - min_left_index < threshold_width_bins)
-            continue;
-        }
+            continue; // discard peak candidate
+        } // end filter peak
         
         peaks_ptr[2 * n_found] = max_index * domscale_;
         peaks_ptr[2 * n_found + 1] = max_amp;
