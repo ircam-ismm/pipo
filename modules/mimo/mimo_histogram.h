@@ -149,10 +149,16 @@ public:
 };
 
 
-
+///////////////////////////////////////////////////////////////////////////////
+//
+// mimo module to make one histogram per column over all buffers
+//
 class mimo_histogram : public Mimo
 {
 public:
+  // attributes
+  PiPoScalarAttr<int>	numbins_attr_;
+
   // constructor
   mimo_histogram (PiPo::Parent *parent, Mimo *receiver = NULL)
   : Mimo(parent, receiver),
@@ -400,11 +406,6 @@ private:
   std::vector<std::string>	labelstore_;
   std::vector<std::vector<PiPoValue>>	traindata_;
   double		distance_;
-
-  // decoding
-public:
-  PiPoScalarAttr<float>	alpha;
-  //todo: mode attribute: normalise mean/std or min/max
 };
 
 
