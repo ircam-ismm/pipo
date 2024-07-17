@@ -101,7 +101,7 @@ public:
     //downSampling_attr_(this, "downsampling", "Downsampling Exponent", false, 2),
     threshold_width_attr_(this, "thwidth", "minimum width for peaks [Hz] (indicates sinusoidality)", false, 0.),
     threshold_height_attr_(this, "thheight", "minimum height for peaks (relative to surrounding troughs)", false, 0.),
-    threshold_dev_attr_(this, "thdev", "peak amplitude threshold relative to mean spectrum amplitude", false, 0.),
+    threshold_dev_attr_(this, "thdev", "minimum peak amplitude deviation from mean spectrum amplitude", false, 0.),
     range_low_attr_(this, "rangelow", "minimum of band where to search for peaks [Hz]", false, 0.),
     range_high_attr_(this, "rangehigh", "maximum of band where to search for peaks [Hz]", false, ABS_MAX)
     //domainScale_attr_(this, "domscale", "scaling factor of output peaks (overwrites domain and down)", false, -0.5)
@@ -250,7 +250,7 @@ public:
         if (n_found >= max_search)
 	  break;
       }
-    }
+    } // end for all bins
     
     if (keep_mode_attr_.get() == 0) // keep strongest
     {
