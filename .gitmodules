@@ -14,3 +14,6 @@
 [submodule "modules/javascript-engine/jerryscript"]
 	path = modules/javascript-engine/jerryscript
 	url = https://github.com/jerryscript-project/jerryscript.git
+[submodule "modules/flucoma-core"]
+	path = modules/flucoma-core
+	url = https://github.com/flucoma/flucoma-core.git
