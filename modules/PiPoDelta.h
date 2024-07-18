@@ -63,34 +63,40 @@ class PiPoDelta : public PiPo
   unsigned int input_size;
   unsigned int missing_inputs;
   PiPoValue    normalization_factor;
+  double framerate;
   
 public:
   PiPoScalarAttr<int>  filter_size_param;
   PiPoScalarAttr<bool> normalize;
+  PiPoScalarAttr<bool> absolute;
+  PiPoScalarAttr<bool> use_frame_rate;
     
   PiPoDelta (Parent *parent, PiPo *receiver = NULL) 
   : PiPo(parent, receiver),
     buffer(), weights(), frame(), 
     filter_size(0), input_size(0), missing_inputs(0), normalization_factor(1),
     filter_size_param(this, "size", "Filter Size", true, 7),
-    normalize(this, "normalize", "Normalize output", true, true)
+    normalize(this, "normalize", "Normalize Output", false, true),
+    absolute(this, "absolute", "Output Absolute Delta Value", false, false),
+    use_frame_rate(this, "useframerate", "Delta Values * framerate", false, false)
   {
-    
-    
+    this->framerate = 1000.0;
   }
   
   ~PiPoDelta ()
   { }
   
   int streamAttributes (bool hasTimeTags, double rate, double offset, 
-			unsigned int width, unsigned int size, 
-			const char **labels, bool hasVarSize, double domain, 
-			unsigned int maxFrames)
+                        unsigned int width, unsigned int size, 
+                        const char **labels, bool hasVarSize, double domain, 
+                        unsigned int maxFrames)
   {
     // 0 for later check
     unsigned int filtsize = std::max(0, filter_size_param.get());
 
     unsigned int insize  = width * size;
+    
+    this->framerate = rate;
     
     if (filtsize != filter_size  ||  insize != input_size)
     {
@@ -190,6 +196,18 @@ public:
         {
           for (unsigned int i = 0; i < size; i++)
             frame[i] *= normalization_factor;
+        }
+
+        if (absolute.get())
+        {
+          for (unsigned int i = 0; i < size; i++)
+            frame[i] = fabs(frame[i]);
+        }
+        
+        if (use_frame_rate.get())
+        {
+          for (unsigned int i = 0; i < size; i++)
+            frame[i] = frame[i] * this->framerate;
         }
 
         ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);

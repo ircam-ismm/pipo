@@ -1,13 +1,13 @@
 /**
  * @file PiPoRms.h
- * @author Norbert.Schnell@ircam.fr
+ * @author ISMM Team @ Ircam
  * 
  * @brief RMS PiPo
  * 
  * @ingroup pipomodules
  *
  * @copyright
- * Copyright (C) 2012 by IMTR IRCAM – Centre Pompidou, Paris, France.
+ * Copyright (C) 2023 by ISMM IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
  * 
  * License (BSD 3-clause)
@@ -52,18 +52,19 @@ private:
   int num;
 
 public:
-  PiPoRms(PiPo *receiver = NULL)
+  PiPoRms(Parent *parent, PiPo *receiver = NULL):
+  PiPo(parent, receiver)
   {
     this->sumOfSquare = 0.0;
-    this->num = 0;
-    
-    this->receiver = receiver;
+    this->num = 0;    
   }
   
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {  
-    char *rmsLabels[1];
-    
+  ~PiPoRms(void)
+  { }
+  
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    const char *rmsLabels[1];
     rmsLabels[0] = "Rms";
         
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, rmsLabels, 0, 0.0, 1);
@@ -77,15 +78,15 @@ public:
     return this->propagateReset(); 
   };
   
-  int frames(double time, float *values, unsigned int size, unsigned int num)
+  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     double norm = 1.0 / size;
     
-    for(int i = 0; i < num; i++)
+    for(unsigned int i = 0; i < num; i++)
     {
       double meanOfSquare = 0.0;
       
-      for(int j = 0; j < size; j++)
+      for(unsigned int j = 0; j < size; j++)
       {
         double x = values[j];
         meanOfSquare += x * x;
@@ -96,9 +97,9 @@ public:
       
       meanOfSquare *= norm;
 
-      this->outputFrame[0] = meanOfSquare;
+      this->outputFrame[0] = sqrt(meanOfSquare);
 
-      int ret = this->propagateFrames(time, this->outputFrame, 2, 1);
+      int ret = this->propagateFrames(time, weight, this->outputFrame, 2, 1);
       
       if(ret != 0)
         return ret;

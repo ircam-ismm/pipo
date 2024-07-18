@@ -41,7 +41,11 @@
 #include <cfloat>
 #include <vector>
 #include <memory>
-
+#ifdef WIN32
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
 #include "mimo.h"
 #include "jsoncpp/include/json.h"
 
@@ -137,7 +141,7 @@ public:
     }
 
     const Json::Value _num = root["num"];
-    int n = _num.size();
+    unsigned int n = _num.size();
     num.resize(n);
     for (unsigned int i = 0; i < n; ++i)
       num[i] = _num[i].asInt();
@@ -153,7 +157,7 @@ public:
     {
       std::cout << "mimo.stats model dimension mismatch error in\n" << std::endl
 		<< json_string << std::endl;
-      printf("%d =? %d =? %d =? %d =? %d =? %d\n", num.size(), min.size(), max.size(), mean.size(), std.size());
+      printf("%lu =? %lu =? %lu =? %lu =? %lu =? %u\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
       return -1;
     }    
   }
@@ -167,11 +171,11 @@ public:
  *
  */
 
-class mimo_stats : public Mimo
+class MimoStats : public Mimo
 {
 public:
   // constructor
-  mimo_stats (PiPo::Parent *parent, Mimo *receiver = NULL)
+  MimoStats (PiPo::Parent *parent, Mimo *receiver = NULL)
   : Mimo(parent, receiver),
     distance_(0.0),
     alpha(this, "alpha", "Normalization step factor for training iteration", false, 0.1)
@@ -231,7 +235,7 @@ public:
       for (int buf = 0; buf < numbuffers; buf++)
       {
 	const PiPoValue *data = buffers[buf].data;
-        printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, &traindata_[buf][0]);
+        printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, traindata_.size() > 0  ?  &traindata_[buf][0]  :  NULL);
 
 	for (int i = 0; i < buffers[buf].numframes; i++)
 	{
@@ -338,7 +342,7 @@ public:
   /** return trained model parameters */
   stats_model_data *getmodel () override  { return &stats_;  }
 
-  bool converged (double *metric)  { return false; }
+  bool converged (double *metric) override { return false; }
 
   int maxiter () override { return 3; }
   
@@ -361,13 +365,17 @@ public:
     if (labels)
     {
       const std::string suffix("Norm");
+#ifdef WIN32
+      newlabels = (const char**)_malloca(width * sizeof(char*));
+#else
       newlabels = (const char **) alloca(width * sizeof(char *));
+#endif
       labelstore_.resize(width);
 
       for (unsigned int i = 0; i < width; i++)
       {
         labelstore_[i] = std::string(labels[i]) + suffix;
-	newlabels[i] = labelstore_[i].c_str();
+	    newlabels[i] = labelstore_[i].c_str();
       }
     }
 
@@ -379,12 +387,13 @@ public:
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override
   {
     bool ok = 1;
-    
+#ifdef WIN32
+    PiPoValue* norm = (PiPoValue*)_malloca(size * sizeof(PiPoValue));
+#else
+    PiPoValue* norm = (PiPoValue *) alloca(size * sizeof(PiPoValue));
+#endif
     for (unsigned int i = 0; i < num; i++)
     {
-      //PiPoValue norm[size];
-      PiPoValue* norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
-
       // normalise
       for (unsigned int j = 0; j < size; j++)
 	if (stats_.std[j] != 0)
@@ -395,8 +404,6 @@ public:
       ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
       values += size;
-
-      free(norm);
     }
 
     return ok ? 0 : -1;

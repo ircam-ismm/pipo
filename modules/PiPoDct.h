@@ -85,7 +85,7 @@ public:
                        const char **labels, bool hasVarSize,
                        double domain, unsigned int maxFrames)
   {
-    unsigned int order = std::max(1, this->order.get());
+    unsigned int order = (std::max)(1, this->order.get());
     unsigned int inputSize = width * height;
 
     enum WeightingMode weightingMode = static_cast<enum WeightingMode>(this->weighting.get());

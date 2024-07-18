@@ -38,104 +38,130 @@
 #ifndef mimo_norm_h
 #define mimo_norm_h
 
+#ifdef WIN32
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
 #include "jsoncpp/include/json.h"
 #include "mimo.h"
 #include "mimo_stats.h"
 
-
 class MiMoNormalize : public Mimo
 {
 private:
-    mimo_stats stats;
-    stats_model_data* _model;	 // _model points to stats_model_data in stats object, or is NULL when invalid
-    const PiPoStreamAttributes* _streamattr;
-    //todo: PiPoenumattr normtype_; // minmax, meanstd
-    PiPoDictionaryAttr model_attr;
-    std::vector<std::vector<PiPoValue>> _traindata;
-    int _size = 0;
-    std::vector<std::string>	labelstore_;
+    MimoStats		stats_;
+    stats_model_data*	model_ = NULL;	 // model_ points to stats_model_data in stats object, or is NULL when invalid
+    int			size_ = 0;
+    bool		is_var_size_ = false;
+
+    PiPoDictionaryAttr			model_attr_;
+    PiPoScalarAttr<PiPo::Enumerate>	normtype_attr_; // minmax, meanstd
+    enum Normtype {normtype_minmax, normtype_meanstd};
+    std::vector<std::vector<PiPoValue>> traindata_;
+    std::vector<std::string>		labelstore_;
+
+    // working data for frames()
+    std::vector<PiPoValue> norm_;
+    std::vector<PiPoValue> normoffset_;
+    std::vector<PiPoValue> normfact_;
 
 public:
     MiMoNormalize(Parent *parent, Mimo *receiver = nullptr)
-    :   Mimo(parent, receiver)
-    ,   stats(parent, receiver)
-    ,   _model(NULL)
-    ,   model_attr(this, "model", "The model for processing", true, "")
+    : Mimo(parent, receiver),
+      stats_(parent, receiver),
+      model_attr_(this, "model", "The model for processing", true, ""),
+      normtype_attr_(this, "type", "Type of normalization: minmax or meanstd", true, 0)
     {
+      normtype_attr_.addEnumItem("minmax",  "Normalize to range [0, 1]");
+      normtype_attr_.addEnumItem("meanstd", "Center around zero and divide by std");
     }
     
     ~MiMoNormalize(void)
-    {
-    }
+    { }
     
     int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
-    {
-        _streamattr = *streamattr;
-        _size = _streamattr[0].dims[0] * _streamattr[0].dims[1];
-        stats.setup(numbuffers, numtracks, bufsizes, streamattr);
-        _traindata.resize(numbuffers);
-        for (int i = 0; i < numbuffers; i++)
-            _traindata[i].resize(bufsizes[i] * _size);
-        return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
+    { // use first track's stream config for all (TODO: ???)
+      is_var_size_ = streamattr[0]->hasVarSize;
+      size_	   = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+
+      stats_.setup(numbuffers, numtracks, bufsizes, streamattr);
+      
+      traindata_.resize(numbuffers);
+      for (int i = 0; i < numbuffers; i++)
+	traindata_[i].resize(bufsizes[i] * size_);
+
+      return propagateSetup(numbuffers, numtracks, bufsizes, streamattr);
     }
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
     {
-        if(stats.train(0, trackindex, numbuffers, buffers) < 0)
-            return -1;
+      if (stats_.train(0, trackindex, numbuffers, buffers) < 0)
+	return -1;
 
-	_model = stats.getmodel();
-        std::vector<mimo_buffer> outbufs(numbuffers);
-        outbufs.assign(buffers, buffers + numbuffers);
-        
-        for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
-        {
-            const PiPoValue *data = buffers[bufferindex].data;
+      model_ = stats_.getmodel();
+      std::vector<mimo_buffer> outbufs(numbuffers);
+      outbufs.assign(buffers, buffers + numbuffers); // copy buffer layout, timestamps pointer; data will be reassigned from traindata_
+
+      // get and check model element range for local vectors
+      std::vector<PiPoValue> normoffset(size_);
+      std::vector<PiPoValue> normfact(size_);
+      get_scaling(normoffset, normfact);
+
+      for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
+      {
+	const PiPoValue *data = buffers[bufferindex].data;
             
-            for (int i = 0; i < buffers[bufferindex].numframes; ++i)
-            {
-                int mtxsize = _streamattr->hasVarSize ? buffers[bufferindex].varsize[i] : _size;
+	for (int i = 0; i < buffers[bufferindex].numframes; ++i)
+	{
+	  int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
                 
-                for (int j = 0; j < mtxsize; ++j)
-                {
-                    PiPoValue min = _model->min[j];
-                    PiPoValue max = _model->max[j];
-                    PiPoValue normalized;
-                    if(abs(max-min) < 1e-06)
-                        normalized = 0;
-                    else
-                        normalized = (data[j] - min) / (float)(max - min);
-                    _traindata[bufferindex][(i*mtxsize)+j] = normalized;
-                }
-                data += _size;
-                outbufs[bufferindex].data = _traindata[bufferindex].data();
-            }
-        }
+	  for (int j = 0; j < mtxsize; ++j)
+	  {
+            traindata_[bufferindex][i * size_ + j] = (data[j] - normoffset[j]) * normfact[j]; //todo: optimize: get pointer
+	  }
+	  
+	  data += size_;
+	}
 
-        return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+        outbufs[bufferindex].data = traindata_[bufferindex].data();
+      }
+
+      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      // Note: even after training, traindata_ keeps a copy of the size of the input data.
     }
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     {
-      if (stats.getmodel()->from_json(model_attr.getJson()) == -1)
+      if (stats_.getmodel()->from_json(model_attr_.getJson()) == -1)
       {
-	_model = NULL;	// mark as invalid (can't load)
+	model_ = NULL;	// mark as invalid (can't load)
 	return -1;
       }
       
-      _model = stats.getmodel(); // set only when parsing finished
-      if (_model->mean.size() < width * height)
+      model_ = stats_.getmodel(); // set only when parsing finished
+      if (model_->mean.size() < width * height)
       { // if model has less elements than data, extend (additional columns will pass through)
-	_model->mean.resize(width * height);
-	_model->std.resize(width * height);
+	model_->min.resize(width * height);
+	model_->max.resize(width * height);
+	model_->mean.resize(width * height);
+	model_->std.resize(width * height);
       }
-	
+
+      // resize, get and check model ranges for frames()
+      get_scaling(normoffset_, normfact_);
+      norm_.resize(width * height);
+
       // make labels
       const char **newlabels = NULL;
       if (labels)
       {
 	const std::string suffix("Norm");
+#ifdef WIN32
+    newlabels = (const char**)_malloca(width * sizeof(char*));
+#else
 	newlabels = (const char **) alloca(width * sizeof(char *));
+#endif
 	labelstore_.resize(width);
 
 	for (unsigned int i = 0; i < width; i++)
@@ -151,24 +177,16 @@ public:
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
     {
-      bool ok = _model != NULL;
+      bool ok = model_ != NULL;
     
       for (unsigned int i = 0; ok  &&  i < num; i++)
-      {
-	//PiPoValue norm[size];
-          PiPoValue *norm = (PiPoValue *)malloc(size * sizeof(PiPoValue));
-	// normalise
+      { // normalise
 	for (unsigned int j = 0; j < size; j++)
-	  if (_model->std[j] != 0)
-	    norm[j] = (values[j] - _model->mean[j]) / _model->std[j];
-	  else
-	    norm[j] = (values[j] - _model->mean[j]);
+	  norm_[j] = (values[j] - normoffset_[j]) * normfact_[j];
 
-	ok &= propagateFrames(time, weight, norm, size, 1) == 0;
+	ok &= propagateFrames(time, weight, &norm_[0], size, 1) == 0;
 
 	values += size;
-
-    free(norm);
       }
 
       return ok ? 0 : -1;
@@ -176,9 +194,47 @@ public:
     
     mimo_model_data *getmodel()
     {
-        return _model;
+        return model_;
     }
-    
+
+private:
+    void get_scaling (std::vector<PiPoValue> &normoffset, std::vector<PiPoValue> &normfact)
+    {
+      int size = model_->mean.size();
+      normoffset.resize(size);
+      normfact.resize(size);
+      
+      switch ((enum Normtype) normtype_attr_.getInt())
+      {
+        case normtype_minmax:
+	  for (int j = 0; j < size; ++j)
+	  {
+	    normoffset[j] = model_->min[j];
+	    PiPoValue range = model_->max[j] - model_->min[j];
+	    if (range != 0)
+	      normfact[j] = 1. / range;
+	    else
+	      normfact[j] = 1.; // almost zero variation: keep value - min
+	  }
+	break;
+
+        case normtype_meanstd:
+	  for (int j = 0; j < size; ++j)
+	  {
+	    normoffset[j] = model_->mean[j];
+	    if (model_->std[j] != 0)
+	      normfact[j] = 1. / model_->std[j]; // almost zero variation: keep value - min
+	    else
+	      normfact[j] = 1;
+	  }
+	break;
+
+        default: // wrong enum value, this should be an error, but we'll just pass data through
+	  std::fill(normoffset.begin(), normoffset.end(), 0);
+	  std::fill(normfact.begin(),   normfact.end(),   1);
+	break;
+      }
+    }
 };
 
 #endif /* mimo_norm_h_ */

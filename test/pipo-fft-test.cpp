@@ -23,9 +23,9 @@ TEST_CASE ("Test pipo fft")
   {
     slice.size.set(winsize);
     slice.hop.set(hopsize);
-    fft.size.set(fftsize);
-    fft.mode.set(3);
-    fft.norm.set(0);
+    fft.size_attr_.set(fftsize);
+    fft.mode_attr_.set(3);
+    fft.norm_attr_.set(0);
     int ret = slice.streamAttributes(false, 44100, 0, 1, 1, NULL, 0, 0, 100);
 
     CHECK(ret == 0);

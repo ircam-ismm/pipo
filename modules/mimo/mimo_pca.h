@@ -1,4 +1,5 @@
-/**
+/** -*-mode:c++; c-basic-offset: 2; eval: (subword-mode) -*-
+ *
  * @file mimo_pca.h
  * @author Ward Nijman
  *
@@ -190,7 +191,7 @@ private:
         
         return ss.str();
     }
-};
+}; // end class svd_model_data
 
 
 
@@ -201,8 +202,10 @@ public:
     enum Direction { Forward = 0, Backward = 1 };
     int numbuffers_, numtracks_, numframestotal_;
     std::vector<int> bufsizes_; // num frames for each buffer
-    int fb_ = Forward;
-    float threshold_ = 1e-6;
+    int   inputsize_ = 0; // total size of input frame (w * h)
+    int   startcol_  = 0; // index of first input element (column) to use
+    int   fb_        = Forward;
+    float threshold_ = 1e-5;
     
     std::vector<PiPoValue> U_, S_, V_, Vt_;
     std::vector<PiPoValue> means_;	// means of n_ input columns
@@ -217,38 +220,71 @@ public:
 #endif
     
 public:
-    PiPoScalarAttr<PiPo::Enumerate> forwardbackward_attr_;
+    PiPoScalarAttr<int> startcol_attr_;
+    PiPoScalarAttr<int> numcols_attr_;
     PiPoScalarAttr<int> rank_attr_;
     PiPoScalarAttr<float> threshold_attr_;
     PiPoDictionaryAttr model_attr_;
+    PiPoScalarAttr<PiPo::Enumerate> forwardbackward_attr_;
 
     svd_model_data decomposition_;
     
     MiMoPca(Parent *parent, Mimo *receiver = nullptr)
-    :   Mimo(parent, receiver)
-    ,   forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, Forward)
-    ,   rank_attr_(this, "rank", "Matrix rank, -1 for automatic", true, -1)
-    ,   threshold_attr_(this, "threshold", "cutoff value for autorank", true, 1e-6)
-    ,   model_attr_(this, "model", "The model for processing", true, "")
+    : Mimo(parent, receiver),
+      startcol_attr_	   (this, "startcol",  "index of first input column to use", true, startcol_),
+      numcols_attr_	   (this, "numcols",   "number of input columns to use",     true, -1),  // all (counting from end)
+      rank_attr_	   (this, "rank",      "Matrix rank, -1 for automatic",	     true, -1),
+      threshold_attr_	   (this, "threshold", "cutoff value for autorank",	     true, threshold_),
+      model_attr_	   (this, "model",     "The model for processing",	     true, ""),
+      forwardbackward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_)
     {
-        forwardbackward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
-        forwardbackward_attr_.addEnumItem("backward", "Backward transformation from principal component space to input space");
+      forwardbackward_attr_.addEnumItem("forward",  "Forward transformation from input space to principal component space");
+      forwardbackward_attr_.addEnumItem("backward", "Backward transformation from principal component space to input space");
     }
     
     ~MiMoPca(void)
     {}
-    
-    int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[])
+
+    template <typename T>
+    T clamp2 (T x, T min, T max) // to be replaced by C++17 clamp()
     {
+      if (x < min) x = min;
+      if (x > max) x = max;
+      return x;
+    }
+  
+    std::tuple<int, int> get_cols (int inputsize, int startcol_attr, int numcols_attr)
+    { // read and sanitize startcol/numcols attrs to determine n_
+      int startcol = clamp2(startcol_attr, 0, inputsize - 1); // clip to 0..size-1, TODO: neg. start counts from end
+      int n;
+      if (numcols_attr < 0)
+	n = std::max(inputsize - startcol + numcols_attr + 1, 0); // numcols < 0 counts from end+1, clip > 0
+      else
+	n = std::min(numcols_attr, inputsize - startcol); // clip to remaining columns after startcol
+
+#ifdef DEBUG
+      printf("pca::get_cols: inputsize %d  startcol %d  numcols %d --> n %d\n", inputsize, startcol_attr, numcols_attr, n);
+#endif
+
+      return  std::make_tuple(n, startcol);
+    }
+  
+    int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[])
+    { 
+#ifdef DEBUG
+      printf("pca::setup  (%d, %d)\n", streamattr[0]->dims[1], streamattr[0]->dims[0]);
+#endif
         attr_       = *streamattr;
         numbuffers_ = numbuffers;
         numtracks_  = numtracks;
 	rank_       = rank_attr_.get();
         threshold_  = threshold_attr_.get();
-	
+
         bufsizes_.assign(tracksize, tracksize + numbuffers);
+        inputsize_ = streamattr[0]->dims[0] * streamattr[0]->dims[1];
         m_ = 1; // we treat matrix data as an unrolled vector
-        n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+        std::tie(n_, startcol_) = get_cols(inputsize_, startcol_attr_.get(), numcols_attr_.get());
+	
 	means_.resize(n_);
 	numframestotal_ = 0;	// total number of frames over all buffers
 	for (int i = 0; i < numbuffers_; i++)
@@ -257,15 +293,16 @@ public:
 	minmn_ = std::min<int>(numframestotal_, n_);
 	S_.resize(minmn_, 0.f);
 
-#ifdef WIN32
-	Vt_.resize(n_ * n_, 0.f);
+#ifndef WIN32
+	// platforms having LAPACK: Apple, Linux
+	// Fortran-based LAPACK uses col-major order so we swap U and VT, spoofing a transposed input matrix
+	Vt_.resize(n_ * n_);
+	U_.resize(numframestotal_ * numframestotal_);
+#else
+	// platforms without LAPACK use native rta svd
+	// unused Vt_.resize(n_ * n_, 0.f);
 	U_.resize(numframestotal_ * numframestotal_, 0.f); /// can be big?????
 	V_.resize(n_ * n_, 0.f);
-#else
-	//Fortran uses col-major order so we swap U and VT, spoofing
-	//a transposed input matrix
-	U_.resize(n_ * n_);
-	Vt_.resize(numframestotal_ * numframestotal_);
 #endif
 
 	// set output stream attributes
@@ -302,6 +339,7 @@ public:
        @param  right(n, p)
        @return out(m, p)
     */
+  //TODO: use lapack on mac
     static std::vector<float> xMul (float* left, float* right, int m, int n, int p)
     {
       std::vector<float> out(m * p);
@@ -310,15 +348,17 @@ public:
       {
 	for(int j = 0; j < p; ++j)
 	{
-	  out[i*p + j] = 0;
-	  
+	  float sum = 0;
 	  for (int k = 0; k < n; ++k)
-	    out[i*p + j] += left[i*n + k] * right[k*p + j];
+	    sum += left[i*n + k] * right[k*p + j];
+
+	  out[i*p + j] = sum;
 	}
       }
       return out;
     }
         
+  //TODO: use lapack on mac
     static std::vector<float> xTranspose (float* in, int m, int n)
     {
       std::vector<float> out(m * n);
@@ -340,14 +380,14 @@ private:
         for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
         {
             int numframes   = buffers[bufferindex].numframes;
-            PiPoValue* data = buffers[bufferindex].data;
+            PiPoValue* data = buffers[bufferindex].data + startcol_;	// shift all frames to first element to use
 
             for (int i = 0; i < numframes; i++)
             {
                 for (int j = 0; j < n_; j++)
                     means_[j] += data[j];
 
-                data += n_;
+                data += inputsize_;
             }
 
 	    numdata += numframes;
@@ -374,7 +414,7 @@ private:
       {
 	int numframes = buffers[bufferindex].numframes;
 	bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
-	PiPoValue* bufferptr = buffers[bufferindex].data;
+	PiPoValue* bufferptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
         
 	// center buffers around mean and append to traindata
 	for (int i = 0; i < numframes; i++)
@@ -383,7 +423,7 @@ private:
 	    dataptr[j] = bufferptr[j] - means_[j];
 	  
 	  dataptr   += n_;
-	  bufferptr += n_;
+	  bufferptr += inputsize_;
 	}
       }
 	
@@ -391,42 +431,37 @@ private:
       // do_pca(bufferindex, numframes);
 	    
 #ifndef WIN32
+      // platforms having LAPACK: Apple, Linux
       __CLPK_integer info = 0;
       __CLPK_integer lwork = -1; //query for optimal size
       float optimalWorkSize[1];
-      __CLPK_integer ldu = n_;
-      __CLPK_integer ldvt = numframestotal_;
-      __CLPK_integer lda = n_;
-      char* jobu = (char*)"A";
+      char* jobu = (char*)"A"; //TODO: we don't want U...
       char* jobvt = (char*)"A";
             
-      //LAPACK svd calculates in-place
+      // LAPACK svd calculates in this workspace
       std::vector<PiPoValue> work;
             
-      PiPoValue* S_ptr = S_.data();
-      PiPoValue* U_ptr = U_.data();
-      PiPoValue* Vt_ptr = Vt_.data();
-            
+      // Fortran-based LAPACK  uses col-major order matrix format so we swap U and VT, spoofing a transposed input matrix
+      // need to correctly swap args and sizes
+      __CLPK_integer M = numframestotal_;
+      __CLPK_integer N = n_;
+
       //First do the query for worksize
-      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, optimalWorkSize, &lwork, &info);
-            
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
+      
       //Resize accordingly
       lwork = optimalWorkSize[0];
       work.resize(lwork);
 	
       //Do the job
-      sgesvd_(jobu, jobvt, &n_, &ldvt, traindata.data(), &lda, S_ptr, U_ptr, &ldu, Vt_ptr, &ldvt, work.data(), &lwork, &info);
-            
-      std::swap(U_, Vt_);
+      // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
+      // in call of sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
       V_ = xTranspose(Vt_.data(), minmn_, n_);
 #else
-      PiPoValue* S_ptr = S_.data();
-      PiPoValue* U_ptr = U_.data();
-      PiPoValue* V_ptr = V_.data();
-	  
       rta_svd_setup_t * svd_setup = nullptr;
-      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_ptr, S_ptr, V_ptr, traindata.data(), numframestotal_, n_);
-      rta_svd(U_ptr, S_ptr, V_ptr, traindata.data(), svd_setup);
+      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
+      rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
 #endif
 	
       int mtxrank = 0;
@@ -463,7 +498,7 @@ public:
       {
         if (mtxrank != minmn_)
           // remove superfluous cols according to rank
-          for (int i = 0; i < n_; i++)
+          for (int i = 1; i < n_; i++) // first row doesn't need to be copied
             for (int j = 0; j < mtxrank; j++)
               V_[i * mtxrank + j] = V_[i * minmn_ + j];
 	  
@@ -480,6 +515,7 @@ public:
 	decomposition_.n = n_;
 	decomposition_.rank = mtxrank;
 	decomposition_.means = means_;
+//	decomposition_.startcol = startcol_; // used as default for decoding???
 
 	// apply forward transformation to input data
 	std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
@@ -488,11 +524,11 @@ public:
 
 	for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
 	{
-	  // copy and center input frames
+	  // copy and center input frames again (TODO: reuse centered copy of data made for training)
 	  int numframes = buffers[bufferindex].numframes;
 	  std::vector<PiPoValue> centered(n_ * numframes);
-	  PiPoValue *dataptr = buffers[bufferindex].data;
 	  PiPoValue *cenptr  = centered.data();
+	  PiPoValue *dataptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
 
 	  for (int k = 0; k < numframes; k++)
 	  {
@@ -500,7 +536,7 @@ public:
 	      cenptr[i] = dataptr[i] - means_[i];
 	    
 	    cenptr  += n_;
-	    dataptr += n_;
+	    dataptr += inputsize_;
 	  }
 	  
 	  // transform all frames at once (todo: could be in place)
@@ -523,8 +559,9 @@ public:
 	return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
       }
       else
-      {
-	signalWarning("PCA Error.. rank < 1, propagating empty matrix");
+      { // empty or uniform input data
+	if (numframestotal_ > 0)
+	  signalWarning("PCA Error.. rank <= 0, propagating empty matrix");
 	std::vector<mimo_buffer> invalidbuf(numbuffers);
 	return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
       }
@@ -544,6 +581,11 @@ public:
             minmn_ = std::min<int>(m_, n_); ///needed???
 	    rank_ = decomposition_.rank; // actual matrix rank from training
 	    means_ = decomposition_.means;
+#ifdef DEBUG
+	    printf("pca::streamAttributes  w %d  h %d  decomp. (%d, %d)  rank %d\n", width, height, m_, n_, rank_);
+#endif
+	    // startcol/endcol attrs are sticky (mimo->pipo) (TODO: should they?????)
+	    std::tie(n_, startcol_) = get_cols(width * height, startcol_attr_.get(), numcols_attr_.get());
 	}
 	else
 	{
@@ -552,7 +594,6 @@ public:
 	    //minmn_[0] = 1;
 	    rank_ = 1;
 	    means_.clear();
-	    signalWarning("PCA not configured yet.");
 	}
         
         fb_ = forwardbackward_attr_.get();
@@ -586,6 +627,7 @@ public:
     {
       if (means_.size() == 0)
       { //model not configured, propagate zero matrix
+        signalWarning("PCA not configured");
         return propagateFrames(time, weight, new float[1](), 1, 1);
       }
       else
@@ -593,7 +635,7 @@ public:
         {
 	    case Forward:
             {
-                if (size < n_)
+                if ((long) size < n_)
                 {
                     signalWarning("Vector too short, input should be a vector with length n");
                     return propagateFrames(time, weight, nullptr, 0, 0);
@@ -602,8 +644,9 @@ public:
 		// copy and center input frames
 		std::vector<float> centered(n_ * num);
 		float *cenptr = centered.data();
+		values += startcol_; // shift to wanted first column, will use n_ out of size cols
 
-		for (int k = 0; k < num; k++)
+		for (unsigned int k = 0; k < num; k++)
 		{
 		    for (int i = 0; i < n_; ++i)
 			cenptr[i] = values[i] - means_[i];
@@ -620,7 +663,7 @@ public:
 
 	    case Backward:
             {
-                if (size < rank_)
+                if ((long) size < rank_)
                 {
                     signalWarning("Vector too short, input should be a vector with length rank");
                     return propagateFrames(time, weight, nullptr, 0, 0);
@@ -628,7 +671,7 @@ public:
                 
                 auto resynthesized = xMul(values, decomposition_.VT.data(), num, rank_, n_);
 
-		for (int k = 0; k < num; k++)
+		for (unsigned int k = 0; k < num; k++)
 		{
 		    for (int i = 0; i < n_; ++i)
 			resynthesized[k * n_ + i] += means_[i];
@@ -645,12 +688,5 @@ public:
         }
     } // end frames
 };
-    
-/** EMACS **
- * Local variables:
- * mode: c++
- * c-basic-offset:2
- * End:
- */
 
 #endif /* MIMO_PCA_H */

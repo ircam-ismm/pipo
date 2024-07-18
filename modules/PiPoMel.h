@@ -51,10 +51,10 @@ public:
   PiPoFft fft;
   PiPoBands bands;  
   
-  PiPoMel(Parent *parent, PiPo *receiver = NULL) :
-  PiPoSlice(parent, &this->fft),
-  fft(parent, &this->bands),
-  bands(parent, receiver)
+  PiPoMel(Parent *parent, PiPo *receiver = NULL)
+  : PiPoSlice(parent, &this->fft),
+    fft(parent, &this->bands),
+    bands(parent, receiver)
   {
     /* steal attributes from member PiPos */
     this->addAttr(this, "windsize", "FFT Window Size", &this->size, true);
@@ -65,7 +65,7 @@ public:
     /* set internal attributes */
     this->wind.set(PiPoSlice::BlackmanWindow);
     this->norm.set(PiPoSlice::PowerNorm);
-    this->fft.mode.set(PiPoFft::PowerFft);
+    this->fft.mode_attr_.set(PiPoFft::PowerFft);
     this->bands.mode.set(PiPoBands::MelBands);
     this->bands.log.set(false);
   }

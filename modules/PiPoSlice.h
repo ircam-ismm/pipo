@@ -52,10 +52,11 @@ public:
   enum UnitE { SamplesUnit = 0, MillisecondsUnit = 1 };
   enum WindowTypeE { UndefinedWindow = -1, NoWindow = 0, HannWindow, HammingWindow, BlackmanWindow, BlackmanHarrisWindow, SineWindow, NumWindows };
   enum NormModeE { UndefinedNorm = -1, NoNorm = 0, LinearNorm, PowerNorm };
+  std::vector<float> *outputVector = NULL;
   
 private:
-  std::vector<float> buffer;
-  std::vector<float> frame;
+  std::vector<float> buffer; // input buffer
+  std::vector<float> frame;  // output buffer when using windowing or normalisation
   std::vector<float> window;
   enum WindowTypeE windowType;
   enum NormModeE normMode;
@@ -103,6 +104,11 @@ public:
     this->norm.addEnumItem("none", "No normalization");
     this->norm.addEnumItem("linear", "Linear normalization");
     this->norm.addEnumItem("power", "Power normalization");
+
+#if DEBUG
+    //signalWarning(std::string("PiPoSlice ctor: unit ") + std::to_string(unit.get()));
+    printf("PiPoSlice ctor: unit %d size %f hop %f\n", unit.get(), size.get(), hop.get());
+#endif
   }
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
@@ -113,13 +119,13 @@ public:
     {
       case MillisecondsUnit:
 	// we expect signal input, so one input data frame is one signal sample frame (of which only the first element is used)
-	frameSize = std::max(1., this->size.get() * 0.001 * rate);
-	hopSize   = std::max(1., this->hop.get()  * 0.001 * rate);
+	frameSize = (std::max)(1., this->size.get() * 0.001 * rate);
+	hopSize   = (std::max)(1., this->hop.get()  * 0.001 * rate);
       break;
 	
       case SamplesUnit:
-	frameSize = std::max(1., this->size.get());
-	hopSize   = std::max(1., this->hop.get());
+	frameSize = (std::max)(1., this->size.get());
+	hopSize   = (std::max)(1., this->hop.get());
       break;
 
       default:
@@ -127,9 +133,9 @@ public:
       return -1;
     }
     
-    enum WindowTypeE windowType = (enum WindowTypeE)this->wind.get();
-    enum NormModeE normMode = (enum NormModeE)this->norm.get();
-    unsigned int inputStride = width * size;
+    enum WindowTypeE win_type  = (enum WindowTypeE) this->wind.get();
+    enum NormModeE   norm_mode = (enum NormModeE)   this->norm.get();
+    unsigned int     inputStride = width * size;
 
     offset += 500.0 * frameSize / rate;
     
@@ -142,18 +148,19 @@ public:
       this->buffer.resize(frameSize);
       this->frame.resize(frameSize);
       this->window.resize(frameSize);
-      this->windowType = UndefinedWindow;
+      this->windowType = UndefinedWindow; // force recalc of window
       this->inputIndex = 0;
     }
     
-    if(windowType != this->windowType || normMode != this->normMode)
+    if (win_type != this->windowType  ||  norm_mode != this->normMode)
     {
-      this->windowType = windowType;
+      this->windowType = win_type;
+      this->normMode   = norm_mode;
       
       double linNorm, powNorm;
-      initWindow(&this->window[0], frameSize, windowType, normMode, linNorm, powNorm);
+      initWindow(&this->window[0], frameSize, win_type, norm_mode, linNorm, powNorm);
       
-      switch(normMode)
+      switch (norm_mode)
       {
         default:
         case NoNorm:
@@ -170,9 +177,22 @@ public:
       }
     }
 
-    // output slice as column vector of length frameSize
-    return this->propagateStreamAttributes(0, rate / (double)hopSize, offset, 1, frameSize, labels, 0, (double)frameSize / rate, 1);
-  }
+    if (win_type == NoWindow  &&  norm_mode == NoNorm)
+      outputVector = &buffer;
+    else
+      outputVector = &frame;
+
+#if DEBUG
+    //signalWarning(std::string("PiPoSlice streamAttributes: unit ") + std::to_string(unit.get()));
+    printf("PiPoSlice streamAttributes: rate %f unit %d size %f hop %f win %d norm %d --> scale %f size %d hop %d rate %f\n",
+	   rate, unit.get(), this->size.get(), hop.get(), win_type, norm_mode,
+	   this->windScale, frameSize, hopSize, rate / (double)hopSize);
+#endif
+    
+    // output interleaved(!) slice as column vector of width 1 and height frameSize,
+    // domain is frame duration, allows to retrieve audio sampling rate
+    return this->propagateStreamAttributes(false, rate / (double)hopSize, offset, 1, frameSize, labels, 0, (double)frameSize / rate, 1);
+  } // PiPoSlice::streamAttributes
   
   int reset(void)
   {
@@ -185,7 +205,7 @@ public:
   {
     int inputIndex = this->inputIndex; // buffer write pointer
     unsigned int outputSize = (unsigned int) this->frame.size();
-    NormModeE normMode = (enum NormModeE)this->norm.get();
+    NormModeE norm_mode = (enum NormModeE)this->norm.get();
     int frameIndex = 0;
 
     while(num > 0)
@@ -211,10 +231,17 @@ public:
         
         if(inputIndex == (int)outputSize)
         {
+	  // frame time to output is in the middle of the window
           int halfWindowSize = outputSize / 2;
           double frameTime = time + 1000.0 * (double)(frameIndex - halfWindowSize) / this->frameRate;
           int ret;
-          
+
+#if DEBUG
+	  //signalWarning(std::string("PiPoSlice frames: unit ") + std::to_string(unit.get()));
+	  //signalWarning(std::string("PiPoSlice frames: time ") + std::to_string(time));
+	  //printf("PiPoSlice frames out: time %f unit %d size %f hop %f\n", frameTime, unit.get(), this->size.get(), hop.get());
+#endif
+
           if(this->windowType > NoWindow)
           {
             this->frame = this->buffer;
@@ -225,7 +252,7 @@ public:
             
             ret = this->propagateFrames(frameTime, weight, &this->frame[0], outputSize, 1);
           }
-          else if(normMode > NoNorm)
+          else if(norm_mode > NoNorm)
           {
             this->frame = this->buffer;
             
@@ -268,7 +295,7 @@ public:
     this->inputIndex = inputIndex;
     
     return 0;
-  }
+  } // frames
   
 private:
   static void initHannWindow(float *ptr, unsigned int size, double &linNorm, double &powNorm)

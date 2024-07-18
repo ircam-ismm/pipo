@@ -53,7 +53,7 @@ extern "C" {
 
 class PiPoGate : public PiPo
 {
-
+  
 public:
   PiPoScalarAttr<int> colindex;
   PiPoScalarAttr<int> numcols;
@@ -67,6 +67,7 @@ public:
   PiPoScalarAttr<bool> enable_max;
   PiPoScalarAttr<bool> enable_mean;
   PiPoScalarAttr<bool> enable_stddev;
+  PiPoScalarAttr<double> offsetAttr;
   
 private:
   double offset;
@@ -76,9 +77,9 @@ private:
   bool segison;
   TempModArray tempmod;
   std::vector<PiPoValue> outputvalues;
-
+  
 public:
-  PiPoGate (Parent *parent, PiPo *receiver = NULL) 
+  PiPoGate (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     tempmod(), outputvalues(),
     colindex(this, "colindex", "Index of First Column Used for Onset Calculation", true, 0),
@@ -92,7 +93,8 @@ public:
     enable_min(this, "min", "Calculate Segment Min", true, false),
     enable_max(this, "max", "Calculate Segment Max", true, false),
     enable_mean(this, "mean", "Calculate Segment Mean", true, false),
-    enable_stddev(this, "stddev", "Calculate Segment StdDev", true, false)
+    enable_stddev(this, "stddev", "Calculate Segment StdDev", true, false),
+    offsetAttr(this, "offset", "Time Offset Added To Onsets [ms]", false, 0)
   {
     this->offset = 0.0;
     this->frameperiod = 1.;
@@ -113,6 +115,7 @@ public:
     
     this->frameperiod = 1000.0 / rate;
     this->offset = -this->frameperiod; // offset of negative frame period to include signal just before peak
+    this->offset += this->offsetAttr.get(); // add user offset (default 0)
     this->onsettime = 0;
     this->reportduration = this->duration.get();
     
@@ -157,7 +160,7 @@ public:
   {
     this->onsettime = 0;
     this->segison = false;
-
+    
     this->tempmod.reset();
     
     return this->propagateReset();
@@ -175,7 +178,7 @@ public:
     int ret = 0;
     bool frameisonset;
     //printf("frames at %f size %d num %d\n", time, size, num);
-
+    
     // clip colindex/size
     //TODO: this shouldn't change at runtime, so do this in streamAttributes only
     while (colindex < 0  &&  size > 0)
@@ -197,7 +200,7 @@ public:
         energy += values[k];
       }
       energy /= numcols;
-
+      
       /* determine if there is an onset */
       if (this->segison)
         // within segment, check for max size if given
@@ -206,13 +209,17 @@ public:
         // within silence, check for onset (but avoid re-trigger)
         frameisonset = energy > onsetThreshold  &&  time >= this->onsettime + minimumInterval;
       
+#if DEBUG
+      // printf("PiPoGate::frames time %f energy %f switch %d is on %d dur %f\n", time, energy, frameisonset, segison, time - this->onsettime);
+#endif
+      
       if (!this->reportduration)
       { /* output marker only */
-  if (frameisonset)
-  { /* report immediate onset */
-    ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
-    this->onsettime = time;
-  }
+        if (frameisonset)
+        { /* report immediate onset */
+          ret = this->propagateFrames(this->offset + time, weight, NULL, 0, 1);
+          this->onsettime = time;
+        }
       }
       else
       { // check for onset and offset (segment begin and end)
@@ -222,8 +229,8 @@ public:
         if (this->segison  &&  ((energy < offThreshold  &&  duration >= durationThreshold)
                                 || (maxsize > 0  &&  time >= this->onsettime + maxsize)))
         { // energy below off threshold or max segment size exceeded
-          long outputsize = this->outputvalues.size();
-          
+          unsigned int outputsize = (unsigned int) this->outputvalues.size();
+
           this->outputvalues[0] = duration;
           
           /* get temporal modelling */
@@ -242,7 +249,7 @@ public:
         }
         else if (energy < offThreshold)
           this->segison = false;
-      
+        
         /* feed temporal modelling */
         if (this->segison)
           this->tempmod.input(values, size);
@@ -263,11 +270,11 @@ public:
     double durationThreshold = this->durthresh.get();
     double duration = inputend - this->onsettime;
     //printf("finalize at %f seg %d duration %f\n", inputEnd, segIsOn, duration);
-
+    
     if (this->segison && duration >= durationThreshold)
     {
       /* end of segment (new onset or below off threshold) */
-      long outputsize = this->outputvalues.size();
+      unsigned int outputsize = (unsigned int) this->outputvalues.size();
       
       this->outputvalues[0] = duration;
       

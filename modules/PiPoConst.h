@@ -70,8 +70,8 @@ public:
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num);
 
 private:
-  int numconstcols_;	// number of added constant columns
-  int numoutcols_;	// number of output columns
+  unsigned int numconstcols_;	// number of added constant columns
+  unsigned int numoutcols_;	// number of output columns
   std::vector<PiPoValue> outvalues_;
 };
 
@@ -121,7 +121,7 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
       outputlabels[l] = strdup("");
 
   // copy added column names, fill with default name up to number of cols
-  int l = 0;
+  unsigned int l = 0;
   for (; l < name_attr_.getSize(); l++)
     outputlabels[width + l] = strdup(name_attr_.getStr(l));
   for (; l < numconstcols_; l++)
@@ -129,7 +129,7 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
   
   int ret = propagateStreamAttributes(hasTimeTags, rate, offset, numoutcols_, height,
 				      const_cast<const char **>(&outputlabels[0]),
-				      false, domain, maxframes);
+				      hasVarSize, domain, maxframes);
 
   for (unsigned int l = 0; l < numoutcols_; ++l)
     free(outputlabels[l]);
@@ -159,7 +159,7 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
 {
   int status = 0;
   int inputcols  = numoutcols_ - numconstcols_; // num input columns
-  int inputrows  = inputcols > 0  ?  size / inputcols  :  1;	// if empty inpupt matrix, generate 1 row
+  unsigned int inputrows  = inputcols > 0  ?  size / inputcols  :  1;	// if empty input matrix, generate 1 row
 
 #if CONST_DEBUG >= 2
   printf("PiPoConst::frames time %f  values %p  size %d  num %d --> %f\n",
@@ -175,7 +175,7 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
       std::copy(invalues, invalues + inputcols, it); // yes, invalues can be NULL, but then inputcols is 0
 
       // append const values (fill with default)
-      int i = 0;
+      unsigned int i = 0;
       for (; i < value_attr_.getSize(); i++)
 	*(it + inputcols + i) = value_attr_.getDbl(i);
       for (; i < numconstcols_; i++)

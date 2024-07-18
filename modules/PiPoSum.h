@@ -54,11 +54,13 @@ private:
 public:
   PiPoScalarAttr<bool> norm;
   PiPoScalarAttr<const char *> colname;
+  PiPoScalarAttr<const char *> outcolnames;
 
   PiPoSum(Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     norm(this, "norm", "Normalize Sum With Size", false, false),
-    colname(this, "colname", "Output Column Name", true, "")
+    colname(this, "colname", "Output Column Name [DEPRECATED]", true, ""),
+    outcolnames(this, "outcolnames", "Output Column Name", true, "")
   { }
   
   ~PiPoSum(void)
@@ -66,8 +68,10 @@ public:
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
-    const char *name = colname.get();
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name ? &name : NULL, 0, 0.0, 1);
+    const char *name1 = outcolnames.get();
+    const char *name2 = colname.get();
+    const char **name = (name1 != NULL  &&  *name1 != 0)  ?  &name1  :  (name2 != NULL  &&  *name2 != 0)  ?  &name2  :  NULL;
+    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name, 0, 0.0, 1);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)

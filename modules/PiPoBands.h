@@ -66,13 +66,14 @@ static float cabsf(floatcomplex value)
 class PiPoBands : public PiPo
 {
 public:
-  enum BandsModeE { UndefinedBands = -1, MelBands = 0, HtkMelBands = 1 }; //todo: bark, erb
+  enum BandsModeE { UndefinedBands = -1, MelBands = 0, HtkMelBands = 1, UserBands = 2, BandsModeEMax}; //todo: bark, erb
   enum EqualLoudnessModeE { None = 0, Hynek = 1 };
 
 private:
   std::vector<PiPoValue> bands;
   std::vector<float> weights;
-  std::vector<unsigned int> bounds;
+  std::vector<unsigned int> bounds;	// band limits in bins
+  std::vector<float> limits;	// band limits in Hz for user bands
   std::vector<float> bandfreq;	// band centre frequency in Hz
   std::vector<float> eqlcurve;	// equal loudness curve
   std::vector<float> power_spectrum;
@@ -89,15 +90,17 @@ public:
   PiPoScalarAttr<int> num;
   PiPoScalarAttr<bool> log;
   PiPoScalarAttr<float> power;
+  PiPoVarSizeAttr<float> band_limits;
 
   PiPoBands(Parent *parent, PiPo *receiver = NULL) :
   PiPo(parent, receiver),
-  bands(), weights(), bounds(), bandfreq(),
+  bands(), weights(), bounds(), limits(), bandfreq(),
   mode(this, "mode", "Bands Mode", true, MelBands),
   eqlmode(this, "eqlmode", "Equal Loudness Curve", true, None),
   num(this, "num", "Number Of Bands", true, 24),
   log(this, "log", "Logarithmic Bands", false, true),
-  power(this, "power", "Power Scaling Exponent", false, 1.)
+  power(this, "power", "Power Scaling Exponent", false, 1.),
+  band_limits(this, "limits", "list of band limits [Hz]", true, 0, 0)
   {
     this->bandsMode = UndefinedBands;
     this->eqlMode = None;
@@ -108,6 +111,7 @@ public:
 
     this->mode.addEnumItem("mel", "MEL bands (normalized band energy)");
     this->mode.addEnumItem("htkmel", "HTK like MEL bands (preserved peak energy)");
+    this->mode.addEnumItem("user", "User provided bands");
 
     this->eqlmode.addEnumItem("none", "no equal loudness scaling");
     this->eqlmode.addEnumItem("hynek", "Hynek's equal loudness curve");
@@ -119,8 +123,10 @@ public:
   {
     enum BandsModeE bandsMode = static_cast<BandsModeE>(this->mode.get());
     enum EqualLoudnessModeE eqlMode = static_cast<EqualLoudnessModeE>(this->eqlmode.get());
-    int numBands = std::max(1, this->num.get());
-    int specSize = size;
+    unsigned int numBands = bandsMode == UserBands
+      ?  std::max<int>((unsigned) 0, band_limits.getSize() / 2)    // user given bands override numBands
+      :  std::max<int>(1, this->num.get());
+    unsigned int specSize = size;
     float sampleRate = 2.0 * domain;
 
     if (width >= 2)
@@ -131,23 +137,19 @@ public:
 
     if (bandsMode < MelBands)
       bandsMode = MelBands;
-    else if (bandsMode > HtkMelBands)
+    else if (bandsMode >= BandsModeEMax)
       bandsMode = HtkMelBands;
-
-    if (numBands < 1)
-      numBands = 1;
-
-    if (specSize < 0)
-      specSize = 0;
 
     if (bandsMode != this->bandsMode || eqlMode != this->eqlMode ||
         numBands != this->bands.size() || specSize != this->specSize ||
         sampleRate != this->sampleRate)
     {
+      this->num.set(0, (int) numBands, true); // copy back to attr (silently)
       this->bands.resize(numBands);
       this->eqlcurve.resize(numBands);
       this->weights.resize(specSize * numBands);
       this->bounds.resize(2 * numBands);
+      this->limits.resize(2 * numBands);
       this->bandfreq.resize(numBands);
 
       this->bandsMode = bandsMode;
@@ -165,7 +167,7 @@ public:
                                             rta_hz_to_mel_slaney, rta_mel_to_hz_slaney, rta_mel_slaney);
 
           // calculate band centre freqs (TODO: pass up from rta_spectrum_to_mel_bands_weights)
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           {
             double b = (bounds[2 * i] + bounds[2 * i + 1]) / 2.; // take mean as band centre freq
             bandfreq[i] = b / (double) specSize * sampleRate / 2. ; // in Hz
@@ -180,7 +182,7 @@ public:
                                             rta_hz_to_mel_htk, rta_mel_to_hz_htk, rta_mel_htk);
 
           // calculate band centre freqs (TODO: pass up from rta_spectrum_to_mel_bands_weights)
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           {
             double b = (bounds[2 * i] + bounds[2 * i + 1]) / 2.; // take mean as band centre freq
             bandfreq[i] = b / (double) specSize * sampleRate / 2. ; // in Hz
@@ -193,13 +195,29 @@ public:
            sampleRate, numBands);
            break;
            */
+
+        case UserBands:
+	{
+	  // check and copy band limits from attr
+	    for (unsigned int i = 0; i < numBands; i++)
+	    {
+	      limits[2 * i]     = band_limits.getDbl(i*2);
+	      limits[2 * i + 1] = band_limits.getDbl(i*2 + 1);
+	      double b = (limits[2 * i] + limits[2 * i + 1]) / 2.; // take mean as band centre freq
+	      bandfreq[i] = b / (double) specSize * sampleRate / 2. ; // in Hz
+            }
+
+	    rta_spectrum_to_bands_weights(&this->weights[0], &this->bounds[0], &this->limits[0],
+					  specSize, sampleRate, numBands);
+	}
+	break;
       }
 
       switch (this->eqlmode.get())
       {
         case Hynek:
 
-          for (int i = 0; i < numBands; i++)
+          for (unsigned int i = 0; i < numBands; i++)
           { // Hynek's equal-loudness-curve formula
             double fsq  = bandfreq[i] * bandfreq[i];
             double ftmp = fsq / (fsq + 1.6e5);
@@ -247,6 +265,10 @@ public:
           break;
         }
         case HtkMelBands:
+        {
+          break;
+        }
+        case UserBands:
         {
           break;
         }

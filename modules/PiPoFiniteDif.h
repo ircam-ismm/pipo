@@ -67,6 +67,7 @@ private:
 public:
   PiPoScalarAttr<int>  filter_size_param;
   PiPoScalarAttr<bool> temporalize;
+  PiPoScalarAttr<bool> absolute;
   PiPoScalarAttr<int> derivative_order_param;
   PiPoScalarAttr<int> accuracy_order_param;
   PiPoScalarAttr<float> delta_t;
@@ -87,6 +88,7 @@ public:
     method(Backward),
     filter_size_param(this, "size", "Filter Size", true, 3),
     //normalize(this, "normalize", "Normalize output", true, false),
+    absolute(this, "absolute", "Output Absolute Derivative Value", false, false),
     derivative_order_param(this, "order", "Derivative order", true, 1),
     accuracy_order_param(this, "accuracy", "Accuracy order", true, 2),
     delta_t(this, "dt", "Sampling period", true, 0.01),
@@ -425,6 +427,12 @@ public:
          for (int i = 0; i < size; i++)
          frame[i] *= normalization_factor;
          }*/
+
+	if (absolute.get())
+        {
+          for (unsigned int i = 0; i < frame.size(); i++)
+            frame[i] = fabs(frame[i]);
+        }
 
         ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);
       }

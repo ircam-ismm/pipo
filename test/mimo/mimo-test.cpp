@@ -4,83 +4,21 @@
 
 #include "../catch.hpp"
 #include <stdlib.h>
-#include "mimo.h"
+#include "MimoTestReceiver.h"
 #include "mimo_stats.h"
-#include "PiPoTestReceiver.h"
-
-class MimoTestReceiver : public Mimo
-{
-public:
-  MimoTestReceiver (PiPo::Parent *parent)
-    : Mimo(parent), prx(parent)
-  {  }
-
-  ~MimoTestReceiver()
-  {  }
-
-  mimo_model_data *getmodel () override { return NULL; }
-
-  // called by mimo module's propagateSetup via setupChain
-  int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) override
-  {
-    const PiPoStreamAttributes *at = streamattr[0];
-
-    char str[1000];
-    printf("%s: received mimo setup output stream attributes\n%s", __PRETTY_FUNCTION__, at->to_string(str, 1000));
-
-    // store stream attributes in outputTrackDescr via base PiPoProcReceiver's method
-    return 0; // propagateStreamAttributes(at->hasTimeTags, at->rate, at->offset, at->dims[0], at->dims[1], at->labels, at->hasVarSize, at->domain, at->maxFrames);
-  }
-
-  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
-  {
-    return -1;
-  }
-
-  // forwarding to PiPoTestReceiver:
-  void zero ()
-  {
-    prx.zero();
-  }
-
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) override
-  {
-    return prx.streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
-  }
-
-  int frames (double _time, double _weight, PiPoValue *_values, unsigned int _size, unsigned int _num) override
-  {
-    return prx.frames(_time, _weight, _values, _size, _num);
-  }
-
-  int finalize (double inputEnd) override
-  {
-    return prx.finalize(inputEnd);
-  }
-
-  void signalError(PiPo *pipo, std::string errorMsg)
-  {
-    prx.signalError(pipo, errorMsg);
-  }
-
-  void signalWarning(PiPo *pipo, std::string errorMsg)
-  {
-    prx.signalWarning(pipo, errorMsg);
-  }
-
-  PiPoTestReceiver prx;
-};
 
 
 TEST_CASE("mimo")
 {
   MimoTestReceiver rx(NULL);	// is also parent
-  mimo_stats stats(NULL);
+  MimoStats stats(NULL);
 
   stats.setReceiver(&rx);
 
   const int numframes = 3, numcols = 3;
-  float data[numframes * numcols] = { 1, 4, 7, 2, 5, 8, 3, 6, 9 };
+  float data[numframes * numcols] = { 1, 4, 7,
+				      2, 5, 8,
+				      3, 6, 9 };
 
   SECTION("setup")
   {
@@ -124,6 +62,11 @@ TEST_CASE("mimo")
 	  printl(min, "%f");
 	  printl(max, "%f");
 
+	  // expected std with normalization by N (matlab: std([1, 2, 3], 1))
+	  CHECK(res.std[0] == Approx(0.8165));
+	  CHECK(res.std[1] == Approx(0.8165));
+	  CHECK(res.std[2] == Approx(0.8165));
+	    
 	  THEN("model as json is")
 	  {
 	    mimo_model_data *model = stats.getmodel();
@@ -162,10 +105,10 @@ TEST_CASE("mimo")
 		CHECK(rx.prx.count_frames == numframes);
 		REQUIRE(rx.prx.values != NULL);
 
-		// last frame is mean + 1
-		CHECK(rx.prx.values[0] == Approx(1 / 1.63299322));
-		CHECK(rx.prx.values[1] == Approx(1 / 4.54606056));
-		CHECK(rx.prx.values[2] == Approx(1 / 7.52772665));
+		// last input frame value is mean + 1, i.e. value - mean == 1. We expect (value - mean) / std
+		CHECK(rx.prx.values[0] == Approx(1 / 0.816497));
+		CHECK(rx.prx.values[1] == Approx(1 / 0.816497));
+		CHECK(rx.prx.values[2] == Approx(1 / 0.816497));
 		rx.zero();
 	      }
 	    }

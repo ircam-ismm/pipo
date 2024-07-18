@@ -65,11 +65,17 @@ private:
   double	   sr_;		// effective sample rate
   int		   ac_size_;
   float		  *corr_;
+  float defaultPeriodicityGate;
   
 public:
   PiPoScalarAttr<double>	minFreq;
   PiPoScalarAttr<PiPo::Enumerate> downSampling;
   PiPoScalarAttr<double>	yinThreshold;
+  PiPoScalarAttr<bool> old;
+
+  PiPoScalarAttr<double>  yinPeriodicityGate;
+  //DEPRECATED ATTRIBUTES
+  PiPoScalarAttr<double>  yinQualityGate;
   
   // constructor
   PiPoYin (Parent *parent, PiPo *receiver = NULL)
@@ -77,6 +83,9 @@ public:
     minFreq(this, "minfreq", "Minimum Frequency", true, 0.0),  // adapt to incoming window
     downSampling(this, "downsampling", "Downsampling Exponent", true, 2),
     yinThreshold(this, "threshold", "Yin Periodicity Threshold", true, 0.68),
+    old(this, "old", "Yin old or new behavior", false, false),
+    yinPeriodicityGate(this, "periodicitygate", "Yin Periodicity Gate", true, 0.),
+    yinQualityGate(this, "qualitygate", "Yin Quality Gate [DEPRECATED]", true, 0.),
     yin_setup(NULL), buffer_(NULL), corr_(NULL), sr_(0), ac_size_(0)
   {
     rta_yin_setup_new(&yin_setup, yin_max_mins);
@@ -85,6 +94,8 @@ public:
     this->downSampling.addEnumItem("2x", "Down sampling by 2");
     this->downSampling.addEnumItem("4x", "Down sampling by 4");
     this->downSampling.addEnumItem("8x", "Down sampling by 8");
+    
+    defaultPeriodicityGate = 0.0;
   }
   
   ~PiPoYin (void)
@@ -113,6 +124,21 @@ public:
     int    downsize = height / down;		// downsampled input frame size
     double minf = minFreq.get();
 
+    if(yinPeriodicityGate.get() == defaultPeriodicityGate && yinQualityGate.get() != defaultPeriodicityGate)
+      signalWarning(std::string("PiPoYin: qualitygate attribute is deprecated. Use periodicitygate instead!"));
+  
+    // clip periodicity gate value to (0., 1.)
+    if(yinPeriodicityGate.get() < 0.)
+      yinPeriodicityGate.set(0., true);
+    else if(yinPeriodicityGate.get() > 1.)
+      yinPeriodicityGate.set(1., true);
+    
+    // DEPRECATED
+    if(yinQualityGate.get() < 0.)
+      yinQualityGate.set(0., true);
+    else if(yinQualityGate.get() > 1.)
+      yinQualityGate.set(1., true);
+    
     sr_ = sampleRate / down;			// effective sample rate
 
     // downsize / 2 >= ac_size for good results
@@ -201,6 +227,57 @@ public:
     }
   }
   
+  // mean-based downsampling (code fixed by Jean Philippe)
+  int downsample_reverse (float *in, int size, float *out, int downsamplingexp)
+  {
+    int downVectorSize = size >> downsamplingexp;
+    int i, j;
+    
+    if (downVectorSize > 0)
+    {
+      switch(downsamplingexp)
+      {
+        case 3:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 8)
+            out[i] = 0.125 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3] + in[j + 4] + in[j + 5] + in[j + 6] + in[j + 7]);
+        }
+          break;
+          
+        case 2:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 4)
+            out[i] = 0.25 * (in[j] + in[j + 1] + in[j + 2] + in[j + 3]);
+        }
+          break;
+          
+        case 1:
+        {
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j += 2)
+            out[i] = 0.5 * (in[j] + in[j + 1]);
+        }
+          break;
+          
+        default:
+          for (i = downVectorSize - 1, j = 0; i >= 0; i--, j++)
+            out[i] = in[j];
+          break;
+      }
+    }
+    else
+    {
+      downVectorSize = 1;
+      float sum = 0.0;
+      
+      for (i = 0; i < size; i++)
+        sum += in[i];
+      
+      out[0] = sum / (float) size;
+    }
+    
+    return downVectorSize;
+  }
+  
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     float min;
@@ -209,12 +286,19 @@ public:
     float periodicity; /* 1.0 - sqrt(min) */
     float energy; /* sqrt(autocorrelation[0]/ (size - ac_size)) */
     float outvalues[4];
+    bool oldBehavior = this->old.get();
     
     if (buffer_ == NULL)
       return -1;
     
-    int downsize = downsample(values, size, buffer_, std::max<int>(0, downSampling.get()));
+    int downsize;
     
+    if(oldBehavior)
+      downsize = downsample(values, size, buffer_, std::max<int>(0, downSampling.get()));
+    else
+      // reverse values in order to match pitch against the most recent ones
+      downsize = downsample_reverse(values, size, buffer_, std::max<int>(0, downSampling.get()));
+      
     if (downsize <= ac_size_)
     { // error: input frame size too small for minfreq
       signalError("input frame size too small for given minfreq");
@@ -235,7 +319,14 @@ public:
     
     energy = sqrt(corr_[0] / (downsize - ac_size_));
     
-    outvalues[0] = (float) sr_ / period;
+    float out_0 = (float) sr_ / period;
+    float periodicityGate = yinPeriodicityGate.get();
+    if(periodicityGate == defaultPeriodicityGate && yinQualityGate.get() != defaultPeriodicityGate)
+      periodicityGate = yinQualityGate.get();
+    if(periodicity < periodicityGate)
+      out_0 = 0;
+    
+    outvalues[0] = out_0;
     outvalues[1] = (float) energy;
     outvalues[2] = (float) periodicity;
     outvalues[3] = (float) ac1_over_ac0;

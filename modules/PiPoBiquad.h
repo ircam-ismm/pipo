@@ -202,8 +202,8 @@ public:
     switch (this->biquadType)
     {
       case DF1BiquadType:
-        for (unsigned int i = 0; i < this->frameHeight; i++)
-          for (unsigned int j = 0; j < this->frameWidth; j++)
+        for (int i = 0; i < this->frameHeight; i++)
+          for (int j = 0; j < this->frameWidth; j++)
             this->outValues[i * this->frameWidth + j] = rta_biquad_df1_stride(
               frameValues[i * this->frameWidth + j],
               b, 1, a, 1,
@@ -213,8 +213,8 @@ public:
         break;
 
       case DF2TBiquadType:
-        for (unsigned int i = 0; i < this->frameHeight; i++)
-          for (unsigned int j = 0; j < this->frameWidth; j++)
+        for (int i = 0; i < this->frameHeight; i++)
+          for (int j = 0; j < this->frameWidth; j++)
             this->outValues[i * this->frameWidth + j] = rta_biquad_df2t_stride(
               frameValues[i * this->frameWidth + j],
               b, 1, a, 1,
@@ -236,8 +236,8 @@ public:
                                                       this->frequencyA.get()));
     float Q = std::max<float>(1e-5, this->QA.get());
 
-    unsigned int frameWidth = width;
-    unsigned int frameHeight = height;
+    int frameWidth = width;
+    int frameHeight = height;
 
 
     if (biquadType != this->biquadType)

@@ -33,6 +33,11 @@
 /* Begin PBXBuildFile section */
 		1D003BA11FB377B700D63452 /* pipo-scale-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */; };
 		1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */ = {isa = PBXBuildFile; fileRef = 1DFED20023A8DE6900BF943F /* PiPoYin2.h */; };
+		2101B13B2924FDFB00DA72DA /* PiPoLoudness.h in Headers */ = {isa = PBXBuildFile; fileRef = 2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */; };
+		21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7428DB13620006CEE9 /* rta_histogram.c */; };
+		21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7928DDB92D0006CEE9 /* PiPoSegment.h */; };
+		21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */ = {isa = PBXBuildFile; fileRef = 21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */; };
+		21056C7E28DDBDA50006CEE9 /* pipo-temporalmodeling-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */; };
 		2123C98D24EFFB0D005044F8 /* mimo-pca-test-simple.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */; };
 		2123C98E24EFFB0D005044F8 /* mimo-pca-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */; };
 		2123C98F24EFFB0D005044F8 /* mimo-stats-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */; };
@@ -58,6 +63,7 @@
 		2123C9BE24EFFD68005044F8 /* json_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AD24EFFD68005044F8 /* json_value.cpp */; };
 		2123C9BF24EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
 		2123C9C024EFFD68005044F8 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9AF24EFFD68005044F8 /* json_writer.cpp */; };
+		215B2AF8292FD1C400D7E1FD /* PiPoSegFirst.h in Headers */ = {isa = PBXBuildFile; fileRef = 215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */; };
 		216C9F6324EFF4E00069A8EE /* PiPoJs.h in Headers */ = {isa = PBXBuildFile; fileRef = 216C9F6224EFF4E00069A8EE /* PiPoJs.h */; };
 		216E1EC324FE95B80033FAD2 /* jerryscript-config.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */; };
 		216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */ = {isa = PBXBuildFile; fileRef = 216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */; };
@@ -67,6 +73,7 @@
 		216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9ED24F002F7005044F8 /* handler-print.c */; };
 		216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9EE24F002F7005044F8 /* handler-register.c */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
+		21BF4DDB2926443700650F02 /* PiPoThru.h in Headers */ = {isa = PBXBuildFile; fileRef = 21BF4DDA2926443500650F02 /* PiPoThru.h */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
 		316488291FC225E60086FEDF /* rta_biquad.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F91FC224450086FEDF /* rta_biquad.c */; };
 		3164882A1FC225E60086FEDF /* rta_dct.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487FF1FC224450086FEDF /* rta_dct.c */; };
@@ -154,6 +161,12 @@
 /* Begin PBXFileReference section */
 		1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-scale-test.cpp"; path = "../../test/pipo-scale-test.cpp"; sourceTree = "<group>"; };
 		1DFED20023A8DE6900BF943F /* PiPoYin2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoYin2.h; path = ../../modules/PiPoYin2.h; sourceTree = "<group>"; };
+		2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoLoudness.h; path = ../../modules/PiPoLoudness.h; sourceTree = "<group>"; };
+		21056C7428DB13620006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = rta_histogram.c; path = ../../modules/rta/src/statistics/rta_histogram.c; sourceTree = "<group>"; };
+		21056C7728DDB7350006CEE9 /* rta_histogram.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = rta_histogram.c; sourceTree = "<group>"; };
+		21056C7928DDB92D0006CEE9 /* PiPoSegment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSegment.h; path = ../../modules/PiPoSegment.h; sourceTree = "<group>"; };
+		21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoTemporalModeling.h; path = ../../modules/PiPoTemporalModeling.h; sourceTree = "<group>"; };
+		21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "pipo-temporalmodeling-test.cpp"; path = "../../test/pipo-temporalmodeling-test.cpp"; sourceTree = "<group>"; };
 		2123C92024EFFB0C005044F8 /* mimo-pca-test-simple.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test-simple.cpp"; sourceTree = "<group>"; };
 		2123C92124EFFB0C005044F8 /* mimo-pca-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-pca-test.cpp"; sourceTree = "<group>"; };
 		2123C92224EFFB0C005044F8 /* mimo-stats-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "mimo-stats-test.cpp"; sourceTree = "<group>"; };
@@ -194,6 +207,7 @@
 		2123C9F924F002F7005044F8 /* module.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = module.h; sourceTree = "<group>"; };
 		2123C9FA24F002F7005044F8 /* libjerry-ext.pc.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "libjerry-ext.pc.in"; sourceTree = "<group>"; };
 		2123C9FC24F002F7005044F8 /* module.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = module.c; sourceTree = "<group>"; };
+		215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSegFirst.h; path = ../../modules/PiPoSegFirst.h; sourceTree = "<group>"; };
 		216C9F6224EFF4E00069A8EE /* PiPoJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoJs.h; path = ../../modules/PiPoJs.h; sourceTree = "<group>"; };
 		216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "jerryscript-config.h"; sourceTree = "<group>"; };
 		216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "jerryscript-port-default.c"; sourceTree = "<group>"; };
@@ -201,6 +215,7 @@
 		216E1EC124FE95B80033FAD2 /* jerryscript.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jerryscript.c; sourceTree = "<group>"; };
 		216E1EC224FE95B80033FAD2 /* jerryscript.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jerryscript.h; sourceTree = "<group>"; };
 		21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoDescr.h; path = ../../modules/PiPoDescr.h; sourceTree = "<group>"; };
+		21BF4DDA2926443500650F02 /* PiPoThru.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoThru.h; path = ../../modules/PiPoThru.h; sourceTree = "<group>"; };
 		21DDC3A81B399D6C00C07AF2 /* pipo.doxygen */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pipo.doxygen; path = ../doxygen/pipo.doxygen; sourceTree = "<group>"; };
 		315B904A1FB4B9980005150B /* mimo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mimo.h; path = ../../sdk/src/mimo.h; sourceTree = "<group>"; };
 		315B904B1FB4B9980005150B /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../sdk/src/PiPo.h; sourceTree = "<group>"; };
@@ -574,6 +589,7 @@
 				31C2B3A91FB0D43F001A134E /* PiPoIdentity.h */,
 				216C9F6224EFF4E00069A8EE /* PiPoJs.h */,
 				31C2B3AC1FB0D43F001A134E /* PiPoLpc.h */,
+				2101B13A2924FDFA00DA72DA /* PiPoLoudness.h */,
 				31C2B3AE1FB0D43F001A134E /* PiPoMaximChroma.h */,
 				31C2B3AF1FB0D43F001A134E /* PiPoMeanStddev.h */,
 				31C2B3B01FB0D43F001A134E /* PiPoMedian.h */,
@@ -589,8 +605,12 @@
 				31C2B3B91FB0D43F001A134E /* PiPoRms.h */,
 				31C2B3BA1FB0D43F001A134E /* PiPoScale.h */,
 				31C2B3BB1FB0D43F001A134E /* PiPoSelect.h */,
+				21056C7928DDB92D0006CEE9 /* PiPoSegment.h */,
+				215B2AF7292FD1C300D7E1FD /* PiPoSegFirst.h */,
+				21056C7A28DDB92D0006CEE9 /* PiPoTemporalModeling.h */,
 				31C2B3BC1FB0D43F001A134E /* PiPoSlice.h */,
 				31C2B3BD1FB0D43F001A134E /* PiPoSum.h */,
+				21BF4DDA2926443500650F02 /* PiPoThru.h */,
 				31C2B3BF1FB0D43F001A134E /* PiPoWavelet.h */,
 				31C2B3C01FB0D43F001A134E /* PiPoYin.h */,
 				1DFED20023A8DE6900BF943F /* PiPoYin2.h */,
@@ -780,6 +800,7 @@
 			children = (
 				316487ED1FC224220086FEDF /* rta_cca.c */,
 				316487EE1FC224220086FEDF /* rta_cca.h */,
+				21056C7728DDB7350006CEE9 /* rta_histogram.c */,
 				316487EF1FC224220086FEDF /* rta_mean_variance.c */,
 				316487F01FC224220086FEDF /* rta_mean_variance.h */,
 				316487F11FC224220086FEDF /* rta_moments.c */,
@@ -826,6 +847,7 @@
 				31D2EE721ED71FCC002E9F6A /* pipo-sequence-test.cpp */,
 				1D003BA01FB377B300D63452 /* pipo-scale-test.cpp */,
 				316488471FC31D600086FEDF /* pipo-select-test.cpp */,
+				21056C7D28DDBDA40006CEE9 /* pipo-temporalmodeling-test.cpp */,
 				31D2EE731ED71FCC002E9F6A /* pipo-version-test.cpp */,
 				31D2EE6F1ED71FCC002E9F6A /* pipo-benchmark.cpp */,
 				2123C99224EFFB26005044F8 /* pipo-js */,
@@ -851,6 +873,7 @@
 		5A04AA9006D4DD3F0098230D = {
 			isa = PBXGroup;
 			children = (
+				21056C7428DB13620006CEE9 /* rta_histogram.c */,
 				31C2B3821FB0D3F1001A134E /* sdk */,
 				31C2B3811FB0D3E8001A134E /* modules */,
 				31D2EEA61ED72A86002E9F6A /* doc */,
@@ -876,6 +899,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2123C9B124EFFD68005044F8 /* autolink.h in Headers */,
+				2101B13B2924FDFB00DA72DA /* PiPoLoudness.h in Headers */,
 				2123C9BC24EFFD68005044F8 /* json_tool.h in Headers */,
 				2123C99C24EFFD5A005044F8 /* mimo_pca.h in Headers */,
 				2123C9B224EFFD68005044F8 /* jsoncpp_config.h in Headers */,
@@ -883,6 +907,7 @@
 				2123C99B24EFFD5A005044F8 /* mimo_normalize.h in Headers */,
 				2123C9B624EFFD68005044F8 /* reader.h in Headers */,
 				216E1EC524FE95B90033FAD2 /* jerryscript-port-default.h in Headers */,
+				21BF4DDB2926443700650F02 /* PiPoThru.h in Headers */,
 				2123C9B424EFFD68005044F8 /* json-features.h in Headers */,
 				2123C9B824EFFD68005044F8 /* version.h in Headers */,
 				216E1EC724FE95B90033FAD2 /* jerryscript.h in Headers */,
@@ -907,7 +932,10 @@
 				31C2B3E51FB0D43F001A134E /* PiPoYin.h in Headers */,
 				1DFED20123A8DE6900BF943F /* PiPoYin2.h in Headers */,
 				31C2B3D51FB0D43F001A134E /* PiPoMedian.h in Headers */,
+				21056C7B28DDB92D0006CEE9 /* PiPoSegment.h in Headers */,
+				21056C7C28DDB92D0006CEE9 /* PiPoTemporalModeling.h in Headers */,
 				31C2B3D71FB0D43F001A134E /* PiPoMfcc.h in Headers */,
+				215B2AF8292FD1C400D7E1FD /* PiPoSegFirst.h in Headers */,
 				31C2B3D61FB0D43F001A134E /* PiPoMel.h in Headers */,
 				31C2B3C81FB0D43F001A134E /* PiPoConst.h in Headers */,
 				31C2B3D81FB0D43F001A134E /* PiPoMinMax.h in Headers */,
@@ -979,7 +1007,7 @@
 		5A04AA9406D4DD3F0098230D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0820;
+				LastUpgradeCheck = 1310;
 				TargetAttributes = {
 					31D2EE7B1ED72503002E9F6A = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -989,13 +1017,11 @@
 			};
 			buildConfigurationList = 5A5828FD08F513D9005EF882 /* Build configuration list for PBXProject "libpipo" */;
 			compatibilityVersion = "Xcode 6.3";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 1;
 			knownRegions = (
-				English,
-				Japanese,
-				French,
-				German,
+				en,
+				Base,
 			);
 			mainGroup = 5A04AA9006D4DD3F0098230D;
 			productRefGroup = 5A04AAA006D4DD700098230D /* products */;
@@ -1054,10 +1080,9 @@
 				3164882E1FC226210086FEDF /* rta_correlation.c in Sources */,
 				3164882F1FC226210086FEDF /* rta_cubic.c in Sources */,
 				3164882A1FC225E60086FEDF /* rta_dct.c in Sources */,
-				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
 				3164882B1FC225E60086FEDF /* rta_delta.c in Sources */,
-				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
 				3164882C1FC225E60086FEDF /* rta_fft.c in Sources */,
+				21056C7528DB13620006CEE9 /* rta_histogram.c in Sources */,
 				316488361FC226440086FEDF /* rta_int.c in Sources */,
 				316488301FC226210086FEDF /* rta_lifter.c in Sources */,
 				316488311FC226210086FEDF /* rta_lpc.c in Sources */,
@@ -1079,6 +1104,8 @@
 				2123C9BA24EFFD68005044F8 /* json_reader.cpp in Sources */,
 				216E1EC624FE95B90033FAD2 /* jerryscript.c in Sources */,
 				216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */,
+				216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */,
+				216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1104,6 +1131,7 @@
 				316488481FC31D780086FEDF /* pipo-select-test.cpp in Sources */,
 				31D2EEA41ED72938002E9F6A /* pipo-sequence-test.cpp in Sources */,
 				2123C99024EFFB0D005044F8 /* mimo-test.cpp in Sources */,
+				21056C7E28DDBDA50006CEE9 /* pipo-temporalmodeling-test.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1113,6 +1141,7 @@
 		315D052B1C4EF736004FAFFB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
 				HEADER_SEARCH_PATHS = (
@@ -1129,6 +1158,7 @@
 		315D052D1C4EF736004FAFFB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
 				HEADER_SEARCH_PATHS = (
@@ -1202,16 +1232,24 @@
 		5A5828FE08F513D9005EF882 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -1234,7 +1272,6 @@
 				);
 				GCC_THREADSAFE_STATICS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
-				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1251,13 +1288,12 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
 				);
-				PREBINDING = YES;
-				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1266,16 +1302,24 @@
 		5A5828FF08F513D9005EF882 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -1295,7 +1339,6 @@
 				);
 				GCC_THREADSAFE_STATICS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO;
-				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1312,13 +1355,11 @@
 					"$(VECLIB_DIR)/Headers",
 					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"-framework",
 					vecLib,
 				);
-				PREBINDING = YES;
-				SDKROOT = macosx;
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
@@ -1327,6 +1368,7 @@
 		5C411FD60DAC17BA006897CA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -1338,8 +1380,8 @@
 		5C411FD70DAC17BA006897CA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				PRODUCT_NAME = doc;
 				ZERO_LINK = NO;
@@ -1349,6 +1391,7 @@
 		5C8290EB0B8E43C900766D9D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -1360,8 +1403,8 @@
 		5C8290EC0B8E43C900766D9D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				PRODUCT_NAME = all;
 				ZERO_LINK = NO;
