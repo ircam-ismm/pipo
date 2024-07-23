@@ -1,6 +1,7 @@
 [submodule "sdk"]
 	path = sdk
 	url = https://github.com/ircam-ismm/pipo-sdk.git
+	branch = develop
 [submodule "modules/bayesfilter"]
 	path = modules/bayesfilter
 	url = https://github.com/ircam-ismm/bayesfilter.git
@@ -10,3 +11,4 @@
 [submodule "modules/rta"]
 	path = modules/rta
 	url = https://github.com/ircam-ismm/rta-lib.git
+	branch = develop
