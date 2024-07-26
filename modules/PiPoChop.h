@@ -334,7 +334,7 @@ public:
     frame_period_ = 1000. / rate;
     
     /* resize and clear temporal models */
-    tempMod.resize(width * height);
+    tempMod.resize(width * height); // pass through full input frame, but inits labels to empty string
     tempMod.reset();
     
     /* enable temporal models */ //TODO: switch at least one on
@@ -353,7 +353,7 @@ public:
     for (unsigned int i = 0; i < totalOutputSize; i++)
     {
       outLabels[i] = new char[this->maxDescrNameLength];
-      outLabels[i][0] = 0;
+      outLabels[i][0] = 0; // init to empty string (might not be overwritten by tempMod.getLabels)
     }
 
     if (reportDuration != 0)
