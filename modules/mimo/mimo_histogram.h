@@ -54,9 +54,22 @@
 class histogram_model_data : public mimo_model_data
 {
 public:
-  std::vector<std::vector<unsigned int>>	hist;  // number of elements in each bin, per column
-  std::vector<std::vector<float>>		bins;  // bin values, if requested, per column
+  std::vector<std::vector<float>> count;  // array(numbins) of number of elements in each bin, per column
+  std::vector<std::vector<float>> bins;   // array(numbins + 1) of bin limits, if requested, per column
 
+  // reserve space
+  void init (int size, int numbins)
+  {
+    count.resize(size);
+    bins.resize(size);
+    
+    for (int i = 0; i < size; i++)
+    {
+      count[i].resize(numbins);
+      bins[i].resize(numbins + 1);
+    }  
+  }
+  
   // helper function for json formatting
   template<typename T>
   std::string vector2json (std::vector<T> v) 
@@ -76,10 +89,11 @@ public:
   }
 
   void model2json (std::stringstream &ss)
-  { 
+  { /*
     ss << "{ \"hist\":  " << vector2json<unsigned int>(hist) << "," << std::endl
        << "  \"bins\":  " << vector2json<float>(bins)  	            << std::endl
        << "}";
+    */
   }
 
   size_t json_size () override
@@ -122,21 +136,22 @@ public:
     bool succes = reader.parse(json_string, root);
     if (!succes)
     {
-      std::cout << "mimo.stats model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
+      std::cout << "mimo.histogram model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
 		<< "in\n" << json_string << std::endl;
       return -1;
     }
 
     const Json::Value _num = root["num"];
     unsigned int n = _num.size();
-    num.resize(n);
+    //num.resize(n);
     for (unsigned int i = 0; i < n; ++i)
-      num[i] = _num[i].asInt();
+      ;//num[i] = _num[i].asInt();
 
-    array_from_json(root["hist"], hist);
-    array_from_json(root["bins"], bins);
+//    array_from_json(root["hist"], count);
+//    array_from_json(root["bins"], bins);
 
-    if (min.size() == n  &&  max.size() ==  n  &&  mean.size() ==  n  &&  std.size() == n)
+    /*
+     if (min.size() == n  &&  max.size() ==  n  &&  mean.size() ==  n  &&  std.size() == n)
       return 0;
     else
     {
@@ -144,7 +159,8 @@ public:
 		<< json_string << std::endl;
       printf("%lu =? %lu =? %lu =? %lu =? %lu =? %u\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
       return -1;
-    }    
+    }
+     */
   }
 };
 
@@ -153,17 +169,18 @@ public:
 //
 // mimo module to make one histogram per column over all buffers
 //
-class mimo_histogram : public Mimo
+class MimoHistogram : public Mimo
 {
-public:
+  
   // attributes
   PiPoScalarAttr<int>	numbins_attr_;
-
+  
+public:
   // constructor
-  mimo_histogram (PiPo::Parent *parent, Mimo *receiver = NULL)
+  MimoHistogram (Parent *parent, Mimo *receiver = NULL)
   : Mimo(parent, receiver),
-    distance_(0.0),
-    alpha(this, "alpha", "Normalization step factor for training iteration", false, 0.1)
+//    distance_(0.0),
+    numbins_attr_(this, "numbins", "Number of histogram bins", true, (int) 50)
   { };
 
   /** prepare for training, allocate training output data
@@ -173,11 +190,6 @@ public:
   */
   int setup (int numbuffers, int numtracks, const int tracksize[], const PiPoStreamAttributes *streamattr[]) override
   {
-#if DEBUG
-    char astr[1001];
-    printf("%s b %d t %d attr:\n%s\n", __PRETTY_FUNCTION__, numbuffers, numtracks, streamattr[0]->to_string(astr, 1000));
-#endif
-    
     if (numtracks != 1)
       return -1; // can only work on one input track per buffer
 
@@ -185,151 +197,49 @@ public:
     numbuffers_ = numbuffers;
     stream_ = *streamattr[0];	
     bufsize_.assign(tracksize, tracksize + numbuffers);	// copy array via pointer iterator
-    
-    // set size and fill with 0
-    size_ = stream_.dims[0] * stream_.dims[1];
-    sum_.assign(size_, 0);
-    sum2_.assign(size_, 0);
-    stats_.num.assign(size_, 0);
-    stats_.mean.assign(size_, 0);
-    stats_.std.assign(size_, 0);
-    stats_.min.assign(size_,  FLT_MAX);
-    stats_.max.assign(size_, -FLT_MAX);
+    size_ = stream_.dims[0] * stream_.dims[1]; // number of columns*rows --> number of output histograms
 
-    // for the sake of the example: reserve space for training output data when iterating
-    traindata_.resize(numbuffers_);
-    for (int i = 0; i < numbuffers_; i++)
-      traindata_[i].resize(tracksize[i] * size_);
+    // set up params
+    rta_histogram_init(&params_);
+    params_.nhist = numbins_attr_.get();
+    // params.lo_given, lo, hi, norm...
+
+    // set up hist data
+    hist_.init(size_, params_.nhist);
+
+   // reserve space for histogram output data
+    traindata_.resize(1);
+    traindata_[0].resize(size_ * params_.nhist);
 
     // propagate same buffer layout
     return propagateSetup(numbuffers, numtracks, tracksize, streamattr);
   }
 
-  /** the train method receives the training data set and performs one iteration of training 
-      Each iteration can output transformed input data by calling propagateTrain().
-  */
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
-#ifndef WIN32
-    printf("%s\n  itercount %d trackindex %d numbuf %d\n", __PRETTY_FUNCTION__, itercount, trackindex, numbuffers);
-#else
-      printf("%s\n  itercount %d trackindex %d numbuf %d\n", __FUNCSIG__, itercount, trackindex, numbuffers);   
-#endif
-    if (itercount == 0)
-    { // for the sake of the example: this mimo module can iterate, but stats are calculated only at first iteration
-      for (int buf = 0; buf < numbuffers; buf++)
-      {
-	const PiPoValue *data = buffers[buf].data;
-        printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, &traindata_[buf][0]);
+    // copy buffers data pointers to  array
+    std::vector<PiPoValue *> inputptr(numbuffers);
 
-	for (int i = 0; i < buffers[buf].numframes; i++)
-	{
-	  int mtxsize = stream_.hasVarSize ? buffers[buf].varsize[i] : size_;
-	    
-	  for (int j = 0; j < mtxsize; j++)
-	  {
-	    PiPoValue val = data[j];
+    for (int i = 0; i < numbuffers; i++)
+      inputptr[i] = buffers[i].data;
 
-	    stats_.num[j]++;
-	    sum_[j]  += val;
-	    sum2_[j] += val * val;
-	    if (val < stats_.min[j])  stats_.min[j] = val;
-	    if (val > stats_.max[j])  stats_.max[j] = val;
-	  }
+    // calc one hist per input element (column) over all buffers
+    for (int j = 0; j < size_; j++)
+      rta_histogram_stride_multi(&params_, numbuffers, inputptr.data(), j, size_, bufsize_.data(), hist_.count[j].data(), 1, hist_.bins[j].data(), 1);
 
-	  data += size_;
-	}
-      }
-
-      // finish statistics
-      for (int j = 0; j < size_; j++)
-      {
-	if (stats_.num[j] > 0)
-	{
-	  stats_.mean[j] = sum_[j] / stats_.num[j];
-	  stats_.std[j] = sqrt(sum2_[j] / stats_.num[j] - stats_.mean[j] * stats_.mean[j]);
-	}
-	else
-	{ // no data
-	  stats_.mean[j] = stats_.min[j] = stats_.max[j] = stats_.std[j] = 0;
-	}
-      }
-
-      // first iteration, output input data, to be worked on at next iterations
-      return propagateTrain(itercount, trackindex, numbuffers, buffers);
-    }
-    else
-    { // for the sake of the example: when iterating, exponentially approach normalised data:
-      // multiply by factor attribute alpha, output avg. distance to full normalisation
-
-      // copy input buffer struct, only pointers will change
-      std::vector<mimo_buffer> outbufs(numbuffers);
-      outbufs.assign(buffers, buffers + numbuffers);	// copy array via pointer iterator
-      
-      for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
-      {
-	int numframes = buffers[bufferindex].numframes;
-	
-	// check if input track size has changed since setup
-	if (numframes != bufsize_[bufferindex])
-	{
-	  traindata_[bufferindex].resize(numframes * size_);
-	  bufsize_[bufferindex] = numframes;
-	}
-
-	float factor = alpha.get() * itercount;
-	PiPoValue *data    = buffers[bufferindex].data; // indata is always original data, we want to iterate on previous output
-	PiPoValue *outdata = outbufs[bufferindex].data = &traindata_[bufferindex][0];
-#if DEBUG
-        printf("  stats norm buf %d  data %p  outdata %p\n", bufferindex, data, outdata);
-        if (data == NULL  ||  outdata == NULL)
-        {
-          printf("\nURGH! data or outdata is NULL, this shouldn't happen!!!!!!!!!!!!\n");
-          signalError("\nURGH! data or outdata is NULL, this shouldn't happen!!!!!!!!!!!!\n");
-          return -1;
-        }
-#endif
-
-	for (int i = 0; i < numframes; i++)
-	{
-	  int mtxsize = stream_.hasVarSize ? buffers[bufferindex].varsize[i] : size_;
-	  int j;
-	  double norm;
-	
-	  for (j = 0; j < mtxsize; j++)
-	  {
-	    if (stats_.std[j] != 0)
-	      norm = (data[j] - stats_.mean[j]) / stats_.std[j];
-	    else
-	      norm = (data[j] - stats_.mean[j]);
-
-	    // banal interpolation
-	    outdata[j] = (1 - factor) * data[j] + factor * norm;
-	  }
-#if DEBUG
-	  if (i == 0 && mtxsize > 0) printf("normalise %f .. %f -> %f\n", data[j - 1], norm, outdata[j - 1]);
-#endif
-
-	  for (; j < size_; j++)
-	    outdata[j] = 0;
-
-	  data += size_;
-	  outdata += size_;
-	}
-
-	distance_ = 1.0 - factor;
-      }
-
-      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
-    }
+    // copy to first buffer of training output data
+    // TODO: in place of hist_
+    
+    
+    return propagateTrain(itercount, trackindex, 1, buffers);
   }
 
   /** return trained model parameters */
-  stats_model_data *getmodel () override  { return &stats_;  }
+  histogram_model_data *getmodel () override  { return &hist_;  }
 
-  bool converged (double *metric) override { return false; }
+  bool converged (double *metric) override { return true; }
 
-  int maxiter () override { return 3; }
+  int maxiter () override { return 1; }
   
     
   /****************************************************************************
@@ -379,12 +289,9 @@ public:
 #endif
     for (unsigned int i = 0; i < num; i++)
     {
-      // normalise
+      // TODO: normalise: output bin index == percentile
       for (unsigned int j = 0; j < size; j++)
-	if (stats_.std[j] != 0)
-	  norm[j] = (values[j] - stats_.mean[j]) / stats_.std[j];
-	else
-	  norm[j] = (values[j] - stats_.mean[j]);
+	norm[j] = values[j];
 
       ok &= propagateFrames(time, weight, norm, size, 1) == 0;
 
@@ -400,12 +307,11 @@ private:
   PiPoStreamAttributes	stream_;
   int			numbuffers_;
   int			size_;	// matrix size
-  std::vector<int>	bufsize_; // num frames for each buffer 
-  std::vector<double>	sum_, sum2_; // sum and sum of squares accumulators
-  stats_model_data	stats_;
+  std::vector<unsigned int>	bufsize_; // num frames for each buffer 
+  rta_histogram_params_t params_;
+  histogram_model_data   hist_;
   std::vector<std::string>	labelstore_;
   std::vector<std::vector<PiPoValue>>	traindata_;
-  double		distance_;
 };
 
 
