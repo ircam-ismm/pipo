@@ -41,6 +41,7 @@
 #define _PIPO_DCT_
 
 #include <algorithm>
+#include <stdio.h>
 #include "PiPo.h"
 
 extern "C" {
@@ -62,14 +63,15 @@ private:
   enum WeightingMode weightingMode;
 
 public:
+  const char *labelbase = NULL;
   PiPoScalarAttr<int> order;
   PiPoScalarAttr<PiPo::Enumerate> weighting;
 
-  PiPoDct(Parent *parent, PiPo *receiver = NULL) :
-  PiPo(parent, receiver),
-  frame(), weights(),
-  order(this, "order", "DCT Order", true, 12),
-  weighting(this, "weighting", "DCT Weighting Mode", true, FeacalcMode)
+  PiPoDct(Parent *parent, PiPo *receiver = NULL)
+  : PiPo(parent, receiver),
+    frame(), weights(),
+    order(this, "order", "DCT Order", true, 12),
+    weighting(this, "weighting", "DCT Weighting Mode", true, FeacalcMode)
   {
     this->inputSize = 0;
     this->weightingMode = FeacalcMode;
@@ -121,7 +123,32 @@ public:
       this->weightingMode = weightingMode;
     }
 
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, order, 1, NULL, 0, 0.0, 1);
+    // set up output labels
+    const char **outlabels = NULL;
+
+    if (labelbase != NULL)
+    { // generate outlabels
+      size_t baselen = strlen(labelbase);
+      outlabels = (const char **) malloc(sizeof(const char *) * width);
+
+      for (unsigned int i = 0; i < width; i++)
+      {
+	outlabels[i] = (const char *) malloc(baselen + 7); // up to 6 digits + string terminator
+	snprintf((char *) outlabels[i], baselen + 7, "%s%d", labelbase, i);
+      }
+    }
+
+    int ret = this->propagateStreamAttributes(hasTimeTags, rate, offset, order, 1, outlabels, 0, 0.0, 1);
+
+    if (outlabels != NULL)
+    {
+      for (unsigned int i = 0; i < width; i++)
+	  free((void *) outlabels[i]);
+	
+      free(outlabels);
+    }
+
+    return ret;
   }
 
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
