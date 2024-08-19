@@ -53,11 +53,11 @@ public:
   PiPoBands bands;
   PiPoDct dct;
   
-  PiPoMfcc(Parent *parent, PiPo *receiver = NULL) :
-  PiPoSlice(parent, &this->fft),
-  fft(parent, &this->bands),
-  bands(parent, &this->dct),
-  dct(parent, receiver)
+  PiPoMfcc(Parent *parent, PiPo *receiver = NULL) // create chain slice:fft:bands:dct
+  : PiPoSlice(parent, &this->fft),
+    fft(parent, &this->bands),
+    bands(parent, &this->dct),
+    dct(parent, receiver)
   {
     /* steal attributes from member PiPos */
     this->addAttr(this, "windsize", "FFT Window Size", &this->size, true);
@@ -72,6 +72,9 @@ public:
     this->bands.mode.set(PiPoBands::MelBands);
     this->bands.log.set(true);
     this->dct.order.set(12);
+
+    // set up dct to produce output labels
+    dct.labelbase = "MFCC";
   }
   
   void setReceiver(PiPo *receiver, bool add) { this->dct.setReceiver(receiver, add); };
