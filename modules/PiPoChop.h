@@ -334,7 +334,7 @@ public:
     frame_period_ = 1000. / rate;
     
     /* resize and clear temporal models */
-    tempMod.resize(width * height); // pass through full input frame, but inits labels to empty string
+    tempMod.resize(width * height); // pass through full input frame (all rows), but inits labels to empty string
     tempMod.reset();
     
     /* enable temporal models */ //TODO: switch at least one on

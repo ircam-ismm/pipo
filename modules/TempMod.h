@@ -206,7 +206,7 @@ public:
 
     return index;
   }
-};
+}; // class TempMod
 
 class TempModArray
 {
@@ -286,28 +286,50 @@ public:
     return totalValues;
   }
 
+  /** generate array.size() tempmod suffixes for each one of the numValues input column labels: <value><Mean> etc.
+   @param valueNames	input column labels array
+   @param numValues	size of valueNames input column label array
+   @param labels	output labels
+   @param strLen	max output label length
+   @param numLabels	size of output labels array
+  */
   unsigned int getLabels(const char **valueNames, unsigned int numValues, char **labels, unsigned int strLen, unsigned int numLabels)
   {
     unsigned int totalLabels = 0;
     std::vector<TempMod>::iterator iter;
-    unsigned int i;
+    unsigned int i, row = 0;
+    char suffix[7] = ""; // first suffix is empty
 
-    for(iter = this->array.begin(), i = 0; iter != this->array.end() && i < numValues; iter++, i++)
+    while (numLabels > 0)
     {
-      unsigned int num;
+      for(iter = this->array.begin(), i = 0; iter != this->array.end() && i < numValues; iter++, i++)
+      {
+        unsigned int num;
 
-      if(valueNames != NULL)
-        num = iter->getLabels(valueNames[i], labels, strLen, numLabels);
-      else
-        num = iter->getLabels(NULL, labels, strLen, numLabels);
+        if(valueNames != NULL)
+        {
+          char label_with_suffix[strLen];
 
-      totalLabels += num;
-      labels += num;
-      numLabels -= num;
+          snprintf(label_with_suffix, strLen, "%s%s", valueNames[i], suffix);
+          num = iter->getLabels(label_with_suffix, labels, strLen, numLabels);
+        }
+        else
+          num = iter->getLabels(NULL, labels, strLen, numLabels);
+
+        totalLabels += num;
+        labels += num;
+        numLabels -= num;
+      }
+
+      // if there are more requested output labels than input columns (because we're unwrapping rows), restart iterator and append row suffix to output labels
+      row++;
+
+      // further suffix is row number
+      snprintf(suffix, 7, "%d", row);
     }
 
     return totalLabels;
   }
-};
+}; // class TempModArray
 
 #endif
