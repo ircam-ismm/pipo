@@ -230,7 +230,7 @@ public:
     {
       
       /* resize temporal models */
-      this->tempMod.resize(inputSize);
+      this->tempMod.resize(size); // do temp.mod on full input frame size = width * height, not only num. columns (inputSize).  Rows will be unwrapped to columns and auto-named.
       
       /* enable temporal models */
       this->tempMod.enable(this->enMin.get(), this->enMax.get(), this->enMean.get(), this->enStddev.get());

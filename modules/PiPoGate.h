@@ -108,7 +108,7 @@ public:
   { }
   
   int streamAttributes (bool hastimetags, double rate, double offset,
-                        unsigned int width, unsigned int size, const char **labels,
+                        unsigned int width, unsigned int height, const char **labels,
                         bool hasvarsize, double domain, unsigned int maxframes)
   {
     int inputsize = width;
@@ -119,41 +119,39 @@ public:
     this->onsettime = 0;
     this->reportduration = this->duration.get();
     
-    if (this->reportduration)
-    {
-      /* resize temporal models */
-      this->tempmod.resize(inputsize);
+    /* resize temporal models */
+    this->tempmod.resize(width * height); // do temp.mod on full input frame size = width * height, not only num. columns (inputsize).  Rows will be unwrapped to columns and auto-named.
+    tempmod.reset();
+
+    /* enable temporal models */
+    this->tempmod.enable(this->enable_min.get(), this->enable_max.get(), this->enable_mean.get(), this->enable_stddev.get());
       
-      /* enable temporal models */
-      this->tempmod.enable(this->enable_min.get(), this->enable_max.get(), this->enable_mean.get(), this->enable_stddev.get());
+    /* get output size */
+    unsigned int outputsize = this->tempmod.getNumValues();
       
-      /* get output size */
-      unsigned int outputsize = this->tempmod.getNumValues();
+    /* alloc output vector for duration and temporal modelling output */
+    this->outputvalues.resize(outputsize + reportduration);
       
-      /* alloc output vector for duration and temporal modelling output */
-      this->outputvalues.resize(outputsize + 1);
+    /* get labels */
+    unsigned int totalOutputSize = outputsize + reportduration;
+    char **outlabels = new char * [totalOutputSize];
+    char *mem = new char[outputsize * 64 + 64];
       
-      /* get labels */
-      char *mem = new char[outputsize * 64 + 64];
-      char **outlabels = new char*[outputsize + 1];
+    for (unsigned int i = 0; i < totalOutputSize; i++)
+      outlabels[i] = mem + i * 64;
       
-      for (unsigned int i = 0; i <= outputsize; i++)
-        outlabels[i] = mem + i * 64;
-      
+    if (reportduration != 0)
       snprintf(outlabels[0], 64, "Duration");
-      this->tempmod.getLabels(labels, inputsize, &outlabels[1], 64, outputsize);
+    tempmod.getLabels(labels, inputsize, outlabels + reportduration, 64, outputsize);
+
+    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1,
+					      (const char **) &outlabels[0],
+					      false, 0.0, 1);
       
-      int ret = this->propagateStreamAttributes(true, rate, 0.0, outputsize + 1, 1,
-                                                (const char **) &outlabels[0],
-                                                false, 0.0, 1);
+    delete [] mem;
+    delete [] outlabels;
       
-      delete [] mem;
-      delete [] outlabels;
-      
-      return ret;
-    }
-    
-    return this->propagateStreamAttributes(true, rate, 0.0, 0, 0, NULL, false, 0.0, 1);
+    return ret;
   }
   
   int reset (void)
