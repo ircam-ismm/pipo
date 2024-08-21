@@ -132,7 +132,7 @@ public:
     allocated_peaks_size_ = width * height / 2 + 1; // we can find at maximum a number of peaks of half the size of the input vector
     buffer_.resize(allocated_peaks_size_ * 2);
     
-    return propagateStreamAttributes(true, rate, offset, 2, max_num_peaks_, peaksColNames, 1, 0.0, 1);
+    return propagateStreamAttributes(hasTimeTags, rate, offset, 2, max_num_peaks_, peaksColNames, 1, 0.0, 1);
   }
   
   int reset (void)
