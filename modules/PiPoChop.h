@@ -51,7 +51,7 @@ extern "C" {
 }
 
 // keep quiet!
-#define DEBUG_CHOP DEBUG * 2
+#define DEBUG_CHOP DEBUG * 0
 // for dbprint
 #define NICE_TIME(t)   ((t) < DBL_MAX * 0.5  ?  (t)  :  -1)
 #define NEXT_TIME(seg) NICE_TIME(seg.getNextTime())

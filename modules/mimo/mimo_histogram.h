@@ -155,7 +155,7 @@ public:
       return 0;
     else
     {
-      std::cout << "mimo.stats model dimension mismatch error in\n" << std::endl
+      std::cout << "mimo.histogram model dimension mismatch error in\n" << std::endl
 		<< json_string << std::endl;
       printf("%lu =? %lu =? %lu =? %lu =? %lu =? %u\n", num.size(), min.size(), max.size(), mean.size(), std.size(), n);
       return -1;

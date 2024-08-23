@@ -235,7 +235,7 @@ public:
       for (int buf = 0; buf < numbuffers; buf++)
       {
 	const PiPoValue *data = buffers[buf].data;
-        printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, traindata_.size() > 0  ?  &traindata_[buf][0]  :  NULL);
+        //printf("  stats calc buf %d  data %p  traindata %p\n", buf, data, traindata_.size() > 0  ?  &traindata_[buf][0]  :  NULL);
 
 	for (int i = 0; i < buffers[buf].numframes; i++)
 	{

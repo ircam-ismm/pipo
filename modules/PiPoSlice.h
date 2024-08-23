@@ -46,6 +46,8 @@
 #include <math.h>
 #include <vector>
 
+#define DEBUG_SLICE (DEBUG * 0)
+
 class PiPoSlice : public PiPo
 {
 public:
@@ -105,7 +107,7 @@ public:
     this->norm.addEnumItem("linear", "Linear normalization");
     this->norm.addEnumItem("power", "Power normalization");
 
-#if DEBUG
+#if DEBUG_SLICE
     //signalWarning(std::string("PiPoSlice ctor: unit ") + std::to_string(unit.get()));
     printf("PiPoSlice ctor: unit %d size %f hop %f\n", unit.get(), size.get(), hop.get());
 #endif
@@ -182,7 +184,7 @@ public:
     else
       outputVector = &frame;
 
-#if DEBUG
+#if DEBUG_SLICE
     //signalWarning(std::string("PiPoSlice streamAttributes: unit ") + std::to_string(unit.get()));
     printf("PiPoSlice streamAttributes: rate %f unit %d size %f hop %f win %d norm %d --> scale %f size %d hop %d rate %f\n",
 	   rate, unit.get(), this->size.get(), hop.get(), win_type, norm_mode,
@@ -236,7 +238,7 @@ public:
           double frameTime = time + 1000.0 * (double)(frameIndex - halfWindowSize) / this->frameRate;
           int ret;
 
-#if DEBUG
+#if DEBUG_SLICE
 	  //signalWarning(std::string("PiPoSlice frames: unit ") + std::to_string(unit.get()));
 	  //signalWarning(std::string("PiPoSlice frames: time ") + std::to_string(time));
 	  //printf("PiPoSlice frames out: time %f unit %d size %f hop %f\n", frameTime, unit.get(), this->size.get(), hop.get());
