@@ -275,14 +275,15 @@ public:
 
     // actually do the UMAP
     fluid::algorithm::UMAP myUMAP;	      // make a UMAP object
-    const int    k         = std::max<int>(num_neighbours_attr_.get(), 1);
+    int          k         = std::max<int>(num_neighbours_attr_.get(), 1);
     const double mindist   = std::max<double>(min_dist_attr_.get(), 0);
     const int    numiter   = std::max<int>(num_iter_attr_.get(), 1);
     const double learnrate = std::max<double>(std::min<double>(learn_rate_attr_.get(), 1), 0);
       
 
-    //if (k > src.size())
-    //  return Error("Number of Neighbours is larger than dataset");
+    if (k > numframestotal_ - 1)
+      // Number of Neighbours is larger than dataset
+      k = numframestotal_ - 1;
 
     // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>, but umap only works on
     fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, outdims_, mindist, numiter, learnrate);
