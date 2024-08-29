@@ -279,18 +279,39 @@ public:
     const double mindist   = std::max<double>(min_dist_attr_.get(), 0);
     const int    numiter   = std::max<int>(num_iter_attr_.get(), 1);
     const double learnrate = std::max<double>(std::min<double>(learn_rate_attr_.get(), 1), 0);
-      
 
-    if (k > numframestotal_ - 1)
-      // Number of Neighbours is larger than dataset
-      k = numframestotal_ - 1;
 
     // should be: fluid::FluidDataSet<mubu_id, PiPoValue, 1>, but umap only works on
-    fluid::FluidDataSet<std::string, double, 1> embedding = myUMAP.train(dataset_in, k, outdims_, mindist, numiter, learnrate);
+    fluid::FluidDataSet<std::string, double, 1> embedding;
+    bool ok = false;
 
-    if (1) 
-    { // ok
-      // copy back to output track, point by point 
+    try
+    {
+      if (numframestotal_ > 0)
+      {
+        if (k > numframestotal_ - 1)
+          // Number of Neighbours is larger than dataset
+          k = numframestotal_ - 1;
+
+        embedding = myUMAP.train(dataset_in, k, outdims_, mindist, numiter, learnrate);
+        ok = true; // todo: replace by query if embedding has data
+      }
+      else
+        signalWarning("umap input data is empty");
+    }
+    catch (const std::exception &e)
+    {
+      std::cout << "umap training error: " << e.what() << std::endl;
+      signalError(std::string("umap training error: ") + e.what());
+    }
+    catch (...)
+    {
+      std::cerr << "umap threw up" << std::endl;
+      signalError("umap threw up");
+    }
+
+    if (ok)
+    { // copy back to output track, point by point
       fluid::FluidTensorView<double, 2>      out_points = embedding.getData();
       fluid::FluidTensorView<std::string, 1> out_ids    = embedding.getIds(); //ids should match, but IIRC ordering isn’t guaranteed, so better to grab again
 
