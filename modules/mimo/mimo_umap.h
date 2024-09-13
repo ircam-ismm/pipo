@@ -138,7 +138,8 @@ public:
   std::vector<int> bufsizes_; // num frames for each buffer
   int fb_        = Forward;
   int m_ = 0, n_ = 0;	// input data vector size (1, n_)
-  std::vector<int> incolumns_; // indims_ used column indices (or empty for all columns)
+  std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
+  bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
   int indims_    = 0;	// training data vector size (used columns)
   int outdims_   = 2;	// output data vector size
   std::vector<std::string> labelstore_;
@@ -189,6 +190,7 @@ public:
       numframestotal_ += bufsizes_[i];
 
     // look up list of input columns
+#if 0
     incolumns_.resize(0);
     PiPo::Atom *incols = columns_attr_.getPtr();
     for (int i = 0; i < columns_attr_.size(); i++)
@@ -212,6 +214,11 @@ public:
     }
     if (incolumns_.size() > 0)
       indims_ = incolumns_.size();
+#else
+    // returns 0..numlabels - 1 if columns_attr_ was not set or invalid
+    incolumns_ = lookup_column_indices(columns_attr_, streamattr[0]->numLabels, streamattr[0]->labels, &incolumns_contiguous_);
+    indims_    = incolumns_.size();
+#endif
     
     // set output stream attributes
     PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[numbuffers_];
@@ -252,6 +259,10 @@ public:
       bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
       PiPoValue* bufferptr = buffers[bufferindex].data;
 
+      if (incolumns_contiguous_)
+	// shift bufferptr to first requested input column 
+	bufferptr += incolumns_[0];
+
       // append to traindata
       for (int i = 0; i < numframes; i++, bufferptr += n_)
       {
@@ -261,9 +272,9 @@ public:
 	// convert one row and copy to umap-needed double data
 	std::vector<double> vec(indims_);
 
-	if (incolumns_.size() == 0)
+	if (incolumns_contiguous_)
 	  // use full input vector
-	  std::copy(bufferptr, bufferptr + n_, vec.begin());
+	  std::copy(bufferptr, bufferptr + indims_, vec.begin());
 	else
 	  // use selected columns
 	  for (int i = 0; i < indims_; i++)
