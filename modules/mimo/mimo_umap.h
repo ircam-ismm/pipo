@@ -287,7 +287,7 @@ public:
 
     try
     {
-      if (numframestotal_ > 0)
+      if (numframestotal_ > 0  &&  indims_ > 0)
       {
         if (k > numframestotal_ - 1)
           // Number of Neighbours is larger than dataset
