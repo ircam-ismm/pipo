@@ -3,7 +3,8 @@
  * @file mimo_UMAP.h
  * @author Diemo Schwarz
  *
- * @brief mimo UMAP using flucoma implementation based on Eigen and Spectra
+ * @brief mimo UMAP using an implementation based on Eigen and Spectra,
+ * provided by the FluCoMa project https://www.flucoma.org
  *
  * @copyright
  * Copyright (C) 2016 - 2022 by ISMM IRCAM - Centre Pompidou, Paris, France
