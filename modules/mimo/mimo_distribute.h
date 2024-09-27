@@ -1,8 +1,8 @@
-/**
+/** -*-mode:c++; c-basic-offset: 2; eval: (subword-mode) -*-
  * @file mimo_unispring.h
- * @author Ward Nijman
+ * @author Diemo Schwarz
  *
- * @brief mimo module of the unispring physical model
+ * @brief mimo module using the polyspring physical model by Victor Paredes for point distribution
  *
  * @copyright
  * Copyright (C) 2016 - 2017 by ISMM IRCAM - Centre Pompidou, Paris, France
@@ -38,17 +38,18 @@
 #ifndef mimo_distribute_h
 #define mimo_distribute_h
 
-#include "jsoncpp/include/json.h"
-#include "rta_unispring.h"
 #include "mimo.h"
+#include "polyspring.hpp"
+#include "jsoncpp/include/json.h"
 
-class unispring_model_data : public mimo_model_data
+class polyspring_model_data : public mimo_model_data
 {
 private:
     Json::Value root;
     Json::Reader reader;
+    
 public:
-    size_t json_size() override
+    size_t json_size () override
     {
         return 0;
     }
@@ -62,134 +63,127 @@ public:
     }
 };
 
-using namespace UniSpringSpace;
 
-class MiMoDistribute : public Mimo
+
+class MimoDistribute : public Mimo
 {
 private:
-    int _numbuffers, _numtracks, _bufsize, _m, _n;
-    const PiPoStreamAttributes* _attr;
-    std::vector<float> in_points, out_points, work;
-    UniSpring* uni;
-    Shape* shape;
-    float dptol;
-    mimo_buffer* outbuf = nullptr;
+  int numframestotal_ = 0;
+  int n_ = 0;
+  int indims_ = 0;
+  const int outdims_ = 2; //only handling 2d spaces for now
+  std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
+  bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
+  std::vector<std::vector<PiPoValue>> outdata_;
+  std::vector<mimo_buffer> outbufs_;
+  Polyspring<float> poly_;
+  polyspring_model_data model;
+  std::vector<PiPoValue> bounds_min_{0, 0};
+  std::vector<PiPoValue> bounds_range_{1, 1};
     
 public:
-    unispring_model_data model;
+  PiPoVarSizeAttr<PiPo::Atom>     columns_attr_;
+
+  MimoDistribute (Parent *parent, Mimo *receiver = nullptr)
+  : Mimo(parent, receiver),
+    columns_attr_	  (this, "columns", "Column Names or Indices to include", true)
+  { }
     
-    MiMoDistribute(Parent *parent, Mimo *receiver = nullptr)
-    :   Mimo(parent, receiver)
-    ,uni(new UniSpring())
-    ,shape(new Square(1))
-    {
-    }
+  ~MimoDistribute(void)
+  { }
     
-    ~MiMoDistribute(void)
+  int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
+  {
+    PiPoStreamAttributes attr =  *streamattr[0]; // copy input attrs
+    std::vector<PiPoStreamAttributes *> outattr{ &attr };
+    outattr[0]->dims[0] = outdims_; 
+    outattr[0]->dims[1] = 1;
+
+    //preallocate output buffers, todo: also polyspring working mem?
+    outdata_.resize(numbuffers); // space for output data
+    outbufs_.reserve(numbuffers);
+
+    for (int i = 0; i < numbuffers; i++)
     {
-        delete uni, delete shape;
-        if(outbuf) delete[] outbuf;
+      numframestotal_ += bufsizes[i];
+      outdata_[i].reserve(bufsizes[i] * outdims_);
     }
-    
-    int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
+    n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1];
+      
+    // look up list of input columns
+    // returns 0..numlabels - 1 if columns_attr_ was not set or invalid
+    incolumns_ = lookup_column_indices(columns_attr_, streamattr[0]->numLabels, streamattr[0]->labels, &incolumns_contiguous_);
+    indims_    = incolumns_.size();
+
+    if (indims_ < 2)
     {
-        /* 
-           MuBu data --> mimo.distribute:
-         - number of rows is equal to the number of accumulated frames in all tracks
-         - number of columns is equal to the multiplied dimensions of each frame
-         - each track in mubu has a maximum of 2 columns = 2d
-         - each xy-point in the model is a frame
-         - all matrices have one row so the input consists of row vectors
-        */
-        
-        //save state
-        _attr = *streamattr;
-        PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[1];
-        outattr[0] = new PiPoStreamAttributes(**streamattr);
-        outattr[0]->dims[0] = 2; //only handling 2d spaces for now
-        outattr[0]->dims[1] = 1;
-        
-        _numbuffers = numbuffers;
-        _numtracks = numtracks;
-        _m = 0;
-        for(int i = 0; i < numbuffers; ++i)
-            _m += bufsizes[i];
-        _n = streamattr[0]->dims[0] * streamattr[0]->dims[1];
-        
-        if(_n < 2)
-        {
-            //signalError("Input data should contain at least two dimensions);
-            return -1;
-        }
-        work.resize(RTA_UNISPRING_NDIM * _n);
-        
-        int* outbufsizes = new int[numbuffers];
-        for(int i = 0; i < numbuffers; ++i)
-            outbufsizes[i] = _m;
-        
-        int ret = propagateSetup(numbuffers, numtracks,outbufsizes, streamattr);
-        delete[] outbufsizes;
-        return ret;
-    }
-    
-    int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
-    {
-        const int tracksize = (_m / _numbuffers) * _n;
-        
-        for(int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
-        {
-            //copy input buffers, if already iterated use previous output
-            float* data;
-            if(!outbuf)
-                data = buffers[bufferindex].data;
-            else
-                data = outbuf[bufferindex].data;
-            
-            const int offset = (bufferindex * _numtracks * tracksize) + (trackindex * tracksize);
-            for(int i = 0; i < tracksize; ++i)
-                work[offset + i] = data[i];
-            
-            //all buffers copied --> do training iteration
-            if(bufferindex == _numbuffers - 1 && trackindex == _numtracks - 1)
-            {
-                if(_m > 0)
-                {
-                    //setup square for now
-                    float s = 1, llx = 20, lly = 20;
-                    shape = new Square(s, llx, lly);
-                    uni->set_points(_m, _n, work.data(), shape);
-                    
-                    int stop = 1; //TODO
-                    stop = uni->update();
-                    
-                    out_points.resize(RTA_UNISPRING_NDIM * _n);
-                    uni->get_points_scaled(out_points.data());
-                    if(outbuf) delete[] outbuf;
-                    outbuf = new mimo_buffer[_numbuffers];
-                    for(int i = 0; i < _numbuffers; ++i)
-                        outbuf[i] = mimo_buffer(_m, out_points.data(), NULL, false, NULL, 0);
-                    
-                    return propagateTrain(itercount, trackindex, numbuffers, outbuf);
-                }
-            }
-        }
-        return -1;
-    }
-    
-    int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-    {
-        return propagateStreamAttributes(hasTimeTags,rate,offset,width,height,labels,hasVarSize,domain,maxFrames);
-    }
-    int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
-    {
-        return propagateFrames(time,weight,values,size,num);
-    }
-    
-    mimo_model_data *getmodel()
-    {
-        return &model;
+      signalError("Input data should contain at least two dimensions");
+      return -1;
     }
 
+    int ret = propagateSetup(numbuffers, 1, bufsizes, (const PiPoStreamAttributes **) &(outattr[0]));
+    return ret;
+  }
+    
+  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer mimobuffers[])
+  {
+    if (itercount == 0)
+    { // first iteration: push input data
+      std::vector<int> bufsizes(numbuffers);
+      std::vector<float *> buffers(numbuffers);
+      for (int i = 0; i < numbuffers; i++)
+      {
+	bufsizes[i] = mimobuffers[i].numframes;
+	buffers[i] = mimobuffers[i].data;
+      }
+      
+      poly_.set_points(numframestotal_, numbuffers, &(bufsizes[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
+    }
+
+    // do one iteration
+    //todo: do several iterations until significant movement of points
+    poly_.iterate();
+
+    // copy back points, scale on the fly
+    std::vector<PiPoValue> &points = poly_.points_.get_points_interleaved();
+    PiPoValue *ptr = points.data();
+    poly_.points_.get_bounds (bounds_min_, bounds_range_);
+
+    outbufs_.resize(numbuffers);
+    outbufs_.assign(mimobuffers, mimobuffers + numbuffers);   // copy buffer attributes
+
+    for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
+    {
+      int numframes = mimobuffers[bufferindex].numframes;
+      outdata_[bufferindex].resize(numframes * outdims_);
+      PiPoValue *data = outdata_[bufferindex].data();
+      outbufs_[bufferindex].data = data;
+
+      // copy and scale
+      for (int i = 0; i < numframes; i++)
+      {
+	data[x(i)] = ptr[x(i)] * bounds_range_[0] + bounds_min_[0];
+	data[y(i)] = ptr[y(i)] * bounds_range_[1] + bounds_min_[1];
+      }
+
+      ptr += numframes;	// advance in points array
+    }
+    return propagateTrain(itercount, trackindex, numbuffers, &outbufs_[0]);
+  }
+    
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    return propagateStreamAttributes(hasTimeTags,rate,offset,width,height,labels,hasVarSize,domain,maxFrames);
+  }
+  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  {
+    return propagateFrames(time,weight,values,size,num);
+  }
+  
+  mimo_model_data *getmodel()
+  {
+    return &model;
+  }
 };
 
 #endif /* mimo_unispring_h */
