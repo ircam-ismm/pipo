@@ -78,6 +78,7 @@ private:
   std::vector<mimo_buffer> outbufs_;
   Polyspring<float> poly_;
   polyspring_model_data model;
+  bool keep_going_ = true; // model has converged?
   std::vector<PiPoValue> bounds_min_{0, 0};
   std::vector<PiPoValue> bounds_range_{1, 1};
     
@@ -91,7 +92,17 @@ public:
     
   ~MimoDistribute(void)
   { }
-    
+
+  int maxiter () override
+  {
+    return 100;
+  }
+  
+  bool converged (double *metric) override
+  {
+    return !keep_going_;
+  };
+
   int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
   {
     PiPoStreamAttributes attr =  *streamattr[0]; // copy input attrs
@@ -142,7 +153,7 @@ public:
 
     // do one iteration
     //todo: do several iterations until significant movement of points
-    poly_.iterate();
+    keep_going_ = poly_.iterate();
 
     // copy back points, scale on the fly
     std::vector<PiPoValue> &points = poly_.points_.get_points_interleaved();
