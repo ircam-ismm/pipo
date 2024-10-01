@@ -83,11 +83,15 @@ private:
   std::vector<PiPoValue> bounds_range_{1, 1};
     
 public:
-  PiPoVarSizeAttr<PiPo::Atom>     columns_attr_;
+  PiPoVarSizeAttr<PiPo::Atom>   columns_attr_;
+  PiPoScalarAttr<unsigned int>  maxiter_attr_;
+  PiPoScalarAttr<float>		pressure_attr_;
 
   MimoDistribute (Parent *parent, Mimo *receiver = nullptr)
   : Mimo(parent, receiver),
-    columns_attr_	  (this, "columns", "Column Names or Indices to include", true)
+    columns_attr_ (this, "columns",  "Column Names or Indices to include", true),
+    maxiter_attr_ (this, "maxiter",  "Maximum number of iterations", 100, false),
+    pressure_attr_(this, "pressure", "Internal pressure of the mass-spring model", 1.2, false)
   { }
     
   ~MimoDistribute(void)
@@ -95,7 +99,7 @@ public:
 
   int maxiter () override
   {
-    return 100;
+    return maxiter_attr_.get();
   }
   
   bool converged (double *metric) override
@@ -103,12 +107,16 @@ public:
     return !keep_going_;
   };
 
-  int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[])
+  int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) override
   {
     PiPoStreamAttributes attr =  *streamattr[0]; // copy input attrs
     std::vector<PiPoStreamAttributes *> outattr{ &attr };
-    outattr[0]->dims[0] = outdims_; 
+    const char *lab[2] = { "DistX", "DistY" };
+    outattr[0]->dims[0] = outdims_;
     outattr[0]->dims[1] = 1;
+    outattr[0]->labels = lab;
+    outattr[0]->numLabels = 2;
+    outattr[0]->labels_alloc = -1; // don't call delete
 
     //preallocate output buffers, todo: also polyspring working mem?
     outdata_.resize(numbuffers); // space for output data
@@ -136,7 +144,7 @@ public:
     return ret;
   }
     
-  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer mimobuffers[])
+  int train (int itercount, int trackindex, int numbuffers, const mimo_buffer mimobuffers[]) override
   {
     if (itercount == 0)
     { // first iteration: push input data
@@ -153,6 +161,7 @@ public:
 
     // do one iteration
     //todo: do several iterations until significant movement of points
+    poly_.int_pres_ = pressure_attr_.get();
     keep_going_ = poly_.iterate();
 
     // copy back points, scale on the fly
