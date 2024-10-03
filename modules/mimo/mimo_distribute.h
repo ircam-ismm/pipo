@@ -78,20 +78,23 @@ private:
   std::vector<mimo_buffer> outbufs_;
   Polyspring<float> poly_;
   polyspring_model_data model;
-  bool keep_going_ = true; // model has converged?
+  bool keep_going_ = true; // true as long as model has not converged
   std::vector<PiPoValue> bounds_min_{0, 0};
   std::vector<PiPoValue> bounds_range_{1, 1};
     
 public:
   PiPoVarSizeAttr<PiPo::Atom>   columns_attr_;
-  PiPoScalarAttr<unsigned int>  maxiter_attr_;
+  PiPoScalarAttr<int>		maxiter_attr_;
   PiPoScalarAttr<float>		pressure_attr_;
+  PiPoScalarAttr<float>		stiffness_attr_;
 
   MimoDistribute (Parent *parent, Mimo *receiver = nullptr)
   : Mimo(parent, receiver),
-    columns_attr_ (this, "columns",  "Column Names or Indices to include", true),
-    maxiter_attr_ (this, "maxiter",  "Maximum number of iterations", 100, false),
-    pressure_attr_(this, "pressure", "Internal pressure of the mass-spring model", 1.2, false)
+    poly_(), // init to get default values
+    columns_attr_  (this, "columns",   "Column Names or Indices to include", true),
+    maxiter_attr_  (this, "maxiter",   "Maximum number of iterations", false, 100),
+    pressure_attr_ (this, "pressure",  "Internal pressure of the mass-spring model", false, poly_.int_pres_),
+    stiffness_attr_(this, "stiffness", "Spring stiffness of the mass-spring model",  false, poly_.k_)
   { }
     
   ~MimoDistribute(void)
@@ -99,7 +102,7 @@ public:
 
   int maxiter () override
   {
-    return maxiter_attr_.get();
+    return std::max<int>(maxiter_attr_.get(), 0);
   }
   
   bool converged (double *metric) override
@@ -122,6 +125,7 @@ public:
     outdata_.resize(numbuffers); // space for output data
     outbufs_.reserve(numbuffers);
 
+    numframestotal_ = 0;
     for (int i = 0; i < numbuffers; i++)
     {
       numframestotal_ += bufsizes[i];
@@ -146,49 +150,64 @@ public:
     
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer mimobuffers[]) override
   {
-    if (itercount == 0)
-    { // first iteration: push input data
-      std::vector<int> bufsizes(numbuffers);
-      std::vector<float *> buffers(numbuffers);
-      for (int i = 0; i < numbuffers; i++)
-      {
-	bufsizes[i] = mimobuffers[i].numframes;
-	buffers[i] = mimobuffers[i].data;
-      }
+    try {
+      if (itercount == 0)
+      { // first iteration: push input data
+	std::vector<int> bufsizes(numbuffers);
+	std::vector<float *> buffers(numbuffers);
+	for (int i = 0; i < numbuffers; i++)
+	{
+	  bufsizes[i] = mimobuffers[i].numframes;
+	  buffers[i] = mimobuffers[i].data;
+	}
       
-      poly_.set_points(numframestotal_, numbuffers, &(bufsizes[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
-    }
-
-    // do one iteration
-    //todo: do several iterations until significant movement of points
-    poly_.int_pres_ = pressure_attr_.get();
-    keep_going_ = poly_.iterate();
-
-    // copy back points, scale on the fly
-    std::vector<PiPoValue> &points = poly_.points_.get_points_interleaved();
-    PiPoValue *ptr = points.data();
-    poly_.points_.get_bounds (bounds_min_, bounds_range_);
-
-    outbufs_.resize(numbuffers);
-    outbufs_.assign(mimobuffers, mimobuffers + numbuffers);   // copy buffer attributes
-
-    for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
-    {
-      int numframes = mimobuffers[bufferindex].numframes;
-      outdata_[bufferindex].resize(numframes * outdims_);
-      PiPoValue *data = outdata_[bufferindex].data();
-      outbufs_[bufferindex].data = data;
-
-      // copy and scale
-      for (int i = 0; i < numframes; i++)
-      {
-	data[x(i)] = ptr[x(i)] * bounds_range_[0] + bounds_min_[0];
-	data[y(i)] = ptr[y(i)] * bounds_range_[1] + bounds_min_[1];
+	poly_.set_points(numframestotal_, numbuffers, &(bufsizes[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
       }
 
-      ptr += numframes;	// advance in points array
+      // update params and do one iteration
+      //todo: do several iterations until significant movement of points
+      poly_.int_pres_ = pressure_attr_.get();
+      poly_.k_        = stiffness_attr_.get();
+      keep_going_     = poly_.iterate();
+
+      // copy back points, scale on the fly
+      std::vector<PiPoValue> &points = poly_.points_.get_points_interleaved();
+      PiPoValue *ptr = points.data();
+      poly_.points_.get_bounds (bounds_min_, bounds_range_);
+
+      outbufs_.resize(numbuffers);
+      outbufs_.assign(mimobuffers, mimobuffers + numbuffers);   // copy buffer attributes
+
+      // copy back from interleaved points array to mimo buffer blocks
+      for (int bufferindex = 0, offset = 0; bufferindex < numbuffers; bufferindex++)
+      {
+	int numframes = mimobuffers[bufferindex].numframes;
+	outdata_[bufferindex].resize(numframes * outdims_);
+	PiPoValue *data = outdata_[bufferindex].data();
+	outbufs_[bufferindex].data = data;
+
+	// copy and scale
+	for (int i = 0; i < numframes; i++)
+	{
+	  data[x(i)] = ptr[x(i + offset)] * bounds_range_[0] + bounds_min_[0];
+	  data[y(i)] = ptr[y(i + offset)] * bounds_range_[1] + bounds_min_[1];
+	  if (fabs(data[x(i)]) > 10000)
+	    printf("argh %d buffer %d offset %d ptr[%d] %f -> data[%d] %f\n", i, bufferindex, offset, x(i + offset), ptr[x(i + offset)], x(i), data[x(i)]);
+	}
+
+	offset += numframes; // advance in points array
+      }
+      return propagateTrain(itercount, trackindex, numbuffers, &outbufs_[0]);
     }
-    return propagateTrain(itercount, trackindex, numbuffers, &outbufs_[0]);
+    catch (const std::exception &e)
+    {
+      std::cout << "polyspring error: " << e.what() << std::endl;
+      signalError(std::string("polyspring error: ") + e.what());
+
+      // propagate empty matrix
+      std::vector<mimo_buffer> invalidbuf(numbuffers);
+      return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
+    }
   }
     
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
