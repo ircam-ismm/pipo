@@ -83,7 +83,7 @@ private:
   std::vector<PiPoValue> bounds_range_{1, 1};
     
 public:
-  PiPoVarSizeAttr<PiPo::Atom>   columns_attr_;
+  PiPoArrayAttr<PiPo::Atom, 2>  columns_attr_;
   PiPoScalarAttr<int>		maxiter_attr_;
   PiPoScalarAttr<float>		pressure_attr_;
   PiPoScalarAttr<float>		stiffness_attr_;
@@ -138,9 +138,9 @@ public:
     incolumns_ = lookup_column_indices(columns_attr_, streamattr[0]->numLabels, streamattr[0]->labels, &incolumns_contiguous_);
     indims_    = incolumns_.size();
 
-    if (indims_ < 2)
+    if (indims_ != 2)
     {
-      signalError("Input data should contain at least two dimensions");
+      signalError("polyspring needs exactly 2 input columns");
       return -1;
     }
 
@@ -191,8 +191,6 @@ public:
 	{
 	  data[x(i)] = ptr[x(i + offset)] * bounds_range_[0] + bounds_min_[0];
 	  data[y(i)] = ptr[y(i + offset)] * bounds_range_[1] + bounds_min_[1];
-	  if (fabs(data[x(i)]) > 10000)
-	    printf("argh %d buffer %d offset %d ptr[%d] %f -> data[%d] %f\n", i, bufferindex, offset, x(i + offset), ptr[x(i + offset)], x(i), data[x(i)]);
 	}
 
 	offset += numframes; // advance in points array
