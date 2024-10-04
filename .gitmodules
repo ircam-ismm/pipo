@@ -20,3 +20,6 @@
 	url = https://github.com/flucoma/flucoma-core.git
 	branch = production
 	
+[submodule "modules/polyspring"]
+	path = modules/polyspring
+	url = https://github.com/ircam-ismm/polyspring.git
