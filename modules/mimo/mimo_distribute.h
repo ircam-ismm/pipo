@@ -74,8 +74,10 @@ private:
   const int outdims_ = 2; //only handling 2d spaces for now
   std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
   bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
+  std::vector<int>                    inputbufsizes_;
   std::vector<std::vector<PiPoValue>> outdata_;
-  std::vector<mimo_buffer> outbufs_;
+  std::vector<mimo_buffer>            outbufs_;
+
   Polyspring<float> poly_;
   polyspring_model_data model;
   bool keep_going_ = true; // true as long as model has not converged
@@ -146,22 +148,23 @@ public:
 
     int ret = propagateSetup(numbuffers, 1, bufsizes, (const PiPoStreamAttributes **) outattrarr.data());
     return ret;
-  }
+  } // end setup ()
     
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer mimobuffers[]) override
   {
     try {
       if (itercount == 0)
       { // first iteration: push input data
-	std::vector<int>     bufsizes(numbuffers);
 	std::vector<float *> buffers(numbuffers);
+        inputbufsizes_.resize(numbuffers);
+
 	for (int i = 0; i < numbuffers; i++)
 	{
-	  bufsizes[i] = mimobuffers[i].numframes;
-	  buffers[i]  = mimobuffers[i].data;
+          inputbufsizes_[i] = mimobuffers[i].numframes;
+	  buffers[i]        = mimobuffers[i].data;
 	}
       
-	poly_.set_points(numframestotal_, numbuffers, &(bufsizes[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
+	poly_.set_points(numframestotal_, numbuffers, &(inputbufsizes_[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
       }
 
       // update params and do one iteration
@@ -182,7 +185,10 @@ public:
       for (int bufferindex = 0, offset = 0; bufferindex < numbuffers; bufferindex++)
       {
 	int numframes = mimobuffers[bufferindex].numframes;
-	outdata_[bufferindex].resize(numframes * outdims_);
+        if (numframes > inputbufsizes_[bufferindex])
+          numframes = inputbufsizes_[bufferindex]; // num. points could have changed
+
+        outdata_[bufferindex].resize(numframes * outdims_);
 	PiPoValue *data = outdata_[bufferindex].data();
 	outbufs_[bufferindex].data = data;
 
@@ -193,7 +199,7 @@ public:
 	  data[y(i)] = ptr[y(i + offset)] * bounds_range_[1] + bounds_min_[1];
 	}
 
-	offset += numframes; // advance in points array
+	offset += inputbufsizes_[bufferindex]; // advance in points array by original num. points
       }
       return propagateTrain(itercount, trackindex, numbuffers, &outbufs_[0]);
     }
@@ -206,7 +212,7 @@ public:
       std::vector<mimo_buffer> invalidbuf(numbuffers);
       return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
     }
-  }
+  } // end train ()
     
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
