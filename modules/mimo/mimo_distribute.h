@@ -112,14 +112,14 @@ public:
 
   int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) override
   {
-    PiPoStreamAttributes attr =  *streamattr[0]; // copy input attrs
-    std::vector<PiPoStreamAttributes *> outattr{ &attr };
+    PiPoStreamAttributes outattr =  *streamattr[0]; // copy input attrs
     const char *lab[2] = { "DistX", "DistY" };
-    outattr[0]->dims[0] = outdims_;
-    outattr[0]->dims[1] = 1;
-    outattr[0]->labels = lab;
-    outattr[0]->numLabels = 2;
-    outattr[0]->labels_alloc = -1; // don't call delete
+    outattr.dims[0] = outdims_;
+    outattr.dims[1] = 1;
+    outattr.labels = lab;
+    outattr.numLabels = 2;
+    outattr.labels_alloc = -1; // don't call delete
+    std::vector<PiPoStreamAttributes *> outattrarr{ &outattr };
 
     //preallocate output buffers, todo: also polyspring working mem?
     outdata_.resize(numbuffers); // space for output data
@@ -144,7 +144,7 @@ public:
       return -1;
     }
 
-    int ret = propagateSetup(numbuffers, 1, bufsizes, (const PiPoStreamAttributes **) &(outattr[0]));
+    int ret = propagateSetup(numbuffers, 1, bufsizes, (const PiPoStreamAttributes **) outattrarr.data());
     return ret;
   }
     
@@ -153,12 +153,12 @@ public:
     try {
       if (itercount == 0)
       { // first iteration: push input data
-	std::vector<int> bufsizes(numbuffers);
+	std::vector<int>     bufsizes(numbuffers);
 	std::vector<float *> buffers(numbuffers);
 	for (int i = 0; i < numbuffers; i++)
 	{
 	  bufsizes[i] = mimobuffers[i].numframes;
-	  buffers[i] = mimobuffers[i].data;
+	  buffers[i]  = mimobuffers[i].data;
 	}
       
 	poly_.set_points(numframestotal_, numbuffers, &(bufsizes[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
