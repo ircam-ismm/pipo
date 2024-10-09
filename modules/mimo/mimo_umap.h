@@ -132,13 +132,13 @@ private:
 
 class MimoUMAP: public Mimo
 {
-public:
+private:
   const PiPoStreamAttributes* attr_;
   enum Direction { Forward = 0, Backward = 1 };
   int numbuffers_, numtracks_, numframestotal_;
   std::vector<int> bufsizes_; // num frames for each buffer
   int fb_        = Forward;
-  int m_ = 0, n_ = 0;	// input data vector size (1, n_)
+  int n_ = 0;	// input data vector size (1, n_)
   std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
   bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
   int indims_    = 0;	// training data vector size (used columns)
@@ -181,8 +181,7 @@ public:
     numbuffers_ = numbuffers;
     numtracks_  = numtracks;
     bufsizes_.assign(tracksize, tracksize + numbuffers);
-    m_ = 1; // we treat matrix data as an unrolled vector
-    n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1]; // input dimensions
+    n_ = streamattr[0]->dims[0] * streamattr[0]->dims[1]; // input dimensions:  we treat matrix data as an unrolled vector
     indims_  = n_;
     outdims_ = std::max(out_dims_attr_.get(), 1); // output dimensions
     
@@ -224,7 +223,7 @@ public:
     // set output stream attributes
     PiPoStreamAttributes** outattr = new PiPoStreamAttributes*[numbuffers_];
 
-    for (int i = 0; i < numbuffers_; ++i)
+    for (int i = 0; i < numbuffers_; ++i) //////xxxxxxx nonsense!  outattrs are per track!!!!
     {
       outattr[i] = new PiPoStreamAttributes(**streamattr);
       outattr[i]->dims[0] = outdims_;
