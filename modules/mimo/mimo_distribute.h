@@ -167,10 +167,12 @@ public:
 	poly_.set_points(numframestotal_, numbuffers, &(inputbufsizes_[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
       }
 
-      // update params and do one iteration
-      //todo: do several iterations until significant movement of points
+      // update params
       poly_.int_pres_ = pressure_attr_.get();
       poly_.k_        = stiffness_attr_.get();
+
+      // do one iteration
+      //todo: do several iterations until significant movement of points
       keep_going_     = poly_.iterate();
 
       // copy back points, scale on the fly
@@ -179,7 +181,7 @@ public:
       poly_.points_.get_bounds (bounds_min_, bounds_range_);
 
       outbufs_.resize(numbuffers);
-      outbufs_.assign(mimobuffers, mimobuffers + numbuffers);   // copy buffer attributes
+      outbufs_.assign(mimobuffers, mimobuffers + numbuffers);   // copy buffer attributes (FUTURE: watch out, they could be merged buffers fed back to module to iterate!!!)
 
       // copy back from interleaved points array to mimo buffer blocks
       for (int bufferindex = 0, offset = 0; bufferindex < numbuffers; bufferindex++)
