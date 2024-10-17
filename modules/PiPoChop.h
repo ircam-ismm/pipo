@@ -417,8 +417,8 @@ public:
         tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
         
         /* report segment at precise last chop time */
-        ret = this->propagateFrames(seg.getSegmentStart(), weight, &outValues[0], outsize, 1);
-        
+        ret = this->propagateFrames(seg.getSegmentStart(), weight, outValues.data(), outsize, 1);
+
         if (ret != 0)
           return ret; // error downstream
       }
@@ -458,7 +458,7 @@ public:
       tempMod.getValues(&outValues[reportDuration], outsize - reportDuration, true);
       
       /* report segment */
-      return this->propagateFrames(inputEnd - duration, 0.0, &outValues[0], outsize, 1);
+      return this->propagateFrames(inputEnd - duration, 0.0, outValues.data(), outsize, 1);
     }
     
     return 0;

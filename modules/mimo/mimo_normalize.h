@@ -127,7 +127,7 @@ public:
         outbufs[bufferindex].data = traindata_[bufferindex].data();
       }
 
-      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
       // Note: even after training, traindata_ keeps a copy of the size of the input data.
     }
     
@@ -184,7 +184,7 @@ public:
 	for (unsigned int j = 0; j < size; j++)
 	  norm_[j] = (values[j] - normoffset_[j]) * normfact_[j];
 
-	ok &= propagateFrames(time, weight, &norm_[0], size, 1) == 0;
+	ok &= propagateFrames(time, weight, norm_.data(), size, 1) == 0;
 
 	values += size;
       }

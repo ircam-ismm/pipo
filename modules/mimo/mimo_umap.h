@@ -364,13 +364,13 @@ public:
       }
 #endif
 	
-      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
     }
     else
     {
       signalWarning("UMAP Error, propagating empty matrix");
       std::vector<mimo_buffer> invalidbuf(numbuffers);
-      return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, invalidbuf.data());
     }
   } // end train
     

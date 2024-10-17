@@ -95,7 +95,7 @@ public:
 	for (int j = 0; j < input_width_; j++)
 	  selected_labels[j] = labels[input_columns_[j]];
 
-	labels = &selected_labels[0];
+	labels = selected_labels.data();
       }
     }
     
@@ -109,7 +109,7 @@ public:
     output_times_.resize(0);
 
     int ret = propagateStreamAttributes(true, rate, 0.0, input_width_, height, //TODO: handle multi-row / empty properly
-					pass_input_  ?  labels  :  (const char **) &selected_labels[0],
+					pass_input_  ?  labels  :  (const char **) selected_labels.data(),
 					false, domain, 1);
       
     return ret;

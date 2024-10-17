@@ -143,7 +143,7 @@ public:
   
   int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
-    float *peaks_ptr = &buffer_[0];
+    float *peaks_ptr = buffer_.data();
     int n_found = 0;
     double mean = -ABS_MAX;
     unsigned int start, end; // start/end bin index

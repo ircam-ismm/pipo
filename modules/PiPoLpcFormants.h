@@ -146,7 +146,7 @@ private:
             delete[] a; delete[]x; delete[]wr; delete[]wi;
             
             //(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
-            return this->propagateFrames(time, weight, &outValues[0], nForm * cols, 1);
+            return this->propagateFrames(time, weight, outValues.data(), nForm * cols, 1);
         }
     };
     

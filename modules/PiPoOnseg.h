@@ -293,7 +293,7 @@ public:
       this->tempMod.getValues(&this->outputValues[this->haveduration], outsize - this->haveduration, true);
     
     /* report segment */
-    return this->propagateFrames(time, weight, &this->outputValues[0], outsize, 1);
+    return this->propagateFrames(time, weight, this->outputValues.data(), outsize, 1);
   }
   
   int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) override

@@ -475,7 +475,7 @@ public:
       if (outlabels_given)
       { // output labels are given
 	outlabelarr.resize(outwidth, ""); // resize to actually used columns, just in case outwidth is greater than label size
-	labels = &outlabelarr[0];	
+	labels = outlabelarr.data();
       }
       else if (outwidth != width)
       { // no new output labels given but width changed: invalidate labels (don't pass labels but anonymous columns)
@@ -505,7 +505,7 @@ public:
     int    outnum  = num;
 
     try {
-      PiPoValue *outptr = &buffer_[0];
+      PiPoValue *outptr = buffer_.data();
       jerry_port_set_current_context(jscontext_);
       
       for (unsigned int i = 0; i < num; i++)
@@ -629,7 +629,7 @@ public:
     if (outnum == 0)
       return 0; // HACK: workaround error returned by pipoproc
     else
-      return propagateFrames(outtime, weight, &buffer_[0], outframesize_, outnum);
+      return propagateFrames(outtime, weight, buffer_.data(), outframesize_, outnum);
   } // frames
 };
 

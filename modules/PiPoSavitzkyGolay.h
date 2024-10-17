@@ -227,7 +227,7 @@ public:
         }
       
         // timeoffset = config_.t * input_frame_period_
-        ret = this->propagateFrames(time, weight, &sg_out_[0], sg_out_.size(), 1);
+        ret = this->propagateFrames(time, weight, sg_out_.data(), sg_out_.size(), 1);
       }
 
       if (ret != 0)

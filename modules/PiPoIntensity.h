@@ -145,7 +145,7 @@ public:
     double offsetValue = this->offsetvalue.get();
     double gainVal = this->gain.get();
     double norm = 0;
-    float *outVector = &(this->output[0]);
+    float *outVector = this->output.data();
 
     if(size > 0)
     {

@@ -128,7 +128,7 @@ inline int PiPoConst::streamAttributes (bool hasTimeTags, double rate, double of
     outputlabels[width + l] = strdup(default_name);
   
   int ret = propagateStreamAttributes(hasTimeTags, rate, offset, numoutcols_, height,
-				      const_cast<const char **>(&outputlabels[0]),
+				      const_cast<const char **>(outputlabels.data()),
 				      hasVarSize, domain, maxframes);
 
   for (unsigned int l = 0; l < numoutcols_; ++l)
@@ -186,7 +186,7 @@ inline int PiPoConst::frames (double time, double weight, PiPoValue *invalues, u
     }
   }
 
-  status = propagateFrames(time, weight, &outvalues_[0], inputrows * numoutcols_, num);
+  status = propagateFrames(time, weight, outvalues_.data(), inputrows * numoutcols_, num);
   return status;
 }
 

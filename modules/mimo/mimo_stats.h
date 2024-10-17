@@ -335,7 +335,7 @@ public:
 	distance_ = 1.0 - factor;
       }
 
-      return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
     }
   }
 

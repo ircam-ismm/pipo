@@ -118,7 +118,7 @@ public:
 
     return propagateStreamAttributes(hasTimeTags, rate, offset,
                                      out_width_, out_height_,
-                                     (labels != NULL ? &out_colnames[0] : NULL), hasVarSize,
+                                     (labels != NULL ? out_colnames.data() : NULL), hasVarSize,
                                      domain, maxFrames);
   } // end streamAttributes
 
@@ -142,7 +142,7 @@ public:
       values += size;
     }
 
-    return propagateFrames(time, weight, &out_values_[0], out_frame_size_, num);
+    return propagateFrames(time, weight, out_values_.data(), out_frame_size_, num);
   }
 };
 

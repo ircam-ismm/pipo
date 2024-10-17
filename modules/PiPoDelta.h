@@ -190,7 +190,7 @@ public:
       {
         float *wptr = &weights[buffer.size - buffer.index];
 
-        rta_delta_vector(&frame[0], &buffer.vector[0], buffer.width, wptr, buffer.size);
+        rta_delta_vector(frame.data(), &buffer.vector[0], buffer.width, wptr, buffer.size);
       
         if (normalize.get())
         {
@@ -210,7 +210,7 @@ public:
             frame[i] = frame[i] * this->framerate;
         }
 
-        ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);
+        ret = this->propagateFrames(time, weight, frame.data(), (unsigned int) frame.size(), 1);
       }
 
       if (ret != 0)

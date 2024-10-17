@@ -97,7 +97,7 @@ public:
 	for (int j = 0; j < input_width_; j++)
 	  selected_labels[j] = labels[input_columns_[j]];
 
-	labels = &selected_labels[0];
+	labels = selected_labels.data();
       }
     }
     
@@ -194,7 +194,7 @@ public:
 	tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
 
       // report segment data, don't pass on segment() call: report segment start time
-      ret = propagateFrames(onset_time_, 0.0, &output_values_[0], outputsize, 1);
+      ret = propagateFrames(onset_time_, 0.0, output_values_.data(), outputsize, 1);
     }
 
     // remember segment status

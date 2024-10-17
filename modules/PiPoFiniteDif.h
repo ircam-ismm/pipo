@@ -420,7 +420,7 @@ public:
       {
         float *wptr = &weights[buffer.size - buffer.index];
 
-        finitedifferences_vector(&frame[0], &buffer.vector[0], buffer.width, wptr, buffer.size);
+        finitedifferences_vector(frame.data(), &buffer.vector[0], buffer.width, wptr, buffer.size);
 
         /*if (normalize.get())
          {
@@ -434,7 +434,7 @@ public:
             frame[i] = fabs(frame[i]);
         }
 
-        ret = this->propagateFrames(time, weight, &frame[0], (unsigned int) frame.size(), 1);
+        ret = this->propagateFrames(time, weight, frame.data(), (unsigned int) frame.size(), 1);
       }
 
       if (ret != 0)

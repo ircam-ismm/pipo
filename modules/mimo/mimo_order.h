@@ -249,7 +249,7 @@ public:
       }
     } // end for elemind
     
-    return propagateTrain(itercount, trackindex, numbuffers, &outbufs[0]);
+    return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
 } // end train
     
   mimo_model_data *getmodel ()
