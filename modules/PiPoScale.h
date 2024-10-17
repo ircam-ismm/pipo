@@ -597,7 +597,7 @@ public:
         outlabels[i] = outcolnames_attr_.getStr(i);
       }
 
-      labels = &(outlabels[0]);
+      labels = outlabels.data();
     }
 
     extendVector(this->inMin, this->extInMin, frameSize, 0.0, completeMode);
@@ -643,7 +643,7 @@ public:
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int numframes)
   {
-    float *bufferptr = &this->buffer[0];
+    float *bufferptr = this->buffer.data();
     bool clip = this->clip.get();
     unsigned int numrows = this->width > 0  ?  size / this->width  :  0;
     
@@ -655,7 +655,7 @@ public:
     // apply scale func
     scaler_->scale(clip, values, bufferptr, numframes, numrows);
     
-    return this->propagateFrames(time, weight, &this->buffer[0], size, numframes);
+    return this->propagateFrames(time, weight, this->buffer.data(), size, numframes);
   } // frames
 };
 

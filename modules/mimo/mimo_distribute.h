@@ -94,7 +94,7 @@ public:
   : Mimo(parent, receiver),
     poly_(), // init to get default values
     columns_attr_  (this, "columns",   "Column Names or Indices to include", true),
-    maxiter_attr_  (this, "maxiter",   "Maximum number of iterations", false, 100),
+    maxiter_attr_  (this, "maxiter",   "Maximum number of iterations", false, 500),
     pressure_attr_ (this, "pressure",  "Internal pressure of the mass-spring model", false, poly_.int_pres_),
     stiffness_attr_(this, "stiffness", "Spring stiffness of the mass-spring model",  false, poly_.k_)
   { }
@@ -164,7 +164,7 @@ public:
 	  buffers[i]        = mimobuffers[i].data;
 	}
       
-	poly_.set_points(numframestotal_, numbuffers, &(inputbufsizes_[0]), &(buffers[0]), n_, incolumns_[0], incolumns_[1]);
+	poly_.set_points(numframestotal_, numbuffers, inputbufsizes_.data(), buffers.data(), n_, incolumns_[0], incolumns_[1]);
       }
 
       // update params
@@ -203,7 +203,7 @@ public:
 
 	offset += inputbufsizes_[bufferindex]; // advance in points array by original num. points
       }
-      return propagateTrain(itercount, trackindex, numbuffers, &outbufs_[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, outbufs_.data());
     }
     catch (const std::exception &e)
     {
@@ -212,7 +212,7 @@ public:
 
       // propagate empty matrix
       std::vector<mimo_buffer> invalidbuf(numbuffers);
-      return propagateTrain(itercount, trackindex, numbuffers, &invalidbuf[0]);
+      return propagateTrain(itercount, trackindex, numbuffers, invalidbuf.data());
     }
   } // end train ()
     

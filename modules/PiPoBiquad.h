@@ -317,7 +317,7 @@ public:
     for (unsigned int i = 0; i < num; i++)
     {
       filterFrame(values);
-      int ret = this->propagateFrames(time, weight, &this->outValues[0], this->frameWidth * this->frameHeight, 1);
+      int ret = this->propagateFrames(time, weight, this->outValues.data(), this->frameWidth * this->frameHeight, 1);
 
       if (ret != 0)
         return ret;

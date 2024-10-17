@@ -451,7 +451,7 @@ void PiPoIdesc::endcallback (double frame_time_sec, void* obj)
   PiPoIdesc *self = (PiPoIdesc *) obj;
 
   // propagate gathered frame data
-  self->status_ = self->propagateFrames(frame_time_sec * 1000., 1., &self->outbuf_[0], self->numcols_, 1);
+  self->status_ = self->propagateFrames(frame_time_sec * 1000., 1., self->outbuf_.data(), self->numcols_, 1);
 }
 
 int PiPoIdesc::frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)

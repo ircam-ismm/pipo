@@ -199,7 +199,7 @@ public:
         values += size;
       }
       
-      int ret = this->propagateFrames(time, weight, &outVector[0], size, num);
+      int ret = this->propagateFrames(time, weight, outVector, size, num);
       if(ret != 0)
         return ret;
     }
@@ -294,7 +294,7 @@ public:
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     PiPoInnerIntensity::NormModeE normMode = (PiPoInnerIntensity::NormModeE)intensity.normmode.get();
-    float *outVector = &(this->output[0]);
+    float *outVector = this->output.data();
 
     if(size > 0)
     {
@@ -323,7 +323,7 @@ public:
         values += size;
       }
       
-      int ret = mvavrg.frames(time, weight, &outVector[0], size+1, num);
+      int ret = mvavrg.frames(time, weight, outVector, size+1, num);
       if(ret != 0)
         return ret;
     }

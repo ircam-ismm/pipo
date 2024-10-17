@@ -320,7 +320,7 @@ public:
         outVector[5] = tilt;
       }
       
-      int ret = this->propagateFrames(lastTime, weight, &this->outVector[0], 6, 1);
+      int ret = this->propagateFrames(lastTime, weight, this->outVector, 6, 1);
       if(ret != 0)
         return ret;
       

@@ -184,7 +184,7 @@ public:
           outlabelstr[ii] = outlabels[ii].c_str();
         }
 
-      labels = &(outlabelstr[0]);
+      labels = outlabelstr.data();
     }
     
     int ret = propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, 1, labels, hasVarSize, domain, 1);

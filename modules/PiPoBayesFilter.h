@@ -134,7 +134,7 @@ public:
   int frames(double time, double weight, PiPoValue *values, unsigned int size,
              unsigned int num)
   {
-    PiPoValue *output = &(this->output[0]);
+    PiPoValue *output = this->output.data();
 
     for (unsigned int i = 0; i < num; i++)
     {
