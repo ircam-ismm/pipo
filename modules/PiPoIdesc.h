@@ -441,7 +441,8 @@ void PiPoIdesc::datacallback (int descrid, int varnum, int numval,
 #endif
   
   int offset = self->doffset_[descrid];
-  for (int i = 0; i < self->dwidth_[descrid]; i++)
+  long outsize = self->outbuf_.size();
+  for (int i = 0; (i < self->dwidth_[descrid]) && (offset+i < outsize); i++)
     self->outbuf_[offset + i] = values[i];
 }
 
