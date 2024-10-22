@@ -61,20 +61,15 @@ private:
   static void datacallback (int descrid, int varnum, int numval, IDESC_REAL_TYPE *values, void* obj);
   static void endcallback (double frame_time_sec, void* obj);
 
-  idescx		       *idesc_;
+  idescx		       *idesc_ = NULL;
   std::vector<PiPoValue>        outbuf_;
-  bool				initialised_;
-  int				status_;
+  bool				initialised_ = false;
+  int				status_ = -1;
   std::map<int, int>		doffset_; // maps idesc-internal descr. id to start index in output columns
   std::map<int, int>		dwidth_;  // maps idesc-internal descr. id to number of output columns
-  int				numcols_; // total number of output columns
+  int				ndescr_requested_ = -1; // length of descriptors attr.
+  int				numcols_ = 0; // total number of output columns
   const char                  **colnames_;
-
-#if DEBUG
-  int db_loudness_did;
-  bool db_loudness_requested;
-  bool db_loudness_warned;
-#endif
 
   void clearcolnames();
 };
@@ -122,7 +117,7 @@ private:
   double sr;
   double winsize;
   double hopsize;
-};
+}; // end class idescx
 
 
 
@@ -151,12 +146,6 @@ PiPoIdesc::PiPoIdesc(PiPo::Parent *parent, PiPo *receiver)
   for (int i = 0; i < num_descr_available; i++)
     descriptors.addEnumItem(idesc::idesc::get_descriptor_name(i));
 
-#if DEBUG
-  db_loudness_did = descriptors.getEnumIndex("Loudness");
-  db_loudness_requested = false;
-  db_loudness_warned = false;
-#endif
-  
   // set up window type and unit enums
   window.addEnumItem("blackman");
   window.addEnumItem("hamming");
@@ -174,7 +163,7 @@ PiPoIdesc::PiPoIdesc(PiPo::Parent *parent, PiPo *receiver)
 # include "ircamdescriptor~params.h"
 
   initialised_ = true;
-}
+} // end ctor PiPoIdesc::PiPoIdesc ()
 
 PiPoIdesc::~PiPoIdesc(void)
 {
@@ -219,9 +208,8 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   double winlen = WindowSize.getDbl() / factor;	// window and hop size in sec
   double hoplen = HopSize.getDbl()    / factor;	// hop size in sec
   int    ndescr = descriptors.getSize(); // length of @descriptors attr list
-  numcols_ = 0; // number of output columns (>= ndescr)
 
-#if IDESC_DEBUG >= 1
+#if IDESC_DEBUG >= 3
   printf("PiPoIdesc streamAttributes timetags %d  rate %.0f  offset %f  width %d  size %d  labels %s  "
        "varsize %d  domain %f  maxframes %d --> win %d = %f s  hop %d = %f s  numdescr %d\n",
        hasTimeTags, rate, offset, (int) width, (int) size, labels ? labels[0] : "n/a", (int) hasVarSize, (float) domain, (int) maxFrames,
@@ -233,14 +221,22 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
     try {
       // init idesc
       if (idesc_ != NULL  &&  (idesc_->get_sr() != rate  ||  idesc_->get_WindowSize() != winlen  ||  idesc_->get_HopSize() != hoplen
-                               || (ndescr == 1  &&  descriptors.getInt(0) == 0))) // workaround for probable bug in idesc lib: switching back to single TotalEnergy descr. does not work (previous descr. output stays)
+                               || ndescr != ndescr_requested_)) // workaround for probable bug in idesc lib: changing number of descr. does not work (previous descr. output stays), see #240, #439
       {
 	delete idesc_;	// reinit only first time or if params changed
 	idesc_ = NULL;
       }
       
       if (idesc_ == NULL)
-	idesc_ = new idescx(rate, winlen, hoplen, this); 
+      {
+#if IDESC_DEBUG >= 2
+	printf("PiPoIdesc reinit numdescr %d\n", ndescr);
+#endif
+	idesc_ = new idescx(rate, winlen, hoplen, this);
+      }
+
+      ndescr_requested_ = ndescr;
+      numcols_ = 0; // number of output columns (>= ndescr)
 
       // set up idesc params from pipo attrs
 #     define IDESC_PARAM(TYPE, NAME, DEFAULT, BLURB) \
@@ -270,10 +266,6 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       int ndescr_unique = 0;
       int ndescr_dropped = 0;
       std::map<int, int> descr_seen;
-#if DEBUG
-      db_loudness_requested = false;
-      db_loudness_warned = false;
-#endif
       
       for (int i = 0; i < ndescr; i++)
       {
@@ -287,11 +279,6 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 	    descr_seen[did] = ndescr_unique;
 	    colnames_[ndescr_unique++] = strdup(dname);
 	    idesc_->set_descriptor(did, idesc::idesc::get_default_variation(did));
-
-#if DEBUG
-	    if (did == db_loudness_did)
-	      db_loudness_requested = true;
-#endif
 	  }
 	  else
 	  { // was already in list: ignore for idesc, remove from attr list (will be ndescr_dropped shorter)
@@ -305,8 +292,9 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
           throw std::invalid_argument(std::string("unknown descriptor name at index ") + std::to_string(i)); //C++11
         }
 
-#if IDESC_DEBUG >= 1
-        post("colnames descr %2d/%2d: %s\n", i, ndescr, colnames_[i]);
+#if IDESC_DEBUG >= 2
+        printf("colnames descr %2d/%2d: %s (%d)\n", i, ndescr, colnames_[i], did);
+        //post("colnames descr %2d/%2d: %s\n", i, ndescr, colnames_[i]);
 #endif
       }
       ndescr = ndescr_unique;
@@ -317,11 +305,14 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
       // query output sizes
       for (int i = 0; i < ndescr; i++)
       {
-        int did = descriptors.getInt(i);
+        int did   = descriptors.getInt(i);
 	int dcols = idesc_->get_dimensions(did);
 	dwidth_[did]  = dcols;    // number of output columns of user-specified descr. i
 	doffset_[did] = numcols_; // start index output columns of user-specified descr. i
 	numcols_ += dcols;
+#if IDESC_DEBUG >= 2
+        printf("%2d: did %2d  doffset %2d  dwidth %2d  numcols %2d\n", i, did, dwidth_[did], doffset_[did], numcols_);
+#endif
       }
       outbuf_.resize(numcols_);
 
@@ -375,11 +366,12 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
   }
   else
     return -1; // TBD: signalWarning?
-}
+} // end streamAttributes ()
+
 
 int PiPoIdesc::finalize (double inputEnd)
 {
-#if IDESC_DEBUG >= 1
+#if IDESC_DEBUG >= 2
   post("PiPoIdesc finalize %f\n", inputEnd);
 #endif
   return this->propagateFinalize(inputEnd);
@@ -388,7 +380,7 @@ int PiPoIdesc::finalize (double inputEnd)
 
 int PiPoIdesc::reset (void)
 {
-#if IDESC_DEBUG >= 1
+#if IDESC_DEBUG >= 2
   post("PiPoIdesc reset\n");
 #endif
 
@@ -426,24 +418,19 @@ void PiPoIdesc::datacallback (int descrid, int varnum, int numval,
 {
   PiPoIdesc *self = (PiPoIdesc *) obj;
 
+  int offset = self->doffset_[descrid];
+  int num    = self->dwidth_[descrid];
+
 #if DEBUG
-  // gather data for each descriptor
-  if (self->db_loudness_requested == false  &&  descrid == self->db_loudness_did)
+  if (offset + num > self->outbuf_.size())
   {
-    if (self->db_loudness_warned)
-    {
-      printf("GOTCHA!!!!!!!!!!!!!!! pipo.ircamdescriptor %p  gets %d Loudness (%d) values %f although it never wanted it!!!!!!!!!!!!!!!!\n", self, numval, descrid, values[0]);
-      post("Hmmm, pipo.ircamdescriptor gets %d Loudness (%d) values %f although it never wanted it.\n", numval, descrid, values[0]);
-      self->db_loudness_warned = true;
-    }
-    return;
+    printf("idesc datacallback overflow: descrid %d varnum %d numval %d doffset %d dwidth %d outsize %d\n", descrid, varnum, numval, offset, num, self->outbuf_.size());
+    num = std::max<int>(0, self->outbuf_.size() - offset);
   }
 #endif
-  
-  int offset = self->doffset_[descrid];
-  for (int i = 0; i < self->dwidth_[descrid]; i++)
+  for (int i = 0; i < num; i++)
     self->outbuf_[offset + i] = values[i];
-}
+} // end datacallback ()
 
 // called by idesc lib after all descriptor were computed and transmitted in datacallback: write propagate pipo output frame
 void PiPoIdesc::endcallback (double frame_time_sec, void* obj)
@@ -489,7 +476,7 @@ int PiPoIdesc::frames (double time, double weight, PiPoValue *values, unsigned i
   }
   else
     return -1;
-}
+} // end frames ()
 
 /** EMACS **
  * Local variables:
