@@ -298,8 +298,8 @@ public:
 
     try
     {
-      if (numframestotal_ > 0  &&  indims_ > 0)
-      {
+      if (numframestotal_ > 1  &&  indims_ > 0)
+      { // 0 < k < numframestotal_, therefore numframestotal_ must be > 1
         if (k > numframestotal_ - 1)
           // Number of Neighbours is larger than dataset
           k = numframestotal_ - 1;
@@ -308,7 +308,7 @@ public:
         ok = true; // todo: replace by query if embedding has data
       }
       else
-        signalWarning("umap input data is empty");
+        signalWarning("umap needs at least 2 frames of input data");
     }
     catch (const std::exception &e)
     {
