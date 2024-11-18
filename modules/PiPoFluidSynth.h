@@ -1,10 +1,15 @@
 /** -*-mode:c; c-basic-offset: 2; -*-
  */
 
+#ifndef _PIPO_FLUID_
+#define _PIPO_FLUID_
+
+#include "PiPo.h"
+
 #include <vector>
 #include <queue>
 
-class PiPoFluid : public PiPo
+class PiPoFluidSynth : public PiPo
 {
   struct MidiMessage
   { // only Note msg so far
@@ -13,26 +18,31 @@ class PiPoFluid : public PiPo
     char   velocity = 0;
     char   channel  = 1;
 
-    MidiMessage() = delete;
+    MidiMessage() = default;
     MidiMessage (double time, char pitch, char velocity, char channel)
-    : time = time, pitch = pitch, velocity = velocity, channel = channel
+    : time(time), pitch(pitch), velocity(velocity), channel(channel)
     { }
+  };
 
-    bool comp (const MidiMessage a, const MidiMessage b) const { return a.time > b.time; }	// invert: priority_queue keeps *maximum* at front
+  struct MidiComp
+  {
+  public:
+    bool operator() (const MidiMessage &a, const MidiMessage &b) const { return a.time > b.time; }	// invert: priority_queue keeps *maximum* at front
   };
 
   class Scheduler
   {
-    std::priority_queue<MidiMessage, std::vector<MidiMessage>, MidiMessage> queue;
+    std::priority_queue<MidiMessage, std::vector<MidiMessage>, MidiComp> queue;
     double maxtime = -DBL_MAX; // keep highest schedule time
 
+  public:
     void reset ()
     {
       maxtime = -DBL_MAX;
-      queue.clear();
+      queue = {}; // no clear()?
     }
 
-    void push (MidiMessage &msg)
+    void push (const MidiMessage &msg)
     {
       if (msg.time > maxtime)
 	maxtime = msg.time;
@@ -74,13 +84,13 @@ public:
   PiPoScalarAttr<double>	sr_attr_;
   PiPoScalarAttr<const char *>  sfname_attr_;
 
-  PiPoFluid (Parent *parent, PiPo *receiver = NULL)
+  PiPoFluidSynth (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     sfname_attr_(this, "soundfont", "Name of sound font file", false, "GM.sf2"),
     sr_attr_(this, "samplerate", "Output sampling rate", true, sr_)
   { }
 
-  ~PiPoFluid (void)
+  ~PiPoFluidSynth (void)
   { }
 
   // Configure PiPo module according to the input stream attributes and propagate output stream attributes.
@@ -91,7 +101,7 @@ public:
   {
     width_             = width; 
     inputperiod_       = 1000. / rate; 
-    sr_      	       = sr_attr_.getDouble();
+    sr_      	       = sr_attr_.getDbl();
     outtime_ 	       = 0;  
     outframe_duration_ = outframe_size_ / sr_;
     
@@ -105,6 +115,7 @@ public:
     else
     {
       signalError("Need at least 2 input columns");
+      return -1;
     }
   }
 
@@ -116,12 +127,12 @@ public:
     // insert on/off into queue
     for (unsigned int i = 0; i < num; i++)
     {
-      int pitch    = values[0];
-      int duration = values[1];
-      int velocity = width_ > 2  ?  values[2]  :  64;
-      int channel  = width_ > 3  ?  values[3]  :  1;
+      char pitch    = values[0];
+      char duration = values[1];
+      char velocity = width_ > 2  ?  values[2]  :  64;
+      char channel  = width_ > 3  ?  values[3]  :  1;
 
-      schedule.push(MidiMessage(time,	         pitch, velocity, channel));
+      schedule.push(MidiMessage{time,	         pitch, velocity, channel});
       schedule.push(MidiMessage(time + duration, pitch, 0,	  channel));
       lasttime = time;
       
@@ -169,6 +180,8 @@ public:
   int finalize (double endtime)
   { // flush all pending events producing more audio frames
     double lasttime = schedule.max_time();
-    return play_until(max(endtime, lasttime + outframe_duration_)); // round up to last block (todo: will still cut release phase)
+    return play_until(std::max(endtime, lasttime + outframe_duration_)); // round up to last block (todo: will still cut release phase)
   }
 };
+
+#endif
