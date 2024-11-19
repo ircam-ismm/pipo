@@ -99,7 +99,7 @@ public:
 
       this->outputFrame[0] = sqrt(meanOfSquare);
 
-      int ret = this->propagateFrames(time, weight, this->outputFrame, 2, 1);
+      int ret = this->propagateFrames(time, weight, this->outputFrame, 1, 1);
       
       if(ret != 0)
         return ret;
