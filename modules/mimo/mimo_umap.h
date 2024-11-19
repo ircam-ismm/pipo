@@ -421,36 +421,38 @@ public:
     else
       switch (fb_)
       {
-	/*
-	  case Forward:
-	  {
-	  if ((long) size < n_)
-	  {
-	  signalWarning("Vector too short, input should be a vector with length n");
-	  return propagateFrames(time, weight, nullptr, 0, 0);
-	  }
-                
-	  return propagateFrames(time, weight, features.data(), rank_, num);
-	  }
-
-	  case Backward:
-	  {
-	  if ((long) size < rank_)
-	  {
-	  signalWarning("Vector too short, input should be a vector with length rank");
-	  return propagateFrames(time, weight, nullptr, 0, 0);
-	  }
-                	
-	  return propagateFrames(time, weight, resynthesized.data(), n_, num);
-	  }
-                
-	  default:
-	  {
-	  signalWarning("Error... invalid decoding mode selected");
-	  return propagateFrames(time, weight, nullptr, 0, 0);
-	  }
-	*/
+          /*
+           case Forward:
+           {
+           if ((long) size < n_)
+           {
+           signalWarning("Vector too short, input should be a vector with length n");
+           return propagateFrames(time, weight, nullptr, 0, 0);
+           }
+           
+           return propagateFrames(time, weight, features.data(), rank_, num);
+           }
+           
+           case Backward:
+           {
+           if ((long) size < rank_)
+           {
+           signalWarning("Vector too short, input should be a vector with length rank");
+           return propagateFrames(time, weight, nullptr, 0, 0);
+           }
+           
+           return propagateFrames(time, weight, resynthesized.data(), n_, num);
+           }
+           
+           default:
+           {
+           signalWarning("Error... invalid decoding mode selected");
+           return propagateFrames(time, weight, nullptr, 0, 0);
+           }
+           */
       }
+    signalWarning("Error... wrong mimo.umap configuration");
+    return -1;
   } // end frames
 };
 
