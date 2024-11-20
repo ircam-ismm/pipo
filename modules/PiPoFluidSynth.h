@@ -4,22 +4,25 @@
 #ifndef _PIPO_FLUID_
 #define _PIPO_FLUID_
 
-#include "PiPo.h"
-
 #include <vector>
 #include <queue>
+
+#include "PiPo.h"
+#include "fluid_synth.h"
+#include "fluid_sfont.h"
+#include "fluid_chan.h"
 
 class PiPoFluidSynth : public PiPo
 {
   struct MidiMessage
   { // only Note msg so far
     double time	    = 0; // in milliseconds
-    char   pitch    = 0;
-    char   velocity = 0;
-    char   channel  = 1;
+    int   pitch    = 0;
+    int   velocity = 0;
+    int   channel  = 1;
 
     MidiMessage() = default;
-    MidiMessage (double time, char pitch, char velocity, char channel)
+    MidiMessage (double time, int pitch, int velocity, int channel)
     : time(time), pitch(pitch), velocity(velocity), channel(channel)
     { }
   };
@@ -72,13 +75,15 @@ class PiPoFluidSynth : public PiPo
 
 private:
   double		 sr_ = 44100;
-  const int		 outframe_size_ = 256;
+  const int		 outframe_size_ = 64;
   double		 outframe_duration_ = 1000. * outframe_size_ / sr_; // [ms]
   double		 outtime_ = 0;
   std::vector<PiPoValue> outbuffer_;
   unsigned int           width_;    // cache input frame width
   double	         inputperiod_;    // cache input frame period [ms] (in case not timetagged)
-  Scheduler		 schedule;
+  Scheduler		 schedule_;
+  fluid_synth_t		*synth_ = NULL;
+  fluid_settings_t	*settings_ = NULL;
 
 public:
   PiPoScalarAttr<double>	sr_attr_;
@@ -86,7 +91,7 @@ public:
 
   PiPoFluidSynth (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    sfname_attr_(this, "soundfont", "Name of sound font file", false, "GM.sf2"),
+    sfname_attr_(this, "soundfont", "Name of sound font file", true, "GM.sf2"),
     sr_attr_(this, "samplerate", "Output sampling rate", true, sr_)
   { }
 
@@ -103,10 +108,28 @@ public:
     inputperiod_       = 1000. / rate; 
     sr_      	       = sr_attr_.getDbl();
     outtime_ 	       = 0;  
-    outframe_duration_ = outframe_size_ / sr_;
+    outframe_duration_ = 1000. * outframe_size_ / sr_;
     
     // create audio output buffer (left + right)
     outbuffer_.resize(outframe_size_ * 2);
+
+    // init fluidsynth
+    settings_ = new_fluid_settings();
+
+    if (settings_ != NULL)
+    {
+      int polyphony = 256;
+      int midi_channels = 16;
+      fluid_settings_setint(settings_, "synth.midi-channels", midi_channels);
+      fluid_settings_setint(settings_, "synth.polyphony", polyphony);
+      fluid_settings_setnum(settings_, "synth.gain", 0.600000);
+      fluid_settings_setnum(settings_, "synth.sample-rate", sr_);
+      fluid_settings_setstr(settings_, "synth.verbose", "yes");
+      synth_ = new_fluid_synth(settings_);
+
+      printf("set soundfont %s\n", sfname_attr_.get());
+      fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
+    }
 
     if (width_ >= 2)
     { // we will produce a mono audio stream
@@ -127,13 +150,15 @@ public:
     // insert on/off into queue
     for (unsigned int i = 0; i < num; i++)
     {
-      char pitch    = values[0];
-      char duration = values[1];
-      char velocity = width_ > 2  ?  values[2]  :  64;
-      char channel  = width_ > 3  ?  values[3]  :  1;
+      int pitch    = values[0];
+      int duration = values[1];
+      int velocity = width_ > 2  ?  values[2]  :  64;
+      int channel  = width_ > 3  ?  values[3]  :  1;
 
-      schedule.push(MidiMessage{time,	         pitch, velocity, channel});
-      schedule.push(MidiMessage(time + duration, pitch, 0,	  channel));
+      printf("fluid frames @ %6.1f %3d %3d %3d dur %6f\n", time, pitch, velocity, channel, duration);
+      
+      schedule_.push(MidiMessage{time,	          pitch, velocity, channel});
+      schedule_.push(MidiMessage(time + duration, pitch, 0, 	   channel));
       lasttime = time;
       
       values += size;
@@ -149,15 +174,14 @@ public:
   int play_until (double endtime)
   {
     bool ok = true;
-    int pitch, velocity, channel;
 
     while (endtime >= outtime_ + outframe_duration_)
     {
       // push all events for this output buffer to fluidsynth (we'll work like the Max scheduler or Live and not be sample accurate)
-      while (schedule.next_time() < endtime)
+      while (schedule_.next_time() < endtime)
       {
 	MidiMessage msg;
-	schedule.pop(msg);
+	schedule_.pop(msg);
 	fluid_synth_noteon(synth_, msg.channel - 1, msg.pitch, msg.velocity);
       }
       
@@ -174,12 +198,14 @@ public:
 
       outtime_ += outframe_duration_;
     }
+    
     return ok ? 0 : -1;
 }
 
   int finalize (double endtime)
   { // flush all pending events producing more audio frames
-    double lasttime = schedule.max_time();
+    double lasttime = schedule_.max_time();
+    printf("fluid finalize end %f max %f\n", endtime, lasttime + outframe_duration_);
     return play_until(std::max(endtime, lasttime + outframe_duration_)); // round up to last block (todo: will still cut release phase)
   }
 };
