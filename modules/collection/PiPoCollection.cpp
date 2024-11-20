@@ -132,6 +132,7 @@ public:
     //include("descr", new PiPoCreator<PiPoDescr>); // << new PiPoBasic
     include("fft", new PiPoCreator<PiPoFft>);
     include("finitedif", new PiPoCreator<PiPoFiniteDif>);
+    include("fluidsynth", new PiPoCreator<PiPoFluidSynth>);
     include("gate", new PiPoCreator<PiPoGate>);
     include("loudness", new PiPoCreator<PiPoLoudness>);
     include("lpc", new PiPoCreator<PiPoLpc>);

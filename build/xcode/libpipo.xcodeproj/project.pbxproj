@@ -94,6 +94,10 @@
 		215B8E532CEE09DE006CA671 /* fluid_list.c in Sources */ = {isa = PBXBuildFile; fileRef = 215B8E342CEE09DD006CA671 /* fluid_list.c */; };
 		215B8E542CEE09DE006CA671 /* fluid_hash.h in Sources */ = {isa = PBXBuildFile; fileRef = 215B8E352CEE09DD006CA671 /* fluid_hash.h */; };
 		215B8E562CEE09F9006CA671 /* fluid_synth.h in Headers */ = {isa = PBXBuildFile; fileRef = 215B8E552CEE09F8006CA671 /* fluid_synth.h */; };
+		215B8E5A2CEE2737006CA671 /* ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 215B8E592CEE2737006CA671 /* ext.h */; };
+		215B8E5C2CEE27D3006CA671 /* ext_systhread.h in Headers */ = {isa = PBXBuildFile; fileRef = 215B8E5B2CEE27D3006CA671 /* ext_systhread.h */; };
+		215B8E5F2CEE299A006CA671 /* fluid_chorus.h in Sources */ = {isa = PBXBuildFile; fileRef = 215B8E5D2CEE2999006CA671 /* fluid_chorus.h */; };
+		215B8E602CEE299A006CA671 /* fluid_chorus.c in Sources */ = {isa = PBXBuildFile; fileRef = 215B8E5E2CEE2999006CA671 /* fluid_chorus.c */; };
 		216C9F6324EFF4E00069A8EE /* PiPoJs.h in Headers */ = {isa = PBXBuildFile; fileRef = 216C9F6224EFF4E00069A8EE /* PiPoJs.h */; };
 		216E1EC324FE95B80033FAD2 /* jerryscript-config.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */; };
 		216E1EC424FE95B90033FAD2 /* jerryscript-port-default.c in Sources */ = {isa = PBXBuildFile; fileRef = 216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */; };
@@ -274,6 +278,10 @@
 		215B8E342CEE09DD006CA671 /* fluid_list.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = fluid_list.c; path = "../../modules/fluidsynth-for-max/src/fluid_list.c"; sourceTree = "<group>"; };
 		215B8E352CEE09DD006CA671 /* fluid_hash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = fluid_hash.h; path = "../../modules/fluidsynth-for-max/src/fluid_hash.h"; sourceTree = "<group>"; };
 		215B8E552CEE09F8006CA671 /* fluid_synth.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = fluid_synth.h; path = "../../modules/fluidsynth-for-max/src/fluid_synth.h"; sourceTree = "<group>"; };
+		215B8E592CEE2737006CA671 /* ext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ext.h; path = ../../modules/collection/ext.h; sourceTree = "<group>"; };
+		215B8E5B2CEE27D3006CA671 /* ext_systhread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ext_systhread.h; path = ../../modules/collection/ext_systhread.h; sourceTree = "<group>"; };
+		215B8E5D2CEE2999006CA671 /* fluid_chorus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = fluid_chorus.h; path = "../../modules/fluidsynth-for-max/src/fluid_chorus.h"; sourceTree = "<group>"; };
+		215B8E5E2CEE2999006CA671 /* fluid_chorus.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = fluid_chorus.c; path = "../../modules/fluidsynth-for-max/src/fluid_chorus.c"; sourceTree = "<group>"; };
 		216C9F6224EFF4E00069A8EE /* PiPoJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoJs.h; path = ../../modules/PiPoJs.h; sourceTree = "<group>"; };
 		216E1EBE24FE95B80033FAD2 /* jerryscript-config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "jerryscript-config.h"; sourceTree = "<group>"; };
 		216E1EBF24FE95B80033FAD2 /* jerryscript-port-default.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "jerryscript-port-default.c"; sourceTree = "<group>"; };
@@ -939,6 +947,10 @@
 		5A04AA9006D4DD3F0098230D = {
 			isa = PBXGroup;
 			children = (
+				215B8E5E2CEE2999006CA671 /* fluid_chorus.c */,
+				215B8E5D2CEE2999006CA671 /* fluid_chorus.h */,
+				215B8E5B2CEE27D3006CA671 /* ext_systhread.h */,
+				215B8E592CEE2737006CA671 /* ext.h */,
 				215B8E552CEE09F8006CA671 /* fluid_synth.h */,
 				215B8E0E2CEE09A6006CA671 /* fluid_settings.c */,
 				215B8E292CEE09DC006CA671 /* fluid_chan.c */,
@@ -1002,6 +1014,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				215B8E5A2CEE2737006CA671 /* ext.h in Headers */,
+				215B8E5C2CEE27D3006CA671 /* ext_systhread.h in Headers */,
 				2123C9B124EFFD68005044F8 /* autolink.h in Headers */,
 				2123C9BC24EFFD68005044F8 /* json_tool.h in Headers */,
 				2123C99C24EFFD5A005044F8 /* mimo_pca.h in Headers */,
@@ -1197,6 +1211,8 @@
 				316488341FC226210086FEDF /* rta_psy.c in Sources */,
 				3164883A1FC226760086FEDF /* rta_selection.c in Sources */,
 				316488371FC226440086FEDF /* rta_util.c in Sources */,
+				215B8E5F2CEE299A006CA671 /* fluid_chorus.h in Sources */,
+				215B8E602CEE299A006CA671 /* fluid_chorus.c in Sources */,
 				215B8E362CEE09DD006CA671 /* fluid_settings.h in Sources */,
 				215B8E372CEE09DD006CA671 /* fluid_tuning.h in Sources */,
 				215B8E382CEE09DD006CA671 /* fluid_tuning.c in Sources */,
