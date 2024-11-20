@@ -102,7 +102,7 @@ public:
     return ss.str().size() + 1;
   }
   
-  char *to_json (char *out, size_t n) throw(std::runtime_error) override
+  char *to_json (char *out, size_t n) throw() override
   {
     std::stringstream ss;
     model2json(ss);
