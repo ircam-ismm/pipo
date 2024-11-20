@@ -134,10 +134,10 @@ public:
 
     if (pass_input_)
       ret = propagateStreamAttributes(true, rate, 0.0, width, height,
-				      &output_labels[0], false, 0.0, 1);
+				      output_labels.data(), false, 0.0, 1);
     else
       ret = propagateStreamAttributes(true, rate, 0.0, output_size_, output_size_ > 0,
-				      &output_labels[0], false, 0.0, 1);
+				      output_labels.data(), false, 0.0, 1);
 
     return ret;
   } // end streamAttributes()
