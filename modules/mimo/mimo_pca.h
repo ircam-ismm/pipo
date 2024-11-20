@@ -491,7 +491,7 @@ private:
        
 public:	
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
-    {
+  {
       int mtxrank = calc_pca(numbuffers, buffers);
       
       if (mtxrank > 0)
@@ -501,69 +501,69 @@ public:
           for (int i = 1; i < n_; i++) // first row doesn't need to be copied
             for (int j = 0; j < mtxrank; j++)
               V_[i * mtxrank + j] = V_[i * minmn_ + j];
-	  
-	Vt_ = xTranspose(V_.data(), n_, mtxrank);
-	S_.resize(mtxrank);
-	V_.resize(mtxrank * n_);
-	Vt_.resize(mtxrank * n_);
-	  
-	// copy to model with whole data
-	decomposition_.VT = Vt_;
-	decomposition_.V = V_;
-	decomposition_.S = S_;
-	decomposition_.m = m_;
-	decomposition_.n = n_;
-	decomposition_.rank = mtxrank;
-	decomposition_.means = means_;
-//	decomposition_.startcol = startcol_; // used as default for decoding???
-
-	// apply forward transformation to input data
-	std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
-	std::vector<mimo_buffer> outbufs(numbuffers);
-	outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
-
-	for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
-	{
-	  // copy and center input frames again (TODO: reuse centered copy of data made for training)
-	  int numframes = buffers[bufferindex].numframes;
-	  std::vector<PiPoValue> centered(n_ * numframes);
-	  PiPoValue *cenptr  = centered.data();
-	  PiPoValue *dataptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
-
-	  for (int k = 0; k < numframes; k++)
-	  {
-	    for (int i = 0; i < n_; ++i)
-	      cenptr[i] = dataptr[i] - means_[i];
-	    
-	    cenptr  += n_;
-	    dataptr += inputsize_;
-	  }
-	  
-	  // transform all frames at once (todo: could be in place)
-	  // produces (numframes, mtxrank) matrix (in vector<float>)
-	  outdata[bufferindex] = xMul(centered.data(), V_.data(), numframes, n_, mtxrank);
-
-	  if (mtxrank != minmn_) // rank < minmn, fill out cols with 0 in mubu
-	  {
-	    outdata[bufferindex].reserve(numframes * minmn_);  // make space for matrix(numframestotal_, minmn_)
-	    for (int i = mtxrank; i < numframes * minmn_; i += minmn_)
-	      for (int j = 0; j < minmn_ - mtxrank; j++)
-		outdata[bufferindex].insert(outdata[bufferindex].begin() + i + j, 0.f);
-	  }
-
-	  // copy transformed data pointer to output buffers
-	  outbufs[bufferindex].numframes = numframes;
-	  outbufs[bufferindex].data = outdata[bufferindex].data();
-	}
-	
-	return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
+        
+        Vt_ = xTranspose(V_.data(), n_, mtxrank);
+        S_.resize(mtxrank);
+        V_.resize(mtxrank * n_);
+        Vt_.resize(mtxrank * n_);
+        
+        // copy to model with whole data
+        decomposition_.VT = Vt_;
+        decomposition_.V = V_;
+        decomposition_.S = S_;
+        decomposition_.m = m_;
+        decomposition_.n = n_;
+        decomposition_.rank = mtxrank;
+        decomposition_.means = means_;
+        //	decomposition_.startcol = startcol_; // used as default for decoding???
+        
+        // apply forward transformation to input data
+        std::vector<std::vector<PiPoValue>> outdata(numbuffers); // space for output data, will be deallocated at end of function
+        std::vector<mimo_buffer> outbufs(numbuffers);
+        outbufs.assign(buffers, buffers + numbuffers);   // copy buffer attributes
+        
+        for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
+        {
+          // copy and center input frames again (TODO: reuse centered copy of data made for training)
+          int numframes = buffers[bufferindex].numframes;
+          std::vector<PiPoValue> centered(n_ * numframes);
+          PiPoValue *cenptr  = centered.data();
+          PiPoValue *dataptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
+          
+          for (int k = 0; k < numframes; k++)
+          {
+            for (int i = 0; i < n_; ++i)
+              cenptr[i] = dataptr[i] - means_[i];
+            
+            cenptr  += n_;
+            dataptr += inputsize_;
+          }
+          
+          // transform all frames at once (todo: could be in place)
+          // produces (numframes, mtxrank) matrix (in vector<float>)
+          outdata[bufferindex] = xMul(centered.data(), V_.data(), numframes, n_, mtxrank);
+          
+          if (mtxrank != minmn_) // rank < minmn, fill out cols with 0 in mubu
+          {
+            outdata[bufferindex].reserve(numframes * minmn_);  // make space for matrix(numframestotal_, minmn_)
+            for (int i = mtxrank; i < numframes * minmn_; i += minmn_)
+              for (int j = 0; j < minmn_ - mtxrank; j++)
+                outdata[bufferindex].insert(outdata[bufferindex].begin() + i + j, 0.f);
+          }
+          
+          // copy transformed data pointer to output buffers
+          outbufs[bufferindex].numframes = numframes;
+          outbufs[bufferindex].data = outdata[bufferindex].data();
+        }
+        
+        return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
       }
       else
       { // empty or uniform input data
-	if (numframestotal_ > 0)
-	  signalWarning("PCA Error.. rank <= 0, propagating empty matrix");
-	std::vector<mimo_buffer> invalidbuf(numbuffers);
-	return propagateTrain(itercount, trackindex, numbuffers, invalidbuf.data());
+        if (numframestotal_ > 0)
+          signalWarning("PCA Error.. rank <= 0, propagating empty matrix");
+        std::vector<mimo_buffer> invalidbuf(numbuffers);
+        return propagateTrain(itercount, trackindex, numbuffers, invalidbuf.data());
       }
     }// end train
     
@@ -572,121 +572,124 @@ public:
         return &decomposition_;
     }
     
-    int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-    {
-	if(decomposition_.from_json(model_attr_.getJson()) != -1)
-	{
-	    m_ = decomposition_.m;
-	    n_ = decomposition_.n;
-            minmn_ = std::min<int>(m_, n_); ///needed???
-	    rank_ = decomposition_.rank; // actual matrix rank from training
-	    means_ = decomposition_.means;
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+      if(decomposition_.from_json(model_attr_.getJson()) != -1)
+      {
+        m_ = decomposition_.m;
+        n_ = decomposition_.n;
+        minmn_ = std::min<int>(m_, n_); ///needed???
+        rank_ = decomposition_.rank; // actual matrix rank from training
+        means_ = decomposition_.means;
 #ifdef DEBUG
-	    printf("pca::streamAttributes  w %d  h %d  decomp. (%d, %d)  rank %d\n", width, height, m_, n_, rank_);
+        printf("pca::streamAttributes  w %d  h %d  decomp. (%d, %d)  rank %d\n", width, height, m_, n_, rank_);
 #endif
-	    // startcol/endcol attrs are sticky (mimo->pipo) (TODO: should they?????)
-	    std::tie(n_, startcol_) = get_cols(width * height, startcol_attr_.get(), numcols_attr_.get());
-	}
-	else
-	{
-	    m_ = 1;
-	    n_ = 1;
-	    //minmn_[0] = 1;
-	    rank_ = 1;
-	    means_.clear();
-	}
-        
-        fb_ = forwardbackward_attr_.get();
-        
-        unsigned int outn = 0, outm = 0;	// todo: check rank_attr_ if different outn requested
-        
-        switch(fb_)
-        {
-            case Forward:
-            {
-                outm = 1;
-                outn = rank_ < 0  ?  1  :  static_cast<unsigned int>(rank_);
-                break;
-            }
-            case Backward:
-            {
-                outm = 1;
-                outn = static_cast<unsigned int>(n_);
-                break;
-            }
-            default:
-            {
-                signalWarning("Mode can either be 'backward' or 'forward'");
-                break;
-            }
-        }
-        return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, maxFrames);
-    } // end streamAttributes
-    
-    int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
-    {
-      if (means_.size() == 0)
-      { //model not configured, propagate zero matrix
-        signalWarning("PCA not configured");
-        return propagateFrames(time, weight, new float[1](), 1, 1);
+        // startcol/endcol attrs are sticky (mimo->pipo) (TODO: should they?????)
+        std::tie(n_, startcol_) = get_cols(width * height, startcol_attr_.get(), numcols_attr_.get());
       }
       else
-        switch (fb_)
+      {
+        m_ = 1;
+        n_ = 1;
+        //minmn_[0] = 1;
+        rank_ = 1;
+        means_.clear();
+      }
+      
+      fb_ = forwardbackward_attr_.get();
+      
+      unsigned int outn = 0, outm = 0;	// todo: check rank_attr_ if different outn requested
+      
+      switch(fb_)
+      {
+        case Forward:
         {
-	    case Forward:
-            {
-                if ((long) size < n_)
-                {
-                    signalWarning("Vector too short, input should be a vector with length n");
-                    return propagateFrames(time, weight, nullptr, 0, 0);
-                }
-
-		// copy and center input frames
-		std::vector<float> centered(n_ * num);
-		float *cenptr = centered.data();
-		values += startcol_; // shift to wanted first column, will use n_ out of size cols
-
-		for (unsigned int k = 0; k < num; k++)
-		{
-		    for (int i = 0; i < n_; ++i)
-			cenptr[i] = values[i] - means_[i];
-
-		    cenptr += n_;
-		    values += size;
-		}
-		
-		// transform all frames at once (todo: can be in place)
-                auto features = xMul(centered.data(), decomposition_.V.data(), num, n_, rank_);
-                
-                return propagateFrames(time, weight, features.data(), rank_, num);
-            }
-
-	    case Backward:
-            {
-                if ((long) size < rank_)
-                {
-                    signalWarning("Vector too short, input should be a vector with length rank");
-                    return propagateFrames(time, weight, nullptr, 0, 0);
-                }
-                
-                auto resynthesized = xMul(values, decomposition_.VT.data(), num, rank_, n_);
-
-		for (unsigned int k = 0; k < num; k++)
-		{
-		    for (int i = 0; i < n_; ++i)
-			resynthesized[k * n_ + i] += means_[i];
-		}
-		
-                return propagateFrames(time, weight, resynthesized.data(), n_, num);
-            }
-                
-            default:
-            {
-                signalWarning("Error... invalid decoding mode selected");
-                return propagateFrames(time, weight, nullptr, 0, 0);
-            }
+          outm = 1;
+          outn = rank_ < 0  ?  1  :  static_cast<unsigned int>(rank_);
+          break;
         }
-    } // end frames
+        case Backward:
+        {
+          outm = 1;
+          outn = static_cast<unsigned int>(n_);
+          break;
+        }
+        default:
+        {
+          signalWarning("Mode can either be 'backward' or 'forward'");
+          break;
+        }
+      }
+      return propagateStreamAttributes(hasTimeTags, rate, offset, outn, outm, NULL, 0, 0.0, maxFrames);
+    } // end streamAttributes
+    
+  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+  {
+    if (means_.size() == 0)
+    { //model not configured, propagate zero matrix
+      signalWarning("PCA not configured");
+      return propagateFrames(time, weight, new float[1](), 1, 1);
+    }
+    else
+      switch (fb_)
+      {
+        case Forward:
+        {
+          if ((long) size < n_)
+          {
+            signalWarning("Vector too short, input should be a vector with length n");
+            return propagateFrames(time, weight, nullptr, 0, 0);
+          }
+          
+          // copy and center input frames
+          std::vector<float> centered(n_ * num);
+          float *cenptr = centered.data();
+          values += startcol_; // shift to wanted first column, will use n_ out of size cols
+          
+          for (unsigned int k = 0; k < num; k++)
+          {
+            for (int i = 0; i < n_; ++i)
+              cenptr[i] = values[i] - means_[i];
+            
+            cenptr += n_;
+            values += size;
+          }
+          
+          // transform all frames at once (todo: can be in place)
+          auto features = xMul(centered.data(), decomposition_.V.data(), num, n_, rank_);
+          
+          return propagateFrames(time, weight, features.data(), rank_, num);
+        }
+          
+        case Backward:
+        {
+          if ((long) size < rank_)
+          {
+            signalWarning("Vector too short, input should be a vector with length rank");
+            return propagateFrames(time, weight, nullptr, 0, 0);
+          }
+          
+          auto resynthesized = xMul(values, decomposition_.VT.data(), num, rank_, n_);
+          
+          for (unsigned int k = 0; k < num; k++)
+          {
+            for (int i = 0; i < n_; ++i)
+              resynthesized[k * n_ + i] += means_[i];
+          }
+          
+          return propagateFrames(time, weight, resynthesized.data(), n_, num);
+        }
+          
+        default:
+        {
+          signalWarning("Error... invalid decoding mode selected");
+          return propagateFrames(time, weight, nullptr, 0, 0);
+        }
+      }
+    
+    signalWarning("Error... wrong mimo.pca configuration");
+    return -1;
+  } // end frames
 };
 
 #endif /* MIMO_PCA_H */

@@ -95,100 +95,100 @@ public:
     }
     
     int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
-    {
+  {
       if (stats_.train(0, trackindex, numbuffers, buffers) < 0)
-	return -1;
-
+        return -1;
+      
       model_ = stats_.getmodel();
       std::vector<mimo_buffer> outbufs(numbuffers);
       outbufs.assign(buffers, buffers + numbuffers); // copy buffer layout, timestamps pointer; data will be reassigned from traindata_
-
+      
       // get and check model element range for local vectors
       std::vector<PiPoValue> normoffset(size_);
       std::vector<PiPoValue> normfact(size_);
       get_scaling(normoffset, normfact);
-
+      
       for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
       {
-	const PiPoValue *data = buffers[bufferindex].data;
-            
-	for (int i = 0; i < buffers[bufferindex].numframes; ++i)
-	{
-	  int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
-                
-	  for (int j = 0; j < mtxsize; ++j)
-	  {
+        const PiPoValue *data = buffers[bufferindex].data;
+        
+        for (int i = 0; i < buffers[bufferindex].numframes; ++i)
+        {
+          int mtxsize = is_var_size_ ? buffers[bufferindex].varsize[i] : size_;
+          
+          for (int j = 0; j < mtxsize; ++j)
+          {
             traindata_[bufferindex][i * size_ + j] = (data[j] - normoffset[j]) * normfact[j]; //todo: optimize: get pointer
-	  }
-	  
-	  data += size_;
-	}
-
+          }
+          
+          data += size_;
+        }
+        
         outbufs[bufferindex].data = traindata_[bufferindex].data();
       }
-
+      
       return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
       // Note: even after training, traindata_ keeps a copy of the size of the input data.
     }
     
     int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-    {
+  {
       if (stats_.getmodel()->from_json(model_attr_.getJson()) == -1)
       {
-	model_ = NULL;	// mark as invalid (can't load)
-	return -1;
+        model_ = NULL;	// mark as invalid (can't load)
+        return -1;
       }
       
       model_ = stats_.getmodel(); // set only when parsing finished
       if (model_->mean.size() < width * height)
       { // if model has less elements than data, extend (additional columns will pass through)
-	model_->min.resize(width * height);
-	model_->max.resize(width * height);
-	model_->mean.resize(width * height);
-	model_->std.resize(width * height);
+        model_->min.resize(width * height);
+        model_->max.resize(width * height);
+        model_->mean.resize(width * height);
+        model_->std.resize(width * height);
       }
-
+      
       // resize, get and check model ranges for frames()
       get_scaling(normoffset_, normfact_);
       norm_.resize(width * height);
-
+      
       // make labels
       const char **newlabels = NULL;
       if (labels)
       {
-	const std::string suffix("Norm");
+        const std::string suffix("Norm");
 #ifdef WIN32
-    newlabels = (const char**)_malloca(width * sizeof(char*));
+        newlabels = (const char**)_malloca(width * sizeof(char*));
 #else
-	newlabels = (const char **) alloca(width * sizeof(char *));
+        newlabels = (const char **) alloca(width * sizeof(char *));
 #endif
-	labelstore_.resize(width);
-
-	for (unsigned int i = 0; i < width; i++)
-	{
-	  labelstore_[i] = std::string(labels[i]) + suffix;
-	  newlabels[i] = labelstore_[i].c_str();
-	}
+        labelstore_.resize(width);
+        
+        for (unsigned int i = 0; i < width; i++)
+        {
+          labelstore_[i] = std::string(labels[i]) + suffix;
+          newlabels[i] = labelstore_[i].c_str();
+        }
       }
-
+      
       return propagateStreamAttributes(hasTimeTags, rate,  offset,  width,  height,
-				       newlabels,  hasVarSize,  domain,  maxFrames);
+                                       newlabels,  hasVarSize,  domain,  maxFrames);
     }
     
     int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
-    {
+  {
       bool ok = model_ != NULL;
-    
+      
       for (unsigned int i = 0; ok  &&  i < num; i++)
       { // normalise
-	for (unsigned int j = 0; j < size; j++)
-	  norm_[j] = (values[j] - normoffset_[j]) * normfact_[j];
-
-	ok &= propagateFrames(time, weight, norm_.data(), size, 1) == 0;
-
-	values += size;
+        for (unsigned int j = 0; j < size; j++)
+          norm_[j] = (values[j] - normoffset_[j]) * normfact_[j];
+        
+        ok &= propagateFrames(time, weight, norm_.data(), size, 1) == 0;
+        
+        values += size;
       }
-
+      
       return ok ? 0 : -1;
     }
     
