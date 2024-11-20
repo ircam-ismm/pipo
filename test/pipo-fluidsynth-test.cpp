@@ -24,6 +24,7 @@ TEST_CASE ("fluidsynth")
 
     WHEN ("send data")
     {
+      // event columns: pitch, duration, [velocity, [channel]],
       float vals[] = { 60, 100, 64, 1 };
 
       REQUIRE(host.frames(100, 1, &vals[0], 4, 1) == 0);      
@@ -34,7 +35,7 @@ TEST_CASE ("fluidsynth")
 	CHECK(host.receivedFrames.size() >= ceil(299. / 1000. * 44100.) );
 	REQUIRE(host.receivedFrames[0].size() == 1);
 
-	// now check audio
+	// now write audio for checking
 	FILE *f = fopen("fluidout.raw", "wb");
 	for (int i = 0; i < host.receivedFrames.size(); i++)
 	  fwrite(host.receivedFrames[i].data(), sizeof(float), 1, f);

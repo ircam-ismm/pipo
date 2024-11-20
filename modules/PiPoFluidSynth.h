@@ -84,15 +84,18 @@ private:
   Scheduler		 schedule_;
   fluid_synth_t		*synth_ = NULL;
   fluid_settings_t	*settings_ = NULL;
+  std::vector<int>	 program_cache_;
 
 public:
   PiPoScalarAttr<double>	sr_attr_;
   PiPoScalarAttr<const char *>  sfname_attr_;
+  PiPoVarSizeAttr<int>		program_attr_;
 
   PiPoFluidSynth (Parent *parent, PiPo *receiver = NULL)
-  : PiPo(parent, receiver),
+  : PiPo(parent, receiver), program_cache_(),  // start empty
     sfname_attr_(this, "soundfont", "Name of sound font file", true, "GM.sf2"),
-    sr_attr_(this, "samplerate", "Output sampling rate", true, sr_)
+    sr_attr_(this, "samplerate", "Output sampling rate", true, sr_),
+    program_attr_(this, "program", "List of program numbers for each channel", false, 1, 0)
   { }
 
   ~PiPoFluidSynth (void)
@@ -124,14 +127,13 @@ public:
       fluid_settings_setint(settings_, "synth.polyphony", polyphony);
       fluid_settings_setnum(settings_, "synth.gain", 0.600000);
       fluid_settings_setnum(settings_, "synth.sample-rate", sr_);
-      fluid_settings_setstr(settings_, "synth.verbose", "yes");
+      fluid_settings_setstr(settings_, "synth.verbose", "no");
 
       if (synth_) delete_fluid_synth(synth_);
       synth_ = new_fluid_synth(settings_);
 
       printf("set soundfont %s\n", sfname_attr_.get());
       fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
-      fluid_synth_program_change(synth_, 0, 0); // set first program
       delete_fluid_settings(settings_);
     }
 
@@ -146,10 +148,48 @@ public:
     }
   }
 
+  bool update_preset ()
+  {
+    bool changed = false;
+    
+    // check if program attr has changed
+    if (program_cache_.size() != program_attr_.size())
+	changed = true;
+    else
+      for (int i = 0; i < program_cache_.size(); i++)
+	if (program_cache_[i] != program_attr_.getInt(i))
+	{
+	  changed = true;
+	  break;
+	}
+
+    if (changed)
+    { // set program for each channel
+      program_cache_.resize(program_attr_.size(), -1); // added values will be initialized to -1
+      for (int i = 0; i < program_attr_.size(); i++)
+      {
+	if (program_cache_[i] != program_attr_.getInt(i))
+	{
+	  program_cache_[i] = program_attr_.getInt(i);
+	  if (program_cache_[i] > -1)
+	  {
+	    printf("program %3d ch %2d\n", program_cache_[i], i);
+	    fluid_synth_program_change(synth_, i, program_cache_[i]);
+	  }
+	  // else: -1: no change
+	}
+      }
+    }
+    return changed;
+  }
+  
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     double	lasttime = time;
 
+    // update program number
+    update_preset();
+    
     // read all midi events from this frame's input columns: pitch, duration, [velocity, [channel]],
     // insert on/off into queue
     for (unsigned int i = 0; i < num; i++)
