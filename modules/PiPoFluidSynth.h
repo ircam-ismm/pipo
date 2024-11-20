@@ -125,10 +125,14 @@ public:
       fluid_settings_setnum(settings_, "synth.gain", 0.600000);
       fluid_settings_setnum(settings_, "synth.sample-rate", sr_);
       fluid_settings_setstr(settings_, "synth.verbose", "yes");
+
+      if (synth_) delete_fluid_synth(synth_);
       synth_ = new_fluid_synth(settings_);
 
       printf("set soundfont %s\n", sfname_attr_.get());
       fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
+      fluid_synth_program_change(synth_, 0, 0); // set first program
+      delete_fluid_settings(settings_);
     }
 
     if (width_ >= 2)
@@ -178,10 +182,12 @@ public:
     while (endtime >= outtime_ + outframe_duration_)
     {
       // push all events for this output buffer to fluidsynth (we'll work like the Max scheduler or Live and not be sample accurate)
-      while (schedule_.next_time() < endtime)
+      while (schedule_.next_time() < outtime_ + outframe_duration_)
       {
+	//printf("next %6.1f  endtime %6.1f\n", schedule_.next_time(), endtime);
 	MidiMessage msg;
 	schedule_.pop(msg);
+	//printf("note %6.1f %3d %3d %2d\n", outtime_, msg.pitch, msg.velocity, msg.channel);
 	fluid_synth_noteon(synth_, msg.channel - 1, msg.pitch, msg.velocity);
       }
       
@@ -193,7 +199,8 @@ public:
       // sum to mono in place
       for (int i = 0; i < outframe_size_; i++)
 	outbuffer_[i] += outbuffer_[i + outframe_size_];
-      
+
+      //printf("push %6.1f  %g .. %g\n", outtime_, outbuffer_[0], outbuffer_[outframe_size_ - 1]);
       ok &= propagateFrames(outtime_, 1, outbuffer_.data(), 1, outframe_size_) == 0;
 
       outtime_ += outframe_duration_;
@@ -205,7 +212,7 @@ public:
   int finalize (double endtime)
   { // flush all pending events producing more audio frames
     double lasttime = schedule_.max_time();
-    printf("fluid finalize end %f max %f\n", endtime, lasttime + outframe_duration_);
+    //printf("fluid finalize end %f max %f\n", endtime, lasttime + outframe_duration_);
     return play_until(std::max(endtime, lasttime + outframe_duration_)); // round up to last block (todo: will still cut release phase)
   }
 };
