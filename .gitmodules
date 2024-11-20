@@ -23,3 +23,6 @@
 [submodule "modules/polyspring"]
 	path = modules/polyspring
 	url = https://github.com/ircam-ismm/polyspring.git
+[submodule "modules/fluidsynth-for-max"]
+	path = modules/fluidsynth-for-max
+	url = git@forge-2.ircam.fr:ismm/fluidsynth-for-max.git
