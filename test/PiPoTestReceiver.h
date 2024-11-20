@@ -1,5 +1,6 @@
 // -*- mode: c++; c-basic-offset:2 -*-
 #include <cmath>
+#include <assert.h>
 #include "PiPo.h"
 
 // macro for catch checks of all stream attributes propagated by propagateStreamAttributes
