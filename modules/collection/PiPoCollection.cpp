@@ -49,9 +49,10 @@
 #include "PiPoConst.h"
 #include "PiPoDct.h"
 #include "PiPoDelta.h"
-#include "PiPoDescr.h" // new name of PiPoBasic
+//#include "PiPoDescr.h" // new name of PiPoBasic
 #include "PiPoFft.h"
 #include "PiPoFiniteDif.h"
+#include "PiPoFluidSynth.h"
 #include "PiPoGate.h"
 #include "PiPoLpc.h"
 #include "PiPoLoudness.h"
@@ -76,7 +77,6 @@
 #include "PiPoSum.h"
 #include "PiPoThru.h"
 // #include "PiPoWavelet.h" // << boost is required to compile this
-#include "PiPoYin.h"
 
 class PiPoPool : public PiPoModuleFactory
 {
@@ -129,7 +129,7 @@ public:
     include("const", new PiPoCreator<PiPoConst>);
     include("dct", new PiPoCreator<PiPoDct>);
     include("delta", new PiPoCreator<PiPoDelta>);
-    include("descr", new PiPoCreator<PiPoDescr>); // << new PiPoBasic
+    //include("descr", new PiPoCreator<PiPoDescr>); // << new PiPoBasic
     include("fft", new PiPoCreator<PiPoFft>);
     include("finitedif", new PiPoCreator<PiPoFiniteDif>);
     include("gate", new PiPoCreator<PiPoGate>);
@@ -164,7 +164,6 @@ public:
     include("sum", new PiPoCreator<PiPoSum>);
     include("thru", new PiPoCreator<PiPoThru>);
     // include("wavelet", new PiPoCreator<PiPoWavelet>); // << needs boost
-    include("yin", new PiPoCreator<PiPoYin>);
   }
 
   void include(std::string name, PiPoCreatorBase *creator)
