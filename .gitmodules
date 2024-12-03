@@ -26,3 +26,5 @@
 [submodule "modules/fluidsynth-for-max"]
 	path = modules/fluidsynth-for-max
 	url = git@forge-2.ircam.fr:ismm/fluidsynth-for-max.git
+	branch = master
+	
