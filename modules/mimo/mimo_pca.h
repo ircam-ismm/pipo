@@ -87,7 +87,7 @@ public:
         return (V.size() + VT.size() + S.size() + means.size())*20;
     }
     
-    char* to_json (char* out, size_t size) throw() override
+    char* to_json (char* out, size_t size) override
     {
         if(size < 1)
             return nullptr;
@@ -297,11 +297,11 @@ public:
 	// platforms having LAPACK: Apple, Linux
 	// Fortran-based LAPACK uses col-major order so we swap U and VT, spoofing a transposed input matrix
 	Vt_.resize(n_ * n_);
-	U_.resize(numframestotal_ * numframestotal_);
+	U_.resize((long) numframestotal_ * numframestotal_);
 #else
 	// platforms without LAPACK use native rta svd
 	// unused Vt_.resize(n_ * n_, 0.f);
-	U_.resize(numframestotal_ * numframestotal_, 0.f); /// can be big?????
+	U_.resize((long) numframestotal_ * numframestotal_, 0.f); /// can be big?????
 	V_.resize(n_ * n_, 0.f);
 #endif
 
@@ -427,9 +427,10 @@ private:
 	}
       }
 	
+      int mtxrank = 0;
       // reads traindata, fills S, U, V, Vt
       // do_pca(bufferindex, numframes);
-	    
+
 #ifndef WIN32
       // platforms having LAPACK: Apple, Linux
       __CLPK_integer info = 0;
@@ -448,24 +449,26 @@ private:
 
       //First do the query for worksize
       sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
-      
-      //Resize accordingly
-      lwork = optimalWorkSize[0];
-      work.resize(lwork);
-	
-      //Do the job
-      // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
-      // in call of sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
-      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
-      V_ = xTranspose(Vt_.data(), minmn_, n_);
+
+      if (info == 0) // success
+      { //Resize accordingly
+        lwork = optimalWorkSize[0];
+        work.resize(lwork);
+
+        //Do the job
+        // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
+        // in call of sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+        sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
+        V_ = xTranspose(Vt_.data(), minmn_, n_);
+      }
+      if (info != 0)
+        signalError("Can't calculate SVD: status " + std::to_string(info));
 #else
       rta_svd_setup_t * svd_setup = nullptr;
       rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
       rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
 #endif
-	
-      int mtxrank = 0;
-            
+
       if (rank_ == -1) //calculate rank
       {
 	int ssize = static_cast<int>(S_.size());
