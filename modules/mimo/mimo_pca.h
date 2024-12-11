@@ -438,29 +438,37 @@ private:
       float optimalWorkSize[1];
       char* jobu = (char*)"A"; //TODO: we don't want U...
       char* jobvt = (char*)"A";
-            
-      // LAPACK svd calculates in this workspace
-      std::vector<PiPoValue> work;
-            
-      // Fortran-based LAPACK  uses col-major order matrix format so we swap U and VT, spoofing a transposed input matrix
-      // need to correctly swap args and sizes
-      __CLPK_integer M = numframestotal_;
-      __CLPK_integer N = n_;
 
-      //First do the query for worksize
-      sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
+      // check size of the matrix such that m × n ≤ 2^31−1
+      // For square matrices n ≤ sqrt(2^31−1) ≈ 46,340
+      if (numframestotal_ < 46340)
+      {
+        // LAPACK svd calculates in this workspace
+        std::vector<PiPoValue> work;
 
-      if (info == 0) // success
-      { //Resize accordingly
-        lwork = optimalWorkSize[0];
-        work.resize(lwork);
+        // Fortran-based LAPACK  uses col-major order matrix format so we swap U and VT, spoofing a transposed input matrix
+        // need to correctly swap args and sizes
+        __CLPK_integer M = numframestotal_;
+        __CLPK_integer N = n_;
 
-        //Do the job
-        // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
-        // in call of sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
-        sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
-        V_ = xTranspose(Vt_.data(), minmn_, n_);
+        //First do the query for worksize
+        sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
+
+        if (info == 0) // success
+        { //Resize accordingly
+          lwork = optimalWorkSize[0];
+          work.resize(lwork);
+
+          //Do the job
+          // transposed input: swap U and Vt arguments (u, ldu <--> vt, ldvt)
+          // in call of sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+          sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
+          V_ = xTranspose(Vt_.data(), minmn_, n_);
+        }
       }
+      else
+        info = 666;
+
       if (info != 0)
         signalError("Can't calculate SVD: status " + std::to_string(info));
 #else
