@@ -68,11 +68,12 @@
 #include "jsoncpp/include/json.h"
 #include <algorithm>
 
-#ifdef WIN32
+//#ifdef WIN32
 extern "C" {
 #include "rta_svd.h"
 }
-#else
+//#else
+#ifndef WIN32
 #include <Accelerate/Accelerate.h>
 #endif
 
@@ -296,8 +297,10 @@ public:
 #ifndef WIN32
 	// platforms having LAPACK: Apple, Linux
 	// Fortran-based LAPACK uses col-major order so we swap U and VT, spoofing a transposed input matrix
-	Vt_.resize(n_ * n_);
-	U_.resize((long) numframestotal_ * numframestotal_);
+	Vt_.resize(n_ * n_, 0.f);
+	U_.resize((long) numframestotal_ * numframestotal_, 0.f);
+        if (numframestotal_ >= 46340) // large matrices will use rta_svd, needs workspace V_
+          V_.resize(n_ * n_, 0.f);
 #else
 	// platforms without LAPACK use native rta svd
 	// unused Vt_.resize(n_ * n_, 0.f);
@@ -402,7 +405,7 @@ private:
     // calculate PCA on all buffers, update numframestotal_, bufsizes_, S_, U_, Vt_, Vt_
     // @return actual rank of matrix
     int calc_pca (int numbuffers, const mimo_buffer buffers[])
-    {
+  {
       // calculate means over all buffers, returns current total number of frames
       numframestotal_ = calc_means(numbuffers, buffers);
 
@@ -412,37 +415,37 @@ private:
 
       for (int bufferindex = 0; bufferindex < numbuffers; ++bufferindex)
       {
-	int numframes = buffers[bufferindex].numframes;
-	bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
-	PiPoValue* bufferptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
-        
-	// center buffers around mean and append to traindata
-	for (int i = 0; i < numframes; i++)
-	{
-	  for (int j = 0; j < n_; j++)
-	    dataptr[j] = bufferptr[j] - means_[j];
-	  
-	  dataptr   += n_;
-	  bufferptr += inputsize_;
-	}
+        int numframes = buffers[bufferindex].numframes;
+        bufsizes_[bufferindex] = numframes; // input track size might have changed since setup
+        PiPoValue* bufferptr = buffers[bufferindex].data + startcol_; // shift all frames to first element to use
+
+        // center buffers around mean and append to traindata
+        for (int i = 0; i < numframes; i++)
+        {
+          for (int j = 0; j < n_; j++)
+            dataptr[j] = bufferptr[j] - means_[j];
+
+          dataptr   += n_;
+          bufferptr += inputsize_;
+        }
       }
-	
+
       int mtxrank = 0;
       // reads traindata, fills S, U, V, Vt
       // do_pca(bufferindex, numframes);
 
 #ifndef WIN32
-      // platforms having LAPACK: Apple, Linux
-      __CLPK_integer info = 0;
-      __CLPK_integer lwork = -1; //query for optimal size
-      float optimalWorkSize[1];
-      char* jobu = (char*)"A"; //TODO: we don't want U...
-      char* jobvt = (char*)"A";
-
-      // check size of the matrix such that m × n ≤ 2^31−1
-      // For square matrices n ≤ sqrt(2^31−1) ≈ 46,340
+      // LAPACK uses 32bit addressing: check size of the matrix such that m × n ≤ 2^31−1
+      // For square matrices n ≤ sqrt(2^31−1) ≈ 46,340  //TODO: link with 64bit LAPACK
       if (numframestotal_ < 46340)
       {
+        // platforms having LAPACK: Apple, Linux
+        __CLPK_integer info = 0;
+        __CLPK_integer lwork = -1; //query for optimal size
+        float optimalWorkSize[1];
+        char* jobu = (char*)"A"; //TODO: we don't want U...
+        char* jobvt = (char*)"A";
+
         // LAPACK svd calculates in this workspace
         std::vector<PiPoValue> work;
 
@@ -465,17 +468,17 @@ private:
           sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, work.data(), &lwork, &info);
           V_ = xTranspose(Vt_.data(), minmn_, n_);
         }
+
+        if (info != 0)
+          signalError("Can't calculate SVD: status " + std::to_string(info));
       }
       else
-        info = 666;
-
-      if (info != 0)
-        signalError("Can't calculate SVD: status " + std::to_string(info));
-#else
-      rta_svd_setup_t * svd_setup = nullptr;
-      rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
-      rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
 #endif
+      {
+        rta_svd_setup_t * svd_setup = nullptr;
+        rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
+        rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
+      }
 
       if (rank_ == -1) //calculate rank
       {
