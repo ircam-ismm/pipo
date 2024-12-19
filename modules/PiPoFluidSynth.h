@@ -133,7 +133,7 @@ public:
       synth_ = new_fluid_synth(settings_);
 
       printf("set soundfont %s\n", sfname_attr_.get());
-      fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
+      int ret = fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
       delete_fluid_settings(settings_);
     }
 
