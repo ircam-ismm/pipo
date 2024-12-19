@@ -478,6 +478,7 @@ private:
         rta_svd_setup_t * svd_setup = nullptr;
         rta_svd_setup_new(&svd_setup, rta_svd_in_place, U_.data(), S_.data(), V_.data(), traindata.data(), numframestotal_, n_);
         rta_svd(U_.data(), S_.data(), V_.data(), traindata.data(), svd_setup);
+        rta_svd_setup_delete(svd_setup);
       }
 
       if (rank_ == -1) //calculate rank
