@@ -73,7 +73,6 @@ private:
   int indims_ = 0;
   const int outdims_ = 2; //only handling 2d spaces for now
   std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
-  bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
   std::vector<int>                    inputbufsizes_;
   std::vector<std::vector<PiPoValue>> outdata_;
   std::vector<mimo_buffer>            outbufs_;
@@ -137,12 +136,13 @@ public:
       
     // look up list of input columns
     // returns 0..numlabels - 1 if columns_attr_ was not set or invalid
-    incolumns_ = lookup_column_indices(columns_attr_, streamattr[0]->numLabels, streamattr[0]->labels, &incolumns_contiguous_);
+    incolumns_ = lookup_column_indices(columns_attr_, streamattr[0]->numLabels, streamattr[0]->labels);
     indims_    = incolumns_.size();
 
+    // check number of input columns
     if (indims_ != 2)
     {
-      signalError("polyspring needs exactly 2 input columns");
+      signalError("mimo.distribute needs exactly 2 input columns");
       return -1;
     }
 
