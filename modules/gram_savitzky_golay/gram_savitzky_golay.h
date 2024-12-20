@@ -9,6 +9,7 @@
 #include <gram_savitzky_golay/api.h>
 #include <sstream>
 #include <vector>
+#include <assert.h>
 
 namespace gram_sg
 {

@@ -45,6 +45,7 @@
 #include "PiPo.h"
 #include "RingBuffer.h"
 #include "gram_savitzky_golay/gram_savitzky_golay.h"
+#include <algorithm>
 
 #ifdef __cplusplus
 extern "C" {
