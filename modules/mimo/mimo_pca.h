@@ -88,7 +88,7 @@ public:
         return (V.size() + VT.size() + S.size() + means.size())*20;
     }
     
-    char* to_json (char* out, size_t size)  throw() override
+    char* to_json (char* out, size_t size) noexcept(false) override
     {
         if(size < 1)
             return nullptr;

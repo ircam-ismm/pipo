@@ -53,7 +53,7 @@ public:
     {
         return 0;
     }
-    char* to_json (char* out, size_t size) throw() override
+    char* to_json (char* out, size_t size) noexcept(false) override
     {
         return 0;
     }
