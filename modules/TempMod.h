@@ -183,6 +183,11 @@ public:
     }
 
     return 0;
+  } // getValues ()
+
+  int getSize ()
+  {
+      return num;
   }
 
   unsigned int getLabels(const char *name, char **labels, unsigned int strLen, unsigned int numLabels)
@@ -208,6 +213,8 @@ public:
   }
 }; // class TempMod
 
+
+// array of tempmod objects, one for each input data column
 class TempModArray
 {
 public:
@@ -284,6 +291,13 @@ public:
     }
 
     return totalValues;
+  }
+
+  int getSize ()
+  {
+      if (array.size() == 0)
+	  throw std::runtime_error("no tempmod input columns");
+      return array[0].getSize();
   }
 
   /** generate array.size() tempmod suffixes for each one of the numValues input column labels: <value><Mean> etc.

@@ -47,7 +47,7 @@
 
 #define TEMPMOD_DEBUG (DEBUG * 1)
 
-template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false, bool DURATION = false>
+template<bool MIN = false, bool MAX = false, bool MEAN = false, bool STD = false, bool DURATION = false, bool SIZE = false>
 class PiPoTemporalModeling : public PiPo
 {
 private:
@@ -109,7 +109,7 @@ public:
 
     /* get output size */
     unsigned int numtempmod  = tempmod_.getNumValues();
-    unsigned int outputwidth = numtempmod + DURATION;
+    unsigned int outputwidth = numtempmod + DURATION + SIZE;
     marker_only_ = outputwidth == 0;
 
     /* alloc output vector for duration and temporal modelling output */
@@ -124,7 +124,9 @@ public:
       
     if (DURATION)
       snprintf(outlabels[0], 64, "Duration");
-    tempmod_.getLabels(labels, input_width_, &outlabels[DURATION], 64, numtempmod);
+    if (SIZE)
+      snprintf(outlabels[DURATION], 64, "Num");
+    tempmod_.getLabels(labels, input_width_, &outlabels[DURATION + SIZE], 64, numtempmod);
      
     int ret = propagateStreamAttributes(true, rate, 0.0, outputwidth, outputwidth > 0,
 					(const char **) &outlabels[0],
@@ -172,7 +174,7 @@ public:
   int segment (double time, bool start) override
   {
 #if TEMPMOD_DEBUG
-    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d  --> output %d\n", MIN, MAX, MEAN, STD, DURATION, time, start, seg_is_on_,
+    printf("PiPoTemporalModeling<%d, %d, %d, %d, %d, %d>::segment(%5.1f) start %d seg is on %d  --> output %d\n", MIN, MAX, MEAN, STD, DURATION, SIZE, time, start, seg_is_on_,
            start == false || seg_is_on_);
 #endif
     int ret = 0;
@@ -186,12 +188,14 @@ public:
     {
       if (DURATION)
 	output_values_[0] = time - onset_time_;
+      if (SIZE)
+	output_values_[DURATION] = tempmod_.getSize();
 
       long outputsize = output_values_.size();
           
       /* get temporal modelling */
-      if (outputsize - DURATION > 0)
-	tempmod_.getValues(&output_values_[DURATION], outputsize - DURATION, true);
+      if (outputsize - DURATION - SIZE > 0)
+	tempmod_.getValues(&output_values_[DURATION + SIZE], outputsize - DURATION - SIZE, true);
 
       // report segment data, don't pass on segment() call: report segment start time
       ret = propagateFrames(onset_time_, 0.0, output_values_.data(), outputsize, 1);
@@ -225,6 +229,7 @@ using PiPoSegMeanStd   = PiPoTemporalModeling<0, 0, 1, 1>;
 using PiPoSegMarker    = PiPoTemporalModeling<0, 0, 0, 0, 0>;
 using PiPoSegDuration  = PiPoTemporalModeling<0, 0, 0, 0, 1>;
 using PiPoSegStats     = PiPoTemporalModeling<1, 1, 1, 1, 1>;
+using PiPoSegSize      = PiPoTemporalModeling<0, 0, 0, 0, 0, 1>;
 // later: define PiPoSegMedian based on class that does buffering of segment data
 
 
