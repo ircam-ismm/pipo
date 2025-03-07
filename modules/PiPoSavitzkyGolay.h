@@ -188,7 +188,7 @@ public:
       labels = outlabelstr.data();
     }
     
-    int ret = propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, 1, labels, hasVarSize, domain, 1);
+    return propagateStreamAttributes(hasTimeTags, framerate, offset, outwidth, 1, labels, hasVarSize, domain, 1);
   } // streamAttributes
 
   // reset: clear input buffer
