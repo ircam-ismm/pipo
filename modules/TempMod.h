@@ -308,7 +308,8 @@ public:
 
         if(valueNames != NULL)
         {
-          char label_with_suffix[strLen];
+          //char label_with_suffix[strLen];
+          char *label_with_suffix = (char *)alloca(strLen*sizeof(char));
 
           snprintf(label_with_suffix, strLen, "%s%s", valueNames[i], suffix);
           num = iter->getLabels(label_with_suffix, labels, strLen, numLabels);
