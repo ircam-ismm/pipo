@@ -48,6 +48,7 @@
 #define defaultGyroWeigth 30.0
 #define defaultGyroWeigthLinear 0.9677
 #define defaultRegularisation 0.01
+#define ORIENTATION_OUTPUT_NUM_COLS 6
 
 using namespace std;
 
@@ -78,7 +79,8 @@ private:
   double lastGyroWeight;
   double lastGyroWeightLinear;
   
-  double timingPeriod;
+  double timingPeriod;  
+  const char **orientationLabels;
   
 public:
   PiPoScalarAttr<double> gyroweight;
@@ -118,10 +120,17 @@ public:
     lastGyroWeight = defaultGyroWeigth;
     lastGyroWeightLinear = defaultGyroWeigthLinear;
     timingPeriod = 1.0/1000;
+    
+    this->orientationLabels = new const char *[ORIENTATION_OUTPUT_NUM_COLS];
+    for (int i = 0; i < ORIENTATION_OUTPUT_NUM_COLS; i++)
+      this->orientationLabels[i] = NULL;
   }
   
   ~PiPoOrientation(void)
-  { }
+  {
+    if (orientationLabels != NULL)
+      delete [] orientationLabels;
+  }
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
@@ -134,7 +143,16 @@ public:
     
     timingPeriod = 1.0/rate;
     
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, labels, 0, domain, maxFrames);
+    for (int i = 0; i < ORIENTATION_OUTPUT_NUM_COLS; i++)
+      this->orientationLabels[i] = NULL;
+    if (labels != NULL)
+    {
+      for (int i = 0; i < width; i++)
+        if(labels[i] != NULL)
+          this->orientationLabels[i] = labels[i];
+    }
+
+    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 6, 1, orientationLabels, 0, domain, maxFrames);
   }
   
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
