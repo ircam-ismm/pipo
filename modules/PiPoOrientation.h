@@ -132,6 +132,17 @@ public:
       delete [] orientationLabels;
   }
   
+  int reset(void)
+  {
+    lastTime = 0.0;
+    firstSample = true;
+    lastGyroWeight = defaultGyroWeigth;
+    lastGyroWeightLinear = defaultGyroWeigthLinear;
+    //timingPeriod = 1.0/1000;
+    
+    return this->propagateReset();
+  }
+  
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     double newGyroWeight = this->gyroweight.get();
@@ -142,6 +153,7 @@ public:
       setGyroWeightLinear(newGyroWeightLinear);
     
     timingPeriod = 1.0/rate;
+    lastTime = 0.0;
     
     for (int i = 0; i < ORIENTATION_OUTPUT_NUM_COLS; i++)
       this->orientationLabels[i] = NULL;
@@ -160,8 +172,22 @@ public:
     PiPoOrientation::InputFormatE inFormat = (PiPoOrientation::InputFormatE)this->inputformat.get();
     PiPoOrientation::TimingModeE timeMode = (PiPoOrientation::TimingModeE)this->timingmode.get();
     
-    for(unsigned int i = 0; i < num; i++)
+    double deltaTime = 0.0;
+    if(timeMode == InternalTimingMode)
     {
+      deltaTime = (time-lastTime)/1000.0;
+      deltaTime /= num;
+      lastTime = time;
+    }
+    else
+    {
+      deltaTime = timingPeriod;
+      //lastTime += timingPeriod;
+    }
+    
+    int ret = 0;
+    for(unsigned int i = 0; i < num; i++)
+    {      
       if(size >= 3)
       {
         if(inFormat == RiotBitalinoFormat)
@@ -197,18 +223,7 @@ public:
           }
         }
       }
-    
-      double deltaTime;
-      if(timeMode == InternalTimingMode)
-      {
-        deltaTime = (time-lastTime)/1000.0;
-        lastTime = time;
-      }
-      else
-      {
-        deltaTime = timingPeriod;
-        lastTime += timingPeriod;
-      }
+
       normalize(accVector);
       
       if(firstSample)
@@ -216,7 +231,7 @@ public:
         firstSample = false;
         for(int i = 0; i < 3; i++)
           accEstimate[i] = accVector[i];
-        return 0;
+        //return 0;
       }
       else
       {
@@ -338,13 +353,13 @@ public:
         outVector[5] = tilt;
       }
       
-      int ret = this->propagateFrames(lastTime, weight, this->outVector, 6, 1);
-      if(ret != 0)
-        return ret;
+      ret += this->propagateFrames(lastTime, weight, this->outVector, 6, 1);
       
       values += size;
+      time += (deltaTime * 1000.0);
+      lastTime += (deltaTime * 1000.0);
     }
-    return 0;
+    return ret;
   }
   
   void rotateInput(double *input, PiPoOrientation::RotationNumE rot)
