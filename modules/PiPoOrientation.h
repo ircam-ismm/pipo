@@ -231,7 +231,6 @@ public:
         firstSample = false;
         for(int i = 0; i < 3; i++)
           accEstimate[i] = accVector[i];
-        //return 0;
       }
       else
       {
@@ -356,8 +355,8 @@ public:
       ret += this->propagateFrames(lastTime, weight, this->outVector, 6, 1);
       
       values += size;
-      time += (deltaTime * 1000.0);
-      lastTime += (deltaTime * 1000.0);
+      time += (deltaTime/* * 1000.0*/);
+      lastTime += (deltaTime /** 1000.0*/);
     }
     return ret;
   }
