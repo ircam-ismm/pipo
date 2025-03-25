@@ -97,6 +97,8 @@ private:
   float biquadGain;
   float biquadQuality;
   float biquadQNormalisation;
+  
+  bool inited;
 
 public:
   PiPoScalarAttr<float> b0;
@@ -134,9 +136,11 @@ public:
     this->biquadGain = this->gainA.get();
     this->biquadQuality = this->QA.get();
 
-	this->f0 = 0.0;
-	this->normF0 = 0.0;
+    this->f0 = 0.0;
+    this->normF0 = 0.0;
 
+    this->inited = false;
+    
     // constant
     this->biquadQNormalisation = M_SQRT1_2;
 
@@ -238,7 +242,8 @@ public:
 
     int frameWidth = width;
     int frameHeight = height;
-
+    
+    this->inited = false;
 
     if (biquadType != this->biquadType)
     {
@@ -316,7 +321,19 @@ public:
   {
     for (unsigned int i = 0; i < num; i++)
     {
-      filterFrame(values);
+      if(!inited)
+      {
+        for(unsigned int j = 0; j < size; j++)
+        {
+          this->outValues[i] = values[j];
+          this->biquadState[i] = values[j];
+        }
+        if((num > 1 && i > 1) || num == 1)
+          inited = true;
+      }
+      else
+        filterFrame(values);
+      
       int ret = this->propagateFrames(time, weight, this->outValues.data(), this->frameWidth * this->frameHeight, 1);
 
       if (ret != 0)
