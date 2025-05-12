@@ -295,8 +295,10 @@ public:
 
   int getSize ()
   {
+#ifndef WIN32
       if (array.size() == 0)
 	  throw std::runtime_error("no tempmod input columns");
+#endif
       return array[0].getSize();
   }
 
