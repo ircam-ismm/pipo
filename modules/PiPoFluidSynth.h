@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <queue>
+#include <algorithm>    
 
 #include "PiPo.h"
 #include "fluid_synth.h"
@@ -253,7 +254,12 @@ public:
   { // flush all pending events producing more audio frames
     double lasttime = schedule_.max_time();
     //printf("fluid finalize end %f max %f\n", endtime, lasttime + outframe_duration_);
-    return play_until(std::max(endtime, lasttime + outframe_duration_)); // round up to last block (todo: will still cut release phase)
+#ifdef WIN32
+    double etime = (((endtime) > (lasttime + outframe_duration_)) ? (endtime) : (lasttime + outframe_duration_));
+#else
+    double etime = std::max(endtime, lasttime + outframe_duration_);
+#endif
+    return play_until(etime); // round up to last block (todo: will still cut release phase)
   }
 };
 
