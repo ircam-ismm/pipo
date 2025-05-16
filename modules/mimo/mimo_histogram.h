@@ -57,7 +57,7 @@ public:
   std::vector<std::vector<float>> count;  // array(numbins) of number of elements in each bin, per column
   std::vector<std::vector<float>> bins;   // array(numbins + 1) of bin limits, if requested, per column
 
-  // reserve space
+  // reserve space for size columns with numbins histogram bins each
   void init (int size, int numbins)
   {
     count.resize(size);
@@ -174,13 +174,15 @@ class MimoHistogram : public Mimo
   
   // attributes
   PiPoScalarAttr<int>	numbins_attr_;
+  PiPoScalarAttr<bool>	norm_attr_;
   
 public:
   // constructor
   MimoHistogram (Parent *parent, Mimo *receiver = NULL)
   : Mimo(parent, receiver),
 //    distance_(0.0),
-    numbins_attr_(this, "numbins", "Number of histogram bins", true, (int) 50)
+    numbins_attr_(this, "numbins", "Number of histogram bins", true, (int) 100),
+    norm_attr_   (this, "norm",    "Normalize histogram output (max = 1)", true, false),
   { };
 
   /** prepare for training, allocate training output data
@@ -202,6 +204,7 @@ public:
     // set up params
     rta_histogram_init(&params_);
     params_.nhist = numbins_attr_.get();
+    params_.norm  = norm_attr_.get();
     // params.lo_given, lo, hi, norm...
 
     // set up hist data
@@ -217,21 +220,38 @@ public:
 
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) override
   {
-    // copy buffers data pointers to  array
+    // copy buffers data pointers to array for rta_histogram_stride_multi
     std::vector<PiPoValue *> inputptr(numbuffers);
 
     for (int i = 0; i < numbuffers; i++)
       inputptr[i] = buffers[i].data;
 
+    // prepare training output data
+    mimo_buffer outbuf[numbuffers];
+    std::vector<PiPoValue> outvals(params_.nhist * size_);
+    outbuf[0].numframes = params_.nhist;
+    outbuf[0].data = outvals.data();
+
+#if 0
     // calc one hist per input element (column) over all buffers
     for (int j = 0; j < size_; j++)
       rta_histogram_stride_multi(&params_, numbuffers, inputptr.data(), j, size_, bufsize_.data(), hist_.count[j].data(), 1, hist_.bins[j].data(), 1);
+#else
+    // calc one hist per input element (column) over all buffers interleaved
+    for (int j = 0; j < size_; j++)
+    {
+      rta_histogram_stride_multi(&params_,
+				 /*input*/  numbuffers, inputptr.data(), j, size_, bufsize_.data(),
+				 /*output*/ outvals.data() + j, size_, hist_.bins[j].data(), 1);
+      // copy interleaved: hist_.count[j] = outvals.data() + j;
+    }
+#endif
 
     // copy to first buffer of training output data
     // TODO: in place of hist_
     
     
-    return propagateTrain(itercount, trackindex, 1, buffers);
+    return propagateTrain(itercount, trackindex, 1, outbuf);
   }
 
   /** return trained model parameters */
