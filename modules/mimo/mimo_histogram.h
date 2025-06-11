@@ -182,7 +182,7 @@ public:
   : Mimo(parent, receiver),
 //    distance_(0.0),
     numbins_attr_(this, "numbins", "Number of histogram bins", true, (int) 100),
-    norm_attr_   (this, "norm",    "Normalize histogram output (max = 1)", true, false),
+    norm_attr_   (this, "norm",    "Normalize histogram output (max = 1)", true, false)
   { };
 
   /** prepare for training, allocate training output data
@@ -227,7 +227,14 @@ public:
       inputptr[i] = buffers[i].data;
 
     // prepare training output data
-    mimo_buffer outbuf[numbuffers];
+    //mimo_buffer outbuf[numbuffers];
+#ifdef WIN32
+    mimo_buffer* outbuf = (mimo_buffer*)_malloca(numbuffers * sizeof(mimo_buffer));
+#else
+    mimo_buffer* outbuf = (mimo_buffer*)alloca(numbuffers * sizeof(mimo_buffer));
+#endif
+
+    
     std::vector<PiPoValue> outvals(params_.nhist * size_);
     outbuf[0].numframes = params_.nhist;
     outbuf[0].data = outvals.data();
