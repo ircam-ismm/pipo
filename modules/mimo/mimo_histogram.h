@@ -182,7 +182,7 @@ public:
   : Mimo(parent, receiver),
 //    distance_(0.0),
     numbins_attr_(this, "numbins", "Number of histogram bins", true, (int) 100),
-    norm_attr_   (this, "norm",    "Normalize histogram output (max = 1)", true, false),
+    norm_attr_   (this, "norm",    "Normalize histogram output (max = 1)", true, false)
   { };
 
   /** prepare for training, allocate training output data
