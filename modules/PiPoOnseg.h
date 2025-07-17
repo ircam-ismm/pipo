@@ -55,7 +55,7 @@ extern "C" {
 #include <algorithm> // for std::min/max
 
 
-#define DEBUG_ONSEG  (DEBUG * 0)
+#define DEBUG_ONSEG  (DEBUG * 1)
 
 class PiPoOnseg : public PiPo
 {

@@ -164,7 +164,7 @@ private:
         double segduration = (i + 1 < choptimes_.size()  ?  choptimes_[i + 1]  :  DBL_MAX) - choptimes_[i];
         
         if (i < chopduration_.size())
-        { // clip duration between 0 and next segment start
+        { // clip duration between 0 (exclusive) and next segment start
           if (chopduration_[i] <= 0)
             chopduration_[i] = segduration;
           else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
