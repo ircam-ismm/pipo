@@ -50,7 +50,7 @@ extern "C" {
 #include <algorithm>
 
 
-static const float       default_value = 0.0;
+static const float default_value = 0.0;
 static const char *default_name  = "Constant";
 
 class PiPoConst : public PiPo
@@ -78,8 +78,8 @@ private:
 
 inline PiPoConst::PiPoConst (Parent *parent, PiPo *receiver)
 : PiPo(parent, receiver),
-  value_attr_(this, "value", "list of values to store for added columns", false, 1, default_value),
-  name_attr_(this, "name",  "list of names of added columns", true, 1, default_name),
+  value_attr_(this, "value", "list of values to store for added columns", false, 0, default_value), // init as empty list to allow not to add column (as soon as name is given, 0 is default for value anyway)
+  name_attr_ (this, "name",  "list of names of added columns", true, 1, default_name),
   numconstcols_(1), numoutcols_(1)
 {}
 
