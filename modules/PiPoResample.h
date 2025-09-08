@@ -38,6 +38,8 @@
 #ifndef _PIPO_RESAMPLE_
 #define _PIPO_RESAMPLE_
 
+#define DEBUG_RESAMP (DEBUG * 1)
+
 #include "PiPo.h"
 
 class PiPoResample : public PiPo
@@ -45,115 +47,114 @@ class PiPoResample : public PiPo
   enum ResampleMode { Off, Nearest } ;
   
 public:
-  PiPoScalarAttr<PiPo::Enumerate> mode;
-  PiPoScalarAttr<double> factor;
-  PiPoScalarAttr<double> targetrate;
+  PiPoScalarAttr<PiPo::Enumerate> mode_attr_;
+  PiPoScalarAttr<double> factor_attr_;
+  PiPoScalarAttr<double> targetrate_attr_;
 private:
   
-  double inputIncr;
-  int inputIndex;
-  int outputIndex;
-  int timeTaggedInput;
-  double targetRate;
-  double targetPeriod;
+  double inputIncr_;
+  int    inputIndex_;
+  int    outputIndex_;
+  int    timeTaggedInput_;
+  double targetRate_;
+  double targetPeriod_;
   
-  float *vector;
-  int size;
-  int maxFrames;
+  float *vector_;
+  int size_;
+  int maxFrames_;
   
 public:
-  PiPoResample(Parent *parent, PiPo *receiver = NULL)
+  PiPoResample (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  factor(this, "factor", "resample factor", true, 1.0),
-  targetrate(this, "targetrate", "output samplerate", true, 1.0),
-  mode(this, "mode", "resample mode", true, Nearest)
+    factor_attr_    (this, "factor", "resample factor", true, 1.0),
+    targetrate_attr_(this, "targetrate", "output samplerate", true, 1.0),
+    mode_attr_      (this, "mode", "resample mode", true, Nearest)
   {
-    this->mode.addEnumItem("off", "Resample Off");
-    this->mode.addEnumItem("Nearest", "Resample Nearest");
+    mode_attr_.addEnumItem("off", "Resample Off");
+    mode_attr_.addEnumItem("Nearest", "Resample Nearest");
     
-    this->inputIncr = 1.0;
-    this->inputIndex = 0;
-    this->outputIndex = 0;
-    this->timeTaggedInput = 0;
-    this->targetRate = 1.;
-    this->targetPeriod = 1000.;
+    inputIncr_       = 1.0;
+    inputIndex_      = 0;
+    outputIndex_     = 0;
+    timeTaggedInput_ = 0;
+    targetRate_      = 1.;
+    targetPeriod_    = 1000.;
     
-    this->vector = NULL;
-    this->size = 0;
-    this->maxFrames = 0;
+    vector_    = NULL;
+    size_      = 0;
+    maxFrames_ = 0;
   }
   
-  ~PiPoResample(void)
+  ~PiPoResample (void)
   {
-    if(this->vector != NULL)
-      free(this->vector);
+    if(vector_ != NULL)
+      free(vector_);
   }
   
-  int
-  streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     double outFrameRate, factor;
     int maxOutBlockSize;
-    if(hasTimeTags)
+
+    if (hasTimeTags)
     {
-      this->targetRate = this->targetrate.get();
-      if(this->targetRate < 1.) this->targetRate = 1.;
-      this->targetPeriod = 1000.0 / this->targetRate;
+      targetRate_ = targetrate_attr_.get();
+      if(targetRate_ < 1.) targetRate_ = 1.;
+      targetPeriod_ = 1000.0 / targetRate_;
       
-      outFrameRate = this->targetRate;
+      outFrameRate = targetRate_;
       factor = outFrameRate / rate;
     }
     else
     {
-      this->inputIncr = fabs(this->factor.get());
-      factor = 1.0 / this->inputIncr;
+      inputIncr_ = fabs(factor_attr_.get());
+      factor = 1.0 / inputIncr_;
       outFrameRate = rate * factor;
     }
 
     maxOutBlockSize = (int)ceil(maxFrames * factor);
     
-    this->timeTaggedInput = hasTimeTags;
-    this->maxFrames = maxOutBlockSize;
-    this->size = width * size;
-    this->vector = (float *)realloc(this->vector, this->size * this->maxFrames * sizeof(float));
+    timeTaggedInput_ = hasTimeTags;
+    maxFrames_ = maxOutBlockSize;
+    size_ = width * size;
+    vector_ = (float *)realloc(vector_, size_ * maxFrames_ * sizeof(float));
     
-    return this->propagateStreamAttributes(0, outFrameRate, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
-  }
+    return propagateStreamAttributes(0, outFrameRate, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
+  } // streamAttributes()
   
-  int
-  reset()
+  int reset ()
   {
-    this->inputIndex = 0;
-    this->outputIndex = 0;
+    inputIndex_ = 0;
+    outputIndex_ = 0;
     
-    return this->propagateReset();
+    return propagateReset();
   }
   
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     int numOutFrames = 0;
     
-    switch(this->mode.get())
+    switch(mode_attr_.get())
     {
       default:
       {
-        memcpy(this->vector, values, num * size * sizeof(float));
+        memcpy(vector_, values, num * size * sizeof(float));
         numOutFrames = num;
-        break;
       }
-        
+      break;
+	
       case Nearest:
       {
-        int inputIndex = this->inputIndex;
-        int outputIndex = this->outputIndex;
+        int inputIndex = inputIndex_;
+        int outputIndex = outputIndex_;
         
-        if(this->timeTaggedInput)
+        if(timeTaggedInput_)
         {
           for(unsigned int i = 0; i < num; i++)
           {
-            while((double)outputIndex * this->targetPeriod < time && numOutFrames < this->maxFrames)
+	    while ((double) outputIndex * targetPeriod_ < time  &&  numOutFrames < maxFrames_)
             {
-              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+	      memcpy(vector_ + numOutFrames * size_, values + i * size, size * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
@@ -162,12 +163,12 @@ public:
         }
         else
         {
-          double factor = this->factor.get();
+          double factor = factor_attr_.get();
           for(unsigned int i = 0; i < num; i++)
           {
-            while((double)outputIndex * factor < (double)inputIndex*num + i + 0.5)
+	    while ((double) outputIndex * factor < (double) inputIndex * num + i + 0.5)
             {
-              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+              memcpy(vector_ + numOutFrames * size_, values + i * size, size * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
@@ -175,17 +176,16 @@ public:
           inputIndex++;
         }
         
-        this->inputIndex = inputIndex;
-        this->outputIndex = outputIndex;
-        
-        break;
+        inputIndex_ = inputIndex;
+        outputIndex_ = outputIndex;
       }
+      break;
     }
     
-    if(numOutFrames > 0)
-      return this->propagateFrames(NULL, weight, this->vector, size, numOutFrames);
+    if (numOutFrames > 0)
+      return propagateFrames(NULL, weight, vector_, size, numOutFrames); ///xxxxxxxxx
     else return 0;
-  }
+  } // frames()
 }; /* _PIPO_RESAMPLE_H_ */
 
 #endif
