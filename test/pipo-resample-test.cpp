@@ -13,6 +13,14 @@
 #include "PiPoTestHost.h"
 
 
+template<typename T>
+std::string vector_to_string (std::vector<T> vec)
+{
+  return "[" + std::accumulate(vec.begin() + 1, vec.end(), std::to_string(vec[0]),
+			       [](const std::string& a, PiPoValue b)
+				 { return a + ", " + std::to_string(b); }) + "]";
+}
+
 TEST_CASE ("resample")
 {
   PiPoTestHost host;
@@ -46,11 +54,11 @@ TEST_CASE ("resample")
 	  inputframe.resize(size);
 
 	  const std::string setup = (std::stringstream("Setup: ") <<
-				     "timetaggedinput=" << timetaggedinput << ", " <<
-				     "factor=" << factor << ", " <<
-				     "width="  << width  << ", " <<
-				     "height=" << height).str();
-	   
+				     "timetaggedinput = " << timetaggedinput << ", " <<
+				     "factor = " << factor << ", " <<
+				     "width = "  << width  << ", " <<
+				     "height = " << height).str();
+
 	  GIVEN (setup)
 	  {
 	    WHEN ("giving targetrate")
@@ -63,13 +71,17 @@ TEST_CASE ("resample")
 	      check = host.setInputStreamAttributes(sa);
 	      REQUIRE (check == 0);
 
+	      std::cout << "Input for " << setup << std::endl;
+	  
 	      for (std::size_t i = 0; i < numframes; i++)
 	      {
 		if (size > 0)
-		{
+		{ // generate vector i, ii, iii, ...
 		  inputframe[0] = i + 1;
 		  for (int j = 1; j < size; j++)
-		    inputframe[j] = inputframe[j - 1] * (1 + pow(10, i));
+		    inputframe[j] = inputframe[j - 1] * 10 + inputframe[0];
+
+		  std::cout << time << " " << vector_to_string(inputframe) << std::endl;
 		}
 		
 		check = host.frames(time, 1., inputframe.data(), size, 1);///todo num>1
@@ -83,6 +95,7 @@ TEST_CASE ("resample")
 	      CHECK (host.receivedFrames.size() == numframes * factor);
               for (unsigned int i = 0; i < host.receivedFrames.size(); i++)
               {
+		std::cout << "received(rate) @" << host.received_times_[i] << ": " << vector_to_string(host.receivedFrames[i]) << std::endl;
 		CHECK (host.received_times_[i] == Approx(expected_time));
                 //CHECK (host.receivedFrames[i][j] == ????);
 		expected_time += outsampleperiod;
@@ -93,17 +106,18 @@ TEST_CASE ("resample")
 	    {
 	      double time = 0;
 	      host.reset(); // clear stored received frames
-	      host.setAttr("resample.factor", factor);
+	      //host.setAttr("resample.factor", factor);
+	      host.setAttr("resample.factor", 1 / factor); // invert for classic PiPoResample.h downsampling factor
 	      check = host.setInputStreamAttributes(sa);
 	      REQUIRE (check == 0);
 
 	      for (std::size_t i = 0; i < numframes; i++)
 	      {
 		if (size > 0)
-		{
+		{ // generate vector i, ii, iii, ...
 		  inputframe[0] = i + 1;
 		  for (int j = 1; j < size; j++)
-		    inputframe[j] = inputframe[j - 1] * (1 + pow(10, i));
+		    inputframe[j] = inputframe[j - 1] * 10 + inputframe[0];
 		}
 		
 		check = host.frames(time, 1., inputframe.data(), size, 1);///todo num>1
@@ -112,10 +126,12 @@ TEST_CASE ("resample")
 		time += insampleperiod;
 	      }
 
-	      double expected_time = 0;
+	      double expected_time = insampleperiod; // output is second frame of decimated input group (???)
 	      CHECK (host.receivedFrames.size() == numframes * factor);
               for (unsigned int i = 0; i < host.receivedFrames.size(); i++)
               {
+		std::cout << "received(factor) @" << host.received_times_[i] << ": " << vector_to_string(host.receivedFrames[i]) << std::endl;
+
 		CHECK (host.received_times_[i] == Approx(expected_time));
                 //CHECK (host.receivedFrames[i][j] == ????);
 		expected_time += outsampleperiod;
