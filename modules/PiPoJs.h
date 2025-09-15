@@ -176,7 +176,7 @@ public:
  */
 
 private:
-  void set_property (jerry_value_t obj, const char *name, jerry_value_t prop) throw (...)
+  void set_property (jerry_value_t obj, const char *name, jerry_value_t prop) noexcept (false)
   {
     jerry_value_t prop_name  = jerry_create_string((const jerry_char_t *) name);
     jerry_value_t set_result = jerry_set_property(obj, prop_name, prop);
@@ -189,7 +189,7 @@ private:
   }
 
   // create array and set as obj.name
-  jerry_value_t create_array (jerry_value_t obj, const char *name, size_t size) throw (...)
+  jerry_value_t create_array (jerry_value_t obj, const char *name, size_t size) noexcept(false)
   {
     jerry_value_t a_arr = jerry_create_typedarray(JERRY_TYPEDARRAY_FLOAT32, (unsigned int) size);
     set_property(obj, name, a_arr);
@@ -197,7 +197,7 @@ private:
   }
 
   // set values of float array object from pointer
-  void set_array (jerry_value_t arr, size_t size, PiPoValue *data) throw (...)
+  void set_array (jerry_value_t arr, size_t size, PiPoValue *data) noexcept(false)
   {
     // set using arraybuffer
     jerry_length_t bytelength = 0;
