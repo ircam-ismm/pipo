@@ -130,7 +130,7 @@ private:
             sort (matrix.begin(), matrix.end());
             
             for (int i = 0; i < nForm; i++) {
-                if (matrix.size() > 0) {
+                if ((size_t) i < matrix.size()) {
                     outValues[i * cols] = matrix[i].first;
                     if (cols > 1) {
                         outValues[i * cols + 1] = matrix[i].second;
