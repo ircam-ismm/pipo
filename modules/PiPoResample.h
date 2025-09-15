@@ -67,9 +67,9 @@ private:
 public:
   PiPoResample (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    factor_attr_    (this, "factor", "resample factor", true, 1.0),
+    factor_attr_    (this, "factor",     "downsample factor", true, 1.0),
     targetrate_attr_(this, "targetrate", "output samplerate", true, 1.0),
-    mode_attr_      (this, "mode", "resample mode", true, Nearest)
+    mode_attr_      (this, "mode",       "resample mode",     true, Nearest)
   {
     mode_attr_.addEnumItem("off", "Resample Off");
     mode_attr_.addEnumItem("Nearest", "Resample Nearest");
@@ -111,7 +111,8 @@ public:
     switch (rate_or_factor)
     {
     case use_rate:
-      factor_       = rate / targetRate_;
+      factor_       = targetRate_ / rate;
+      inputIncr_    = 1.0 / factor_;
     break;
 
     case use_factor:
@@ -167,22 +168,22 @@ public:
               outputIndex++;
               numOutFrames++;
             }
-	    inputIndex++; // not actually used for timeTaggedInput_
           }
+	  inputIndex++; // not actually used for timeTaggedInput_
         }
         else
         { // sampled
-          double factor = factor_attr_.get();
           for(unsigned int i = 0; i < num; i++)
-          {
-	    while ((double) outputIndex * factor < (double) inputIndex * num + i + 0.5)
+          { // use inputIncr_ instead of factor_ for classic downsampling behaviour
+	    while ((double) outputIndex * inputIncr_ < (double) inputIndex * num + i + 0.5)
             {
+		//printf("sampled i %d/%d  inputIndex %d  outputIndex %d  numOutFrames %d  [ %f ...]\n", i, num, inputIndex, outputIndex, numOutFrames, values[i * size]);
               memcpy(vector_ + numOutFrames * size_, values + i * size, size_ * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
           }
-          inputIndex++;
+	  inputIndex++;
         }
         
         inputIndex_ = inputIndex;
@@ -201,7 +202,7 @@ public:
 	  ok &= propagateFrames(time, weight, vector_ + i * size_, size_, 1) == 0;
 	  time += targetPeriod_;
 	}
-	return ok;
+	return ok ? 0 : 1;
       }
       else
 	return propagateFrames(time, weight, vector_, size_, numOutFrames);

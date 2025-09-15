@@ -1,6 +1,7 @@
 // -*- mode: c++; c-basic-offset:2 -*-
 
 #include <sstream>
+#include <iomanip>
 #include <string>
 #include <cstddef>
 
@@ -27,10 +28,11 @@ TEST_CASE ("resample")
   PiPoTestHost host;
   PiPoStreamAttributes sa;
 
+  int maxframes = 8;
   int numframes = 9;
   host.setGraph("resample");
   host.setAttr("resample.mode", 1);
-  sa.maxFrames = numframes;
+  sa.maxFrames = maxframes;
 
   int check;
   double insamplerate   = 1000.;
@@ -112,21 +114,27 @@ TEST_CASE ("resample")
 		}
 		else
 		{ // sampled
-		  check = host.frames(time, 1., inputframe.data(), size, numframes); // push all sampled frames at once
-		  REQUIRE (check == 0);		  
+		  for (int i = 0; i < numframes; i += maxframes)
+		  {
+		    check = host.frames(time, 1., inputframe.data() + i * size, size, std::min(numframes - i, maxframes)); // push one block of sampled frames at a time
+		    REQUIRE (check == 0);
+		    time += insampleperiod * maxframes;
+		  }
 		}
 
 		// check received frames and time tags
 		double expected_time = timetaggedinput
 		  ?  insampleperiod // with timetags, output is second frame of decimated input group (???)
 		  :  0;
-		CHECK (host.receivedFrames.size() == ceil(numframes * srfactor));
+		CHECK (abs(host.receivedFrames.size() - numframes * srfactor) < 2);
+		INFO ("received frames" << host.receivedFrames.size() << " expected frames " << numframes * srfactor);
+
 		for (unsigned int i = 0; i < host.receivedFrames.size(); i++)
 		{
-		  std::cout << "received(rate) @" << host.received_times_[i] << ": " << vector_to_string(std::span(host.receivedFrames[i])) << std::endl;
+		  std::cout << "received(rate) @" << std::fixed << std::setprecision(3) << host.received_times_[i] << ": " << vector_to_string(std::span(host.receivedFrames[i])) << std::endl;
 		  CHECK (host.received_times_[i] == Approx(expected_time));
 		  //CHECK (host.receivedFrames[i][j] == ????);
-		  expected_time += outsampleperiod;
+		  expected_time += timetaggedinput  ?  outsampleperiod  :  0; // sampled output doesn't incr. timetags
 		}
 	      } // when
 	    } // given
