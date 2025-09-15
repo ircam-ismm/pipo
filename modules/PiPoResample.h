@@ -52,12 +52,13 @@ public:
   PiPoScalarAttr<double> targetrate_attr_;
 private:
   
-  double inputIncr_;
-  int    inputIndex_;
-  int    outputIndex_;
   int    timeTaggedInput_;
+  double inputIncr_; // given downsampling "factor"
+  double factor_;    // actual resampling factor from source to target rate
   double targetRate_;
   double targetPeriod_;
+  int    inputIndex_;
+  int    outputIndex_;
   
   float *vector_;
   int size_;
@@ -74,6 +75,7 @@ public:
     mode_attr_.addEnumItem("Nearest", "Resample Nearest");
     
     inputIncr_       = 1.0;
+    factor_          = 1.0;
     inputIndex_      = 0;
     outputIndex_     = 0;
     timeTaggedInput_ = 0;
@@ -91,35 +93,42 @@ public:
       free(vector_);
   }
   
-  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxnumframes)
   {
-    double outFrameRate, factor;
-    int maxOutBlockSize;
+    enum { use_rate, use_factor } rate_or_factor = use_factor;
 
-    if (hasTimeTags)
+    inputIncr_  = fabs(factor_attr_.get());
+    targetRate_ = targetrate_attr_.get();
+    if (targetRate_ < 1.) targetRate_ = 1.;
+
+    if (targetRate_ != 1.  &&  inputIncr_ != 1.) // both given, need to prioritize
+	rate_or_factor = hasTimeTags  ?  use_rate  :  use_factor;
+    else if (targetRate_ != 1.)
+	rate_or_factor = use_rate;
+    else if (inputIncr_ != 1.)
+	rate_or_factor = use_factor;
+
+    switch (rate_or_factor)
     {
-      targetRate_ = targetrate_attr_.get();
-      if(targetRate_ < 1.) targetRate_ = 1.;
-      targetPeriod_ = 1000.0 / targetRate_;
-      
-      outFrameRate = targetRate_;
-      factor = outFrameRate / rate;
-    }
-    else
-    {
-      inputIncr_ = fabs(factor_attr_.get());
-      factor = 1.0 / inputIncr_;
-      outFrameRate = rate * factor;
+    case use_rate:
+      factor_       = rate / targetRate_;
+    break;
+
+    case use_factor:
+      factor_       = 1.0 / inputIncr_;
+      targetRate_   = rate * factor_;
+    break;
     }
 
-    maxOutBlockSize = (int)ceil(maxFrames * factor);
-    
+    targetPeriod_    = 1000.0 / targetRate_;
     timeTaggedInput_ = hasTimeTags;
-    maxFrames_ = maxOutBlockSize;
-    size_ = width * size;
-    vector_ = (float *)realloc(vector_, size_ * maxFrames_ * sizeof(float));
+    maxFrames_       = (int) ceil(maxnumframes * ceil(factor_));
+    size_            = width * height;
+    vector_          = (float *) realloc(vector_, size_ * maxFrames_ * sizeof(float));
+
+    printf("PiPoResample::streamAttributes timetagged %d  rate %f  width %d height %d  num %d --> incr %f  targetrate %f  factor %f  maxframes %d\n", hasTimeTags, rate, width, height, maxnumframes, inputIncr_, targetRate_, factor_, maxFrames_);
     
-    return propagateStreamAttributes(0, outFrameRate, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
+    return propagateStreamAttributes(0, targetRate_, offset, width, height, (const char **)labels, hasVarSize, domain, maxFrames_);
   } // streamAttributes()
   
   int reset ()
@@ -152,23 +161,23 @@ public:
         {
           for(unsigned int i = 0; i < num; i++)
           {
-	    while ((double) outputIndex * targetPeriod_ < time  &&  numOutFrames < maxFrames_)
+	    while ((double) outputIndex * targetPeriod_ < time  &&  numOutFrames < maxFrames_) // TBD: timetagged with num > 1 makes no sense
             {
-	      memcpy(vector_ + numOutFrames * size_, values + i * size, size * sizeof(float));
+	      memcpy(vector_ + numOutFrames * size_, values + i * size, size_ * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
+	    inputIndex++; // not actually used for timeTaggedInput_
           }
-          inputIndex++;
         }
         else
-        {
+        { // sampled
           double factor = factor_attr_.get();
           for(unsigned int i = 0; i < num; i++)
           {
 	    while ((double) outputIndex * factor < (double) inputIndex * num + i + 0.5)
             {
-              memcpy(vector_ + numOutFrames * size_, values + i * size, size * sizeof(float));
+              memcpy(vector_ + numOutFrames * size_, values + i * size, size_ * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
@@ -183,7 +192,20 @@ public:
     }
     
     if (numOutFrames > 0)
-      return propagateFrames(NULL, weight, vector_, size, numOutFrames); ///xxxxxxxxx
+    {
+      if (timeTaggedInput_)
+      { /* not sure this loop is necessary, timeTaggedInput should never have num > 1 */
+	int ok = true;
+	for (int i = 0; i < numOutFrames; i++)
+	{
+	  ok &= propagateFrames(time, weight, vector_ + i * size_, size_, 1) == 0;
+	  time += targetPeriod_;
+	}
+	return ok;
+      }
+      else
+	return propagateFrames(time, weight, vector_, size_, numOutFrames);
+    }
     else return 0;
   } // frames()
 }; /* _PIPO_RESAMPLE_H_ */
