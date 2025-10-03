@@ -46,7 +46,7 @@
 #include <cmath>
 #include <cstdlib> // qsort
 
-#define PIPO_PEAKS_DEBUG 1
+#define PIPO_PEAKS_DEBUG (DEBUG * 1)
 #define ABS_MAX 2147483647.0
 
 typedef struct

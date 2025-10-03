@@ -127,7 +127,9 @@ public:
     size_            = width * height;
     vector_          = (float *) realloc(vector_, size_ * maxFrames_ * sizeof(float));
 
+#if DEBUG
     printf("PiPoResample::streamAttributes timetagged %d  rate %f  width %d height %d  num %d --> incr %f  targetrate %f  factor %f  maxframes %d\n", hasTimeTags, rate, width, height, maxnumframes, inputIncr_, targetRate_, factor_, maxFrames_);
+#endif
     
     return propagateStreamAttributes(0, targetRate_, offset, width, height, (const char **)labels, hasVarSize, domain, maxFrames_);
   } // streamAttributes()
