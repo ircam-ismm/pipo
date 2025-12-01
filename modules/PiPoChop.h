@@ -360,8 +360,10 @@ public:
       std::strcpy(outLabels[0], "Duration");
     
     tempMod.getLabels(labels, width, outLabels + reportDuration, this->maxDescrNameLength, outputSize);
-    
-    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1,
+
+    // pass expected segment rate
+    double outrate = chopSizeA.get() > 0  ?  1000. / chopSizeA.get()  :  rate;
+    int ret = this->propagateStreamAttributes(true, outrate, 0.0, totalOutputSize, 1,
                                               const_cast<const char **>(outLabels),
                                               false, 0.0, 1);
     
