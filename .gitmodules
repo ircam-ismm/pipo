@@ -17,7 +17,7 @@
 
 [submodule "modules/flucoma-core"]
 	path = modules/flucoma-core
-	url = https://github.com/flucoma/flucoma-core.git
+	url = https://github.com/ircam-ismm/flucoma-core.git
 	branch = production
 	
 [submodule "modules/polyspring"]
