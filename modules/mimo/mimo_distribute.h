@@ -157,13 +157,22 @@ public:
       { // first iteration: push input data
 	std::vector<float *> buffers(numbuffers);
         inputbufsizes_.resize(numbuffers);
+        int numtotalcheck = 0;
 
 	for (int i = 0; i < numbuffers; i++)
 	{
           inputbufsizes_[i] = mimobuffers[i].numframes;
 	  buffers[i]        = mimobuffers[i].data;
+          numtotalcheck    += inputbufsizes_[i];
 	}
-      
+
+        // sanity check
+        if (numframestotal_ != numtotalcheck)
+        {
+          signalError("data has changed");
+          return -1;
+        }
+
 	poly_.set_points(numframestotal_, numbuffers, inputbufsizes_.data(), buffers.data(), n_, incolumns_[0], incolumns_[1]);
       }
 
