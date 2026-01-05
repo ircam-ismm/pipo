@@ -245,7 +245,13 @@ public:
     return propagateSetup(numbuffers, numtracks, tracksize, const_cast<const PiPoStreamAttributes**>(outattr));
   }
 
-public:	
+public:
+  static void progress_callback (void *obj, int progress)
+  {
+    PiPo *pipo = (PiPo *) obj;
+    pipo->signalProgress(progress);
+  }
+  
   int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
   {
     // convert input data into flucoma dataset
@@ -285,7 +291,7 @@ public:
     }
 
     // actually do the UMAP
-    fluid::algorithm::UMAP myUMAP;	      // make a UMAP object
+    fluid::algorithm::UMAP myUMAP(progress_callback, this);	      // make a UMAP object
     int          k         = std::max<int>(num_neighbours_attr_.get(), 1);
     const double mindist   = std::max<double>(min_dist_attr_.get(), 0);
     const int    numiter   = std::max<int>(num_iter_attr_.get(), 1);
