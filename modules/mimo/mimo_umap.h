@@ -48,8 +48,8 @@
 #include <algorithm>
 
 #include "jsoncpp/include/json.h"
-#include "data/FluidDataSet.hpp" // includes flucoma-core-src/include/data/FluidDataSet.hpp
-#include "algorithms/public/UMAP.hpp"
+#include "flucoma/data/FluidDataSet.hpp" // includes flucoma-core-src/include/flucoma/data/FluidDataSet.hpp
+#include "flucoma/algorithms/public/UMAP.hpp"
 
 
 class UMAP_model_data : public mimo_model_data
