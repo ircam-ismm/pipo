@@ -93,7 +93,7 @@ public:
     if(!succes)
     {
       std::cout << "mimo.UMAP model json parsing error:\n" << reader.getFormatedErrorMessages() << std::endl
-		<< "in\n" << json_string << std::endl;
+                << "in\n" << json_string << std::endl;
       return -1;
     }
     const Json::Value _sizes = root["dimensions"];
@@ -120,7 +120,7 @@ private:
     for (size_t i = 0; i < v.size(); ++i)
     {
             if (i != 0)
-	      ss << ",";
+              ss << ",";
             ss << v[i];
     }
     ss << "]";
@@ -138,33 +138,33 @@ private:
   int numbuffers_, numtracks_, numframestotal_;
   std::vector<int> bufsizes_; // num frames for each buffer
   int fb_        = Forward;
-  int n_ = 0;	// input data vector size (1, n_)
+  int n_ = 0;   // input data vector size (1, n_)
   std::vector<unsigned int> incolumns_; // indims_ used column indices (or empty for all columns)
   bool incolumns_contiguous_; // column indices are contiguous sequence of indices incolumns_[0]..[size - 1]
-  int indims_    = 0;	// training data vector size (used columns)
-  int outdims_   = 2;	// output data vector size
+  int indims_    = 0;   // training data vector size (used columns)
+  int outdims_   = 2;   // output data vector size
   std::vector<std::string> labelstore_;
         
 public:
   PiPoScalarAttr<PiPo::Enumerate> forward_backward_attr_;
   PiPoVarSizeAttr<PiPo::Atom>     columns_attr_;
-  PiPoScalarAttr<int>		  num_neighbours_attr_;
-  PiPoScalarAttr<int>		  out_dims_attr_;
-  PiPoScalarAttr<double>	  min_dist_attr_;
-  PiPoScalarAttr<int>		  num_iter_attr_;
-  PiPoScalarAttr<double>	  learn_rate_attr_;
-  PiPoDictionaryAttr		  model_attr_;
+  PiPoScalarAttr<int>             num_neighbours_attr_;
+  PiPoScalarAttr<int>             out_dims_attr_;
+  PiPoScalarAttr<double>          min_dist_attr_;
+  PiPoScalarAttr<int>             num_iter_attr_;
+  PiPoScalarAttr<double>          learn_rate_attr_;
+  PiPoDictionaryAttr              model_attr_;
 
   UMAP_model_data decomposition_;
     
   MimoUMAP(Parent *parent, Mimo *receiver = nullptr)
   : Mimo(parent, receiver),
     forward_backward_attr_(this, "direction", "Mode for decoding: forward or backward", true, fb_),
-    columns_attr_	  (this, "columns", "Column Names or Indices to include", true),
+    columns_attr_         (this, "columns", "Column Names or Indices to include", true),
     out_dims_attr_        (this, "dims", "Number of Output Dimensions", true, outdims_),
     num_neighbours_attr_  (this, "k", "Number of Nearest Neighbours", false, 15),
-    min_dist_attr_	  (this, "mindist", "Minimum Distance", false, 0.1),
-    num_iter_attr_	  (this, "numiter", "Number of Iterations", false, 200),
+    min_dist_attr_        (this, "mindist", "Minimum Distance", false, 0.1),
+    num_iter_attr_        (this, "numiter", "Number of Iterations", false, 200),
     learn_rate_attr_      (this, "learnrate", "Learning Rate", false, 0.1),
     model_attr_           (this, "model", "The model for processing", true, "")
   {
@@ -185,7 +185,7 @@ public:
     indims_  = n_;
     outdims_ = std::max(out_dims_attr_.get(), 1); // output dimensions
     
-    numframestotal_ = 0;	// total number of frames over all buffers
+    numframestotal_ = 0;        // total number of frames over all buffers
     for (int i = 0; i < numbuffers_; i++)
       numframestotal_ += bufsizes_[i];
 
@@ -197,19 +197,19 @@ public:
     {
       if (incols[i].isNumber())
       {
-	int colind = incols[i].getInt();
+        int colind = incols[i].getInt();
 
-	if (colind >= 0)
-	  incolumns_.push_back(colind);
-	// else: count from back
+        if (colind >= 0)
+          incolumns_.push_back(colind);
+        // else: count from back
       }
       else if (incols[i].isString())
       { // look up column index by name
-	const char *colname = incols[i].getString();
+        const char *colname = incols[i].getString();
 
-	int colind = streamattr[0]->lookup_label(colname);
-	if (colind >= 0)
-	  incolumns_.push_back(colind);
+        int colind = streamattr[0]->lookup_label(colname);
+        if (colind >= 0)
+          incolumns_.push_back(colind);
       } // else: unknown type, just ignore
     }
     if (incolumns_.size() > 0)
@@ -233,12 +233,12 @@ public:
       outattr[i]->labels = new const char*[outdims_];
       outattr[i]->numLabels = outdims_;
       outattr[i]->labels_alloc = outdims_;
-	
+        
       for (int j = 0; j < outdims_; j++)
       {
-	char *lab = (char *) malloc(8); //todo: memleak!
-	snprintf(lab, 8, "UMAP%d", j);
-	outattr[i]->labels[j] = lab;
+        char *lab = (char *) malloc(8); //todo: memleak!
+        snprintf(lab, 8, "UMAP%d", j);
+        outattr[i]->labels[j] = lab;
       }
     }
 
@@ -266,32 +266,32 @@ public:
       PiPoValue* bufferptr = buffers[bufferindex].data;
 
       if (incolumns_contiguous_)
-	// shift bufferptr to first requested input column 
-	bufferptr += incolumns_[0];
+        // shift bufferptr to first requested input column 
+        bufferptr += incolumns_[0];
 
       // append to traindata
       for (int i = 0; i < numframes; i++, bufferptr += n_)
       {
-	//const mubu_id id{bufferindex, i};
-	std::string id = std::to_string(((unsigned long) bufferindex << 32) + i); // cram 2 ints into a string, todo: use hex or base64
-	
-	// convert one row and copy to umap-needed double data
-	std::vector<double> vec(indims_);
+        //const mubu_id id{bufferindex, i};
+        std::string id = std::to_string(((uint64_t) bufferindex << 32) + i); // cram 2 32-bit ints into a numerical string, todo: use hex or base64
+        
+        // convert one row and copy to umap-needed double data
+        std::vector<double> vec(indims_);
 
-	if (incolumns_contiguous_)
-	  // use full input vector
-	  std::copy(bufferptr, bufferptr + indims_, vec.begin());
-	else
-	  // use selected columns
-	  for (int i = 0; i < indims_; i++)
-	    vec[i] = bufferptr[incolumns_[i]];
-	
-	dataset_in.add(id, fluid::FluidTensorView<double, 1>(vec.data(), 0, indims_)); //todo: FluidTensorView should be able to use vec directly...
+        if (incolumns_contiguous_)
+          // use full input vector
+          std::copy(bufferptr, bufferptr + indims_, vec.begin());
+        else
+          // use selected columns
+          for (int i = 0; i < indims_; i++)
+            vec[i] = bufferptr[incolumns_[i]];
+        
+        dataset_in.add(id, fluid::FluidTensorView<double, 1>(vec.data(), 0, indims_)); //todo: FluidTensorView should be able to use vec directly...
       }
     }
 
     // actually do the UMAP
-    fluid::algorithm::UMAP myUMAP(progress_callback, this);	      // make a UMAP object
+    fluid::algorithm::UMAP myUMAP(progress_callback, this);           // make a UMAP object
     int          k         = std::max<int>(num_neighbours_attr_.get(), 1);
     const double mindist   = std::max<double>(min_dist_attr_.get(), 0);
     const int    numiter   = std::max<int>(num_iter_attr_.get(), 1);
@@ -341,35 +341,35 @@ public:
       // allocate temp space
       for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
       {
-	int numframes = buffers[bufferindex].numframes;
-	outdata[bufferindex].reserve(numframes * outdims_);
-	outbufs[bufferindex].numframes = numframes;
-	outbufs[bufferindex].data      = outdata[bufferindex].data();
+        int numframes = buffers[bufferindex].numframes;
+        outdata[bufferindex].resize(numframes * outdims_);
+        outbufs[bufferindex].numframes = numframes;
+        outbufs[bufferindex].data      = outdata[bufferindex].data();
       }
 
       // copy transformed data pointer to output buffers via id (index pair)
       for (auto i = 0; i < embedding.size(); i++)
       {
-        unsigned long  id  = std::stoul(out_ids.row(i)); // parse imposed silly string id
-	double        *vec = out_points.row(i).data();
+        uint64_t id  = std::stoul(out_ids.row(i)); // parse imposed silly string id
+        double  *vec = out_points.row(i).data();
 
-	int bufferindex = id >> 32;
-	int elemindex   = id & 0xffffffff;
-	std::copy(vec, vec + outdims_, &(outdata[bufferindex][elemindex * outdims_]));
+        int bufferindex = id >> 32;
+        int elemindex   = id & 0xffffffff;
+        std::copy(vec, vec + outdims_, &(outdata[bufferindex][elemindex * outdims_]));
       }
 #else // trust ids are stable, return pointers to blocks, no outdata[] needed
       for (int bufferindex = 0, bufstart = 0; bufferindex < numbuffers; bufferindex++)
       {
-	// todo: check first/last id is as expected, else break, revert to elem copy
-	// mubu_id    id   = out_ids.row(i);
+        // todo: check first/last id is as expected, else break, revert to elem copy
+        // mubu_id    id   = out_ids.row(i);
 
-	int numframes = buffers[bufferindex].numframes;
-	outbufs[bufferindex].numframes = numframes;
-	outbufs[bufferindex].data      = &out_points.row(bufstart);
-	bufstart += numframes;
+        int numframes = buffers[bufferindex].numframes;
+        outbufs[bufferindex].numframes = numframes;
+        outbufs[bufferindex].data      = &out_points.row(bufstart);
+        bufstart += numframes;
       }
 #endif
-	
+        
       return propagateTrain(itercount, trackindex, numbuffers, outbufs.data());
     }
     else
@@ -397,7 +397,7 @@ public:
         
     fb_ = forward_backward_attr_.get();
         
-    unsigned int outn = 0, outm = 0;	// todo: check rank_attr_ if different outn requested
+    unsigned int outn = 0, outm = 0;    // todo: check rank_attr_ if different outn requested
         
     switch(fb_)
     {
