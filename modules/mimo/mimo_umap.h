@@ -350,7 +350,7 @@ public:
       // copy transformed data pointer to output buffers via id (index pair)
       for (auto i = 0; i < embedding.size(); i++)
       {
-        uint64_t id  = std::stoull(out_ids.row(i)); // parse imposed silly string id
+        uint64_t id  = std::stoull(out_ids.row(i)()); // parse imposed silly string id
         double  *vec = out_points.row(i).data();
 
         int bufferindex = id >> 32;
