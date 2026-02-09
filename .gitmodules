@@ -18,7 +18,7 @@
 [submodule "modules/flucoma-core"]
 	path = modules/flucoma-core
 	url = https://github.com/ircam-ismm/flucoma-core.git
-	branch = memo-integration
+	branch = mimo-integration
 	
 [submodule "modules/polyspring"]
 	path = modules/polyspring
