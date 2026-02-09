@@ -133,7 +133,7 @@ public:
       if (synth_) delete_fluid_synth(synth_);
       synth_ = new_fluid_synth(settings_);
 
-      printf("set soundfont %s\n", sfname_attr_.get());
+      //printf("set soundfont %s\n", sfname_attr_.get());
       int ret = fluid_synth_sfload(synth_, sfname_attr_.get(), 0);
       delete_fluid_settings(settings_);
     }
@@ -174,7 +174,7 @@ public:
 	  program_cache_[i] = program_attr_.getInt(i);
 	  if (program_cache_[i] > -1)
 	  {
-	    printf("program %3d ch %2d\n", program_cache_[i], i);
+	    //printf("program %3d ch %2d\n", program_cache_[i], i);
 	    fluid_synth_program_change(synth_, i, program_cache_[i]);
 	  }
 	  // else: -1: no change
@@ -200,7 +200,7 @@ public:
       int velocity = width_ > 2  ?  values[2]  :  64;
       int channel  = width_ > 3  ?  values[3]  :  1;
 
-      printf("fluid frames @ %6.1f %3d %3d %3d dur %6f\n", time, pitch, velocity, channel, duration);
+      //printf("fluid frames @ %6.1f %3d %3d %3d dur %6f\n", time, pitch, velocity, channel, duration);
       
       schedule_.push(MidiMessage{time,	          pitch, velocity, channel});
       schedule_.push(MidiMessage(time + duration, pitch, 0, 	   channel));

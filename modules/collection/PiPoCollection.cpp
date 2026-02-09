@@ -67,6 +67,7 @@
 #include "PiPoOnseg.h"
 #include "PiPoPeaks.h"
 #include "PiPoPsy.h"
+#include "PiPoResample.h"
 #include "PiPoRms.h"
 #include "PiPoScale.h"
 #include "PiPoSelect.h"
@@ -147,7 +148,8 @@ public:
     include("onseg", new PiPoCreator<PiPoOnseg>);
     include("peaks", new PiPoCreator<PiPoPeaks>);
     include("psy", new PiPoCreator<PiPoPsy>);
-    // include("rms", new PiPoCreator<PiPoRms>);
+    include("resample", new PiPoCreator<PiPoResample>);
+    include("rms", new PiPoCreator<PiPoRms>);
     include("scale", new PiPoCreator<PiPoScale>);
     include("select", new PiPoCreator<PiPoSelect>);
     include("segment", new PiPoCreator<PiPoSegment>);

@@ -1,9 +1,11 @@
 #include "catch.hpp"
 
-#define PIPO_WRONG_VERSION 0.001f
+#define PIPO_WRONG_VERSION      0.001f
+#define PIPO_WRONG_VERSION_INT  1
 
 // redefine to simulate a wrong version
-#define PIPO_SDK_VERSION PIPO_WRONG_VERSION
+#define PIPO_SDK_VERSION     PIPO_WRONG_VERSION
+#define PIPO_SDK_VERSION_INT PIPO_WRONG_VERSION_INT
 
 // with this defined, we can override the getVersion method
 #define PIPO_TESTING 1

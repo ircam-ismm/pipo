@@ -38,6 +38,8 @@
 #ifndef _PIPO_RESAMPLE_
 #define _PIPO_RESAMPLE_
 
+#define DEBUG_RESAMP (DEBUG * 1)
+
 #include "PiPo.h"
 
 class PiPoResample : public PiPo
@@ -45,147 +47,170 @@ class PiPoResample : public PiPo
   enum ResampleMode { Off, Nearest } ;
   
 public:
-  PiPoScalarAttr<PiPo::Enumerate> mode;
-  PiPoScalarAttr<double> factor;
-  PiPoScalarAttr<double> targetrate;
+  PiPoScalarAttr<PiPo::Enumerate> mode_attr_;
+  PiPoScalarAttr<double> factor_attr_;
+  PiPoScalarAttr<double> targetrate_attr_;
 private:
   
-  double inputIncr;
-  int inputIndex;
-  int outputIndex;
-  int timeTaggedInput;
-  double targetRate;
-  double targetPeriod;
+  int    timeTaggedInput_;
+  double inputIncr_; // given downsampling "factor"
+  double factor_;    // actual resampling factor from source to target rate
+  double targetRate_;
+  double targetPeriod_;
+  int    inputIndex_;
+  int    outputIndex_;
   
-  float *vector;
-  int size;
-  int maxFrames;
+  float *vector_;
+  int size_;
+  int maxFrames_;
   
 public:
-  PiPoResample(Parent *parent, PiPo *receiver = NULL)
+  PiPoResample (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-  factor(this, "factor", "resample factor", true, 1.0),
-  targetrate(this, "targetrate", "output samplerate", true, 1.0),
-  mode(this, "mode", "resample mode", true, Nearest)
+    factor_attr_    (this, "factor",     "downsample factor", true, 1.0),
+    targetrate_attr_(this, "targetrate", "output samplerate", true, 1.0),
+    mode_attr_      (this, "mode",       "resample mode",     true, Nearest)
   {
-    this->mode.addEnumItem("off", "Resample Off");
-    this->mode.addEnumItem("Nearest", "Resample Nearest");
+    mode_attr_.addEnumItem("off", "Resample Off");
+    mode_attr_.addEnumItem("Nearest", "Resample Nearest");
     
-    this->inputIncr = 1.0;
-    this->inputIndex = 0;
-    this->outputIndex = 0;
-    this->timeTaggedInput = 0;
-    this->targetRate = 1.;
-    this->targetPeriod = 1000.;
+    inputIncr_       = 1.0;
+    factor_          = 1.0;
+    inputIndex_      = 0;
+    outputIndex_     = 0;
+    timeTaggedInput_ = 0;
+    targetRate_      = 1.;
+    targetPeriod_    = 1000.;
     
-    this->vector = NULL;
-    this->size = 0;
-    this->maxFrames = 0;
+    vector_    = NULL;
+    size_      = 0;
+    maxFrames_ = 0;
   }
   
-  ~PiPoResample(void)
+  ~PiPoResample (void)
   {
-    if(this->vector != NULL)
-      free(this->vector);
+    if(vector_ != NULL)
+      free(vector_);
   }
   
-  int
-  streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxnumframes)
   {
-    double outFrameRate, factor;
-    int maxOutBlockSize;
-    if(hasTimeTags)
+    enum { use_rate, use_factor } rate_or_factor = use_factor;
+
+    inputIncr_  = fabs(factor_attr_.get());
+    targetRate_ = targetrate_attr_.get();
+    if (targetRate_ < 1.) targetRate_ = 1.;
+
+    if (targetRate_ != 1.  &&  inputIncr_ != 1.) // both given, need to prioritize
+	rate_or_factor = hasTimeTags  ?  use_rate  :  use_factor;
+    else if (targetRate_ != 1.)
+	rate_or_factor = use_rate;
+    else if (inputIncr_ != 1.)
+	rate_or_factor = use_factor;
+
+    switch (rate_or_factor)
     {
-      this->targetRate = this->targetrate.get();
-      if(this->targetRate < 1.) this->targetRate = 1.;
-      this->targetPeriod = 1000.0 / this->targetRate;
-      
-      outFrameRate = this->targetRate;
-      factor = outFrameRate / rate;
-    }
-    else
-    {
-      this->inputIncr = fabs(this->factor.get());
-      factor = 1.0 / this->inputIncr;
-      outFrameRate = rate * factor;
+    case use_rate:
+      factor_       = targetRate_ / rate;
+      inputIncr_    = 1.0 / factor_;
+    break;
+
+    case use_factor:
+      factor_       = 1.0 / inputIncr_;
+      targetRate_   = rate * factor_;
+    break;
     }
 
-    maxOutBlockSize = (int)ceil(maxFrames * factor);
+    targetPeriod_    = 1000.0 / targetRate_;
+    timeTaggedInput_ = hasTimeTags;
+    maxFrames_       = (int) ceil(maxnumframes * ceil(factor_));
+    size_            = width * height;
+    vector_          = (float *) realloc(vector_, size_ * maxFrames_ * sizeof(float));
+
+#if DEBUG
+    printf("PiPoResample::streamAttributes timetagged %d  rate %f  width %d height %d  num %d --> incr %f  targetrate %f  factor %f  maxframes %d\n", hasTimeTags, rate, width, height, maxnumframes, inputIncr_, targetRate_, factor_, maxFrames_);
+#endif
     
-    this->timeTaggedInput = hasTimeTags;
-    this->maxFrames = maxOutBlockSize;
-    this->size = width * size;
-    this->vector = (float *)realloc(this->vector, this->size * this->maxFrames * sizeof(float));
-    
-    return this->propagateStreamAttributes(0, outFrameRate, offset, width, size, (const char **)labels, hasVarSize, domain, maxOutBlockSize);
-  }
+    return propagateStreamAttributes(0, targetRate_, offset, width, height, (const char **)labels, hasVarSize, domain, maxFrames_);
+  } // streamAttributes()
   
-  int
-  reset()
+  int reset ()
   {
-    this->inputIndex = 0;
-    this->outputIndex = 0;
+    inputIndex_ = 0;
+    outputIndex_ = 0;
     
-    return this->propagateReset();
+    return propagateReset();
   }
   
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     int numOutFrames = 0;
     
-    switch(this->mode.get())
+    switch(mode_attr_.get())
     {
       default:
       {
-        memcpy(this->vector, values, num * size * sizeof(float));
+        memcpy(vector_, values, num * size * sizeof(float));
         numOutFrames = num;
-        break;
       }
-        
+      break;
+	
       case Nearest:
       {
-        int inputIndex = this->inputIndex;
-        int outputIndex = this->outputIndex;
+        int inputIndex = inputIndex_;
+        int outputIndex = outputIndex_;
         
-        if(this->timeTaggedInput)
+        if(timeTaggedInput_)
         {
           for(unsigned int i = 0; i < num; i++)
           {
-            while((double)outputIndex * this->targetPeriod < time && numOutFrames < this->maxFrames)
+	    while ((double) outputIndex * targetPeriod_ < time  &&  numOutFrames < maxFrames_) // TBD: timetagged with num > 1 makes no sense
             {
-              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+	      memcpy(vector_ + numOutFrames * size_, values + i * size, size_ * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
           }
-          inputIndex++;
+	  inputIndex++; // not actually used for timeTaggedInput_
         }
         else
-        {
-          double factor = this->factor.get();
+        { // sampled
           for(unsigned int i = 0; i < num; i++)
-          {
-            while((double)outputIndex * factor < (double)inputIndex*num + i + 0.5)
+          { // use inputIncr_ instead of factor_ for classic downsampling behaviour
+	    while ((double) outputIndex * inputIncr_ < (double) inputIndex * num + i + 0.5)
             {
-              memcpy(this->vector + numOutFrames * this->size, values + i * size, size * sizeof(float));
+		//printf("sampled i %d/%d  inputIndex %d  outputIndex %d  numOutFrames %d  [ %f ...]\n", i, num, inputIndex, outputIndex, numOutFrames, values[i * size]);
+              memcpy(vector_ + numOutFrames * size_, values + i * size, size_ * sizeof(float));
               outputIndex++;
               numOutFrames++;
             }
           }
-          inputIndex++;
+	  inputIndex++;
         }
         
-        this->inputIndex = inputIndex;
-        this->outputIndex = outputIndex;
-        
-        break;
+        inputIndex_ = inputIndex;
+        outputIndex_ = outputIndex;
       }
+      break;
     }
     
-    if(numOutFrames > 0)
-      return this->propagateFrames(NULL, weight, this->vector, size, numOutFrames);
+    if (numOutFrames > 0)
+    {
+      if (timeTaggedInput_)
+      { /* not sure this loop is necessary, timeTaggedInput should never have num > 1 */
+	int ok = true;
+	for (int i = 0; i < numOutFrames; i++)
+	{
+	  ok &= propagateFrames(time, weight, vector_ + i * size_, size_, 1) == 0;
+	  time += targetPeriod_;
+	}
+	return ok ? 0 : 1;
+      }
+      else
+	return propagateFrames(time, weight, vector_, size_, numOutFrames);
+    }
     else return 0;
-  }
+  } // frames()
 }; /* _PIPO_RESAMPLE_H_ */
 
 #endif

@@ -164,7 +164,7 @@ private:
         double segduration = (i + 1 < choptimes_.size()  ?  choptimes_[i + 1]  :  DBL_MAX) - choptimes_[i];
         
         if (i < chopduration_.size())
-        { // clip duration between 0 and next segment start
+        { // clip duration between 0 (exclusive) and next segment start
           if (chopduration_[i] <= 0)
             chopduration_[i] = segduration;
           else if (chopduration_[i] > segduration) // avoid overlapping segments (this could be relaxed later)
@@ -360,8 +360,10 @@ public:
       std::strcpy(outLabels[0], "Duration");
     
     tempMod.getLabels(labels, width, outLabels + reportDuration, this->maxDescrNameLength, outputSize);
-    
-    int ret = this->propagateStreamAttributes(true, rate, 0.0, totalOutputSize, 1,
+
+    // pass expected segment rate
+    double outrate = chopSizeA.get() > 0  ?  1000. / chopSizeA.get()  :  rate;
+    int ret = this->propagateStreamAttributes(true, outrate, 0.0, totalOutputSize, 1,
                                               const_cast<const char **>(outLabels),
                                               false, 0.0, 1);
     
