@@ -1,9 +1,9 @@
 /**
  * @file PiPo1Euro.h
- * @author Sebestien Naves
+ * @author Sebestien Naves & ISMM Team @ Ircam
  * @date 06.2026
  *
- * @brief PiPo based on rta-lib's biquad
+ * @brief PiPo one euro filter based on G. Casiez algoritm https://gery.casiez.net/1euro/
  *
  * @ingroup pipomodules
  *
@@ -41,18 +41,7 @@
 #ifndef _PIPO_1EURO_H_
 #define _PIPO_1EURO_H_
 
-#define PIPO_BIQUAD_MIN_Q 0.001
-
-#ifdef WIN32
-#define M_SQRT1_2  0.70710678118654752440084436210
-#endif
-
 #include "PiPo.h"
-
-extern "C" {
-#include "rta_configuration.h"
-#include "rta_biquad.h"
-}
 
 #include <algorithm>
 #include <cmath>
@@ -67,45 +56,40 @@ private:
 
   double twopi;
   double frameRate;
-  float flag_2nd, dx_prev1, out_prev1, dx_prev2, out_prev2, dx_prev3, out_prev3;
-  float out_prev11, out_prev12, out_prev13, out_prev21, out_prev22, out_prev23, out_prev31, out_prev32, out_prev33;
-
+  float fcd;
   
-  //bool inited;
+  float flag_2nd, dx_prev1, out_prev, out_prev1, out_prev2, out_prev3;
+  float outVal;
 
 public:
-  PiPoScalarAttr<float> fcd;
+  //PiPoScalarAttr<float> fcd;
   PiPoScalarAttr<float>  fcmin; //minimum Frequency of the Lowpass filter
   PiPoScalarAttr<float>  beta;  //speed
-  //PiPoScalarAttr<float>  framerate;
   PiPoScalarAttr<bool> bypass;
+  PiPoScalarAttr<int> order;
   
   //=================== CONSTRUCTOR ====================//
 
   PiPo1Euro(Parent *parent, PiPo *receiver = NULL) :
   PiPo(parent, receiver),
-  fcd(this, "fcd", "fcd coefficient", true, 1.),
-  fcmin(this, "fcmin", "minimum frequency of the lowpass filter", true, 1.),
-  beta(this, "beta", "speed coefficient", true, 1.),
-  //framerate(this, "framerate", "framerate", true, 100.),
-  bypass(this, "bypass", "bypass", true, 0.)
+  //fcd(this, "fcd", "fcd coefficient", true, 1.),
+  fcmin(this, "fcmin", "minimum cutoff frequency of cascaded lowpass filters.", true, 1.),
+  beta(this, "beta", "speed factor to reach fcmin : minimum cutoff frequency.", true, 1.),
+  bypass(this, "bypass", "bypass filter (true/false)", true, 0.),
+  order(this, "order", "number of consecutive times the filter is applied", true, 1.)
   {
     this->twopi = M_PI*2;
-    frameRate = 100.;
-    this->outValues.resize(3);
+    this->frameRate = 100.;
+    this->fcd = 1.;
+    this->flag_2nd = 0;
+    this->dx_prev1 = 0.;
+    this->outValues.resize(1);
     
+    out_prev = 0.;
     out_prev1 = 0.;
     out_prev2 = 0.;
     out_prev3 = 0.;
-    out_prev11 = 0.;
-    out_prev12 = 0.;
-    out_prev13 = 0.;
-    out_prev21 = 0.;
-    out_prev22 = 0.;
-    out_prev23 = 0.;
-    out_prev31 = 0.;
-    out_prev32 = 0.;
-    out_prev33 = 0.;
+    outVal = 0.;
   }
 
   ~PiPo1Euro()
@@ -114,7 +98,7 @@ public:
 
   float getAlpha(float value, float framerate)
   {
-    float wTe = twopi * value / framerate;
+    float wTe = this->twopi * value / framerate;
     return wTe / (1 + wTe);
   }
   
@@ -126,6 +110,8 @@ public:
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     this->frameRate = rate;
+    if(this->order.get() > 4) this->order.set(4);
+    else if(this->order.get() < 1) this->order.set(1);
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, false, 0.0, 1);
   }
 
@@ -139,70 +125,76 @@ public:
     int ret = 0;
     for(unsigned int i = 0; i < num; i++)
     {
-      if(size >= 3)
+      if(size > 0)
       {
         if(this->bypass.get())
         {
-          out_prev1 = fixDenorm(values[0]);
-          out_prev2 = fixDenorm(values[1]);
-          out_prev3 = fixDenorm(values[2]);
+          out_prev = fixDenorm(values[0]);
+          out_prev1 = out_prev;
+          out_prev2 = out_prev;
+          out_prev3 = out_prev;
+          
+          outVal = out_prev;
         }
         else
         {
           if(flag_2nd != 0) //next times
           {
-            float alpha = getAlpha(this->fcd.get(), frameRate);
-            float dx = (values[0] - out_prev11) * frameRate; //rate of change : derivative from input with output
+            float alpha = getAlpha(this->fcd, frameRate);
+            float dx = (values[0] - out_prev) * frameRate; //rate of change : derivative from input with output
             float edx = alpha * dx + (1. - alpha) * dx_prev1;//filtered rate of change
             dx_prev1 = fixDenorm(edx);
             float fc = this->fcmin.get() + this->beta.get() * abs(edx);//adaptative cut-off
             alpha = getAlpha(fc, frameRate);
-            out_prev11 = fixDenorm(alpha * values[0] + (1. - alpha) * out_prev11);//filter input
-            out_prev12 = fixDenorm(alpha * out_prev11 + (1. - alpha) * out_prev12);
-            out_prev13 = fixDenorm(alpha * out_prev12 + (1. - alpha) * out_prev13);
-            out_prev1 = fixDenorm(alpha * out_prev13 + (1. - alpha) * out_prev1);
             
-            dx = (values[1] - out_prev21) * frameRate; //rate of change : derivative from input with output
-            edx = alpha * dx + (1. - alpha) * dx_prev2;//filtered rate of change
-            dx_prev2 = fixDenorm(edx);
-            fc = this->fcmin.get() + this->beta.get() * abs(edx);//adaptative cut-off
-            alpha = getAlpha(fc, frameRate);
-            out_prev21 = fixDenorm(alpha * values[1] + (1. - alpha) * out_prev21);//filter input
-            out_prev22 = fixDenorm(alpha * out_prev21 + (1. - alpha) * out_prev22);
-            out_prev23 = fixDenorm(alpha * out_prev22 + (1. - alpha) * out_prev23);
-            out_prev2 = fixDenorm(alpha * out_prev23 + (1. - alpha) * out_prev2);
-            
-            dx = (values[2] - out_prev31) * frameRate; //rate of change : derivative from input with output
-            edx = alpha * dx + (1. - alpha) * dx_prev3;//filtered rate of change
-            dx_prev3 = fixDenorm(edx);
-            fc = this->fcmin.get() + this->beta.get() * abs(edx);//adaptative cut-off
-            alpha = getAlpha(fc, frameRate);
-            out_prev31 = fixDenorm(alpha * values[2] + (1. - alpha) * out_prev31);//filter input
-            out_prev32 = fixDenorm(alpha * out_prev31 + (1. - alpha) * out_prev32);
-            out_prev33 = fixDenorm(alpha * out_prev32 + (1. - alpha) * out_prev33);
-            out_prev3 = fixDenorm(alpha * out_prev33 + (1. - alpha) * out_prev3);
-          }
+            switch(this->order.get())
+            {
+              default:
+              case 1:
+                out_prev = fixDenorm(alpha * values[0] + (1. - alpha) * out_prev);
+                out_prev1 = out_prev;
+                out_prev2 = out_prev;
+                out_prev3 = out_prev;
+                outVal = out_prev;
+                break;
+              case 2:
+                out_prev = fixDenorm(alpha * values[0] + (1. - alpha) * out_prev);//filter input
+                out_prev1 = fixDenorm(alpha * out_prev + (1. - alpha) * out_prev1);
+                out_prev2 = out_prev1;
+                out_prev3 = out_prev1;
+                outVal = out_prev1;
+                break;
+              case 3:
+                out_prev = fixDenorm(alpha * values[0] + (1. - alpha) * out_prev);//filter input
+                out_prev1 = fixDenorm(alpha * out_prev + (1. - alpha) * out_prev1);
+                out_prev2 = fixDenorm(alpha * out_prev1 + (1. - alpha) * out_prev2);
+                out_prev3 = out_prev2;
+                outVal = out_prev2;
+                break;
+              case 4:
+                out_prev = fixDenorm(alpha * values[0] + (1. - alpha) * out_prev);//filter input
+                out_prev1 = fixDenorm(alpha * out_prev + (1. - alpha) * out_prev1);
+                out_prev2 = fixDenorm(alpha * out_prev1 + (1. - alpha) * out_prev2);
+                out_prev3 = fixDenorm(alpha * out_prev2 + (1. - alpha) * out_prev3);
+                outVal = out_prev3;
+                break;
+            }
+         }
           else //the first time in the loop
           {
             flag_2nd = 1;
-            //      dx_prev1 = 0.;
-            out_prev1 = fixDenorm(values[0]);
-            out_prev11 = fixDenorm(values[0]);
-            //      dx_prev2 = 0.;
-            out_prev2 = fixDenorm(values[1]);
-            out_prev21 = fixDenorm(values[1]);
-            //      dx_prev3 = 0.;
-            out_prev3 = fixDenorm(values[2]);
-            out_prev31 = fixDenorm(values[2]);
+            out_prev = fixDenorm(values[0]);
+            out_prev1 = out_prev;
+            out_prev2 = out_prev;
+            out_prev3 = out_prev;
+            outVal = out_prev;
           }
         }
       }
       
-      this->outValues[0] = out_prev1;
-      this->outValues[1] = out_prev2;
-      this->outValues[2] = out_prev3;
+      this->outValues[0] = outVal;
 
-      ret += this->propagateFrames(time, weight, this->outValues.data(), 3, 1);
+      ret += this->propagateFrames(time, weight, this->outValues.data(), 1, 1);
       
       values += size;
     }
