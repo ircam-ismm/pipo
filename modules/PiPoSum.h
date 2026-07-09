@@ -50,53 +50,51 @@ class PiPoSum : public PiPo
 {
 private:
   bool normSum;
-  
+  std::vector<PiPoValue> outbuf;
+
 public:
   PiPoScalarAttr<bool> norm;
   PiPoScalarAttr<const char *> colname;
   PiPoScalarAttr<const char *> outcolnames;
 
-  PiPoSum(Parent *parent, PiPo *receiver = NULL)
+  PiPoSum (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
     norm(this, "norm", "Normalize Sum With Size", false, false),
     colname(this, "colname", "Output Column Name [DEPRECATED]", true, ""),
     outcolnames(this, "outcolnames", "Output Column Name", true, "")
   { }
-  
+
   ~PiPoSum(void)
   { }
-  
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+
+  int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     const char *name1 = outcolnames.get();
     const char *name2 = colname.get();
     const char **name = (name1 != NULL  &&  *name1 != 0)  ?  &name1  :  (name2 != NULL  &&  *name2 != 0)  ?  &name2  :  NULL;
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name, 0, 0.0, 1);
+    outbuf.resize(maxFrames);
+    return this->propagateStreamAttributes(hasTimeTags, rate, offset, 1, 1, name, false, 0.0, maxFrames);
   }
-  
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
+
+  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     bool normSum = this->norm.get();
-    
-    for(unsigned int i = 0; i < num; i++)
+
+    for (unsigned int i = 0; i < num; i++)
     {
-      float sum = 0.0;
-      
-      for(unsigned int j = 0; j < size; j++)
+      PiPoValue sum = 0.0;
+
+      for (unsigned int j = 0; j < size; j++)
         sum += values[j];
-      
-      if(normSum)
+
+      if (normSum)
         sum /= size;
-      
-      int ret = this->propagateFrames(time, weight, &sum, 1, 1);
-      
-      if(ret != 0)
-        return ret;
-      
+
+      outbuf[i] = sum;
       values += size;
     }
-    
-    return 0;
+
+    return this->propagateFrames(time, weight, outbuf.data(), 1, num);
   }
 };
 
