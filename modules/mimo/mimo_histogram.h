@@ -234,10 +234,13 @@ public:
     mimo_buffer* outbuf = (mimo_buffer*)alloca(numbuffers * sizeof(mimo_buffer));
 #endif
 
-    
     std::vector<PiPoValue> outvals(params_.nhist * size_);
     outbuf[0].numframes = params_.nhist;
     outbuf[0].data = outvals.data();
+    outbuf[0].varsize = NULL;
+    outbuf[0].time.timetags = NULL;
+    outbuf[0].time.starttime = 0;
+    outbuf[0].has_timetags = false;
 
 #if 0
     // calc one hist per input element (column) over all buffers
