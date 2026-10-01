@@ -172,17 +172,19 @@ PiPoIdesc::~PiPoIdesc(void)
     delete idesc_;
     idesc_ = NULL;
   }
-  if (colnames_ != NULL)
-    clearcolnames();	//FIXME: free strings
+  clearcolnames();
 }
 
 void PiPoIdesc::clearcolnames ()
 {
-  for (int i = 0; i < numcols_; i++)
-    free((void *) colnames_[i]);
+  if (colnames_ != NULL)
+  {
+    for (int i = 0; i < numcols_; i++)
+      free((void *) colnames_[i]);
 
-  free((void *) colnames_);
-  colnames_ = NULL;
+    free((void *) colnames_);
+    colnames_ = NULL;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,6 +237,7 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 	idesc_ = new idescx(rate, winlen, hoplen, this);
       }
 
+      clearcolnames(); // free strdup'ed column names
       ndescr_requested_ = ndescr;
       numcols_ = 0; // number of output columns (>= ndescr)
 
@@ -256,7 +259,6 @@ int PiPoIdesc::streamAttributes (bool hasTimeTags, double rate, double offset,
 
 #     include "ircamdescriptor~params.h"
 
-      if (colnames_ != NULL) clearcolnames();
       colnames_ = (const char **) malloc(ndescr * sizeof(char *));
 
       // set window type
