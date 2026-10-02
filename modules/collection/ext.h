@@ -7,7 +7,7 @@
 // replacement of max include, used in pipocollection for libpipo to make fluidsynth pipo compile
 
 // provide stubs for all used functions
-void post(const char *fmt, ...)
+static void post(const char *fmt, ...)
 {
   char buf[1024];
 

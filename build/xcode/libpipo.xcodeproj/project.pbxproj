@@ -106,6 +106,7 @@
 		216E1EC724FE95B90033FAD2 /* jerryscript.h in Headers */ = {isa = PBXBuildFile; fileRef = 216E1EC224FE95B80033FAD2 /* jerryscript.h */; };
 		216E1ECA24FE99290033FAD2 /* handler-print.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9ED24F002F7005044F8 /* handler-print.c */; };
 		216E1ECB24FE99290033FAD2 /* handler-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 2123C9EE24F002F7005044F8 /* handler-register.c */; };
+		2181726C306FDF9E00EFE74E /* rta_svd.c in Sources */ = {isa = PBXBuildFile; fileRef = 316487F51FC224220086FEDF /* rta_svd.c */; };
 		21AFE4EA2088EDD6001F5C63 /* PiPoDescr.h in Headers */ = {isa = PBXBuildFile; fileRef = 21AFE4E92088EDD6001F5C63 /* PiPoDescr.h */; };
 		21BF4DDB2926443700650F02 /* PiPoThru.h in Headers */ = {isa = PBXBuildFile; fileRef = 21BF4DDA2926443500650F02 /* PiPoThru.h */; };
 		311BA1F41EDAD03400244DAC /* libpipo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 315D052F1C4EF736004FAFFB /* libpipo.a */; };
@@ -1210,6 +1211,7 @@
 				316488331FC226210086FEDF /* rta_onepole.c in Sources */,
 				316488341FC226210086FEDF /* rta_psy.c in Sources */,
 				3164883A1FC226760086FEDF /* rta_selection.c in Sources */,
+				2181726C306FDF9E00EFE74E /* rta_svd.c in Sources */,
 				316488371FC226440086FEDF /* rta_util.c in Sources */,
 				215B8E5F2CEE299A006CA671 /* fluid_chorus.h in Sources */,
 				215B8E602CEE299A006CA671 /* fluid_chorus.c in Sources */,
@@ -1400,7 +1402,6 @@
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1440,7 +1441,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-framework",
-					vecLib,
+					Accelerate,
 				);
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
@@ -1470,7 +1471,6 @@
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
@@ -1506,7 +1506,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
-					vecLib,
+					Accelerate,
 				);
 				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
 				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;

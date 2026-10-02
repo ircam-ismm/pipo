@@ -7,12 +7,12 @@
 
 // provide stubs for all used functions
 typedef void *t_systhread_mutex;
-void  systhread_mutex_new(void *, void *) { }
-void  systhread_mutex_free(void *) { }
-void  systhread_mutex_lock(void *) { }
-void  systhread_mutex_unlock(void *) { }
+static void  systhread_mutex_new(void *, void *) { }
+static void  systhread_mutex_free(void *) { }
+static void  systhread_mutex_lock(void *) { }
+static void  systhread_mutex_unlock(void *) { }
 
-int gettime() { return 0; }
+static int gettime() { return 0; }
 
 
 #endif 
