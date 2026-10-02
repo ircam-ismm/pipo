@@ -405,7 +405,7 @@ private:
     // calculate PCA on all buffers, update numframestotal_, bufsizes_, S_, U_, Vt_, Vt_
     // @return actual rank of matrix
     int calc_pca (int numbuffers, const mimo_buffer buffers[])
-  {
+    {
       // calculate means over all buffers, returns current total number of frames
       numframestotal_ = calc_means(numbuffers, buffers);
 
@@ -456,6 +456,9 @@ private:
 
         //First do the query for worksize
         sgesvd_(jobu, jobvt, &N, &M, traindata.data(), &N, S_.data(), Vt_.data(), &N, U_.data(), &M, optimalWorkSize, &lwork, &info);
+# if DEBUG
+	if (info != 0)  printf("******** mimo_pca sgesvd query: error %d\n", info);
+# endif
 
         if (info == 0) // success
         { //Resize accordingly
@@ -470,7 +473,9 @@ private:
         }
 
         if (info != 0)
+	{
           signalError("Can't calculate SVD: status " + std::to_string(info));
+	}
       }
       else
 #endif
