@@ -199,7 +199,7 @@ public:
     for (int bufferindex = 0; bufferindex < numbuffers; bufferindex++)
     {
       int numframes = buffers[bufferindex].numframes;
-      outdata[bufferindex].reserve(numframes * framesize_);
+      outdata[bufferindex].resize(numframes * framesize_);
       outbufs[bufferindex].numframes = numframes;
       outbufs[bufferindex].data      = outdata[bufferindex].data();
     }
@@ -245,6 +245,7 @@ public:
         size_t order     = indices[i];
         size_t bufind    = bufferind[order];
         size_t frameoffs = frameoffset[order];
+
         outdata[bufind][frameoffs + elemind] = i;
       }
     } // end for elemind
