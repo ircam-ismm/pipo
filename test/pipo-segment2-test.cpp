@@ -48,8 +48,8 @@ TEST_CASE ("segment2", "[seg]")
     vals[i] = std::rand() / static_cast<float>(RAND_MAX) - 0.5;
 
   PiPoTestHost host;
-  host.setGraph("descr:segment:segmarker");
-  host.setAttr("segment.columns", "Loudness");
+  REQUIRE(host.setGraph("descr:segment:segmarker"));
+  REQUIRE(host.setAttr("segment.columns", "Loudness"));
 
   PiPoStreamAttributes sa;
   sa.rate = sr;

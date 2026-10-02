@@ -31,8 +31,8 @@ TEST_CASE ("onseg", "[seg]")
     vals[i] = std::rand() / static_cast<float>(RAND_MAX);
 
   PiPoTestHost host;
-  host.setGraph("descr:onseg");
-  host.setAttr("onseg.columns", "Loudness");
+  REQUIRE(host.setGraph("descr:onseg"));
+  REQUIRE(host.setAttr("onseg.columns", "Loudness"));
 
   PiPoStreamAttributes sa;
   sa.rate = sr;

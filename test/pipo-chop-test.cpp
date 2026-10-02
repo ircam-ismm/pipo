@@ -31,8 +31,8 @@ TEST_CASE ("chop", "[seg]")
     vals[i] = std::rand() / static_cast<float>(RAND_MAX);
 
   PiPoTestHost host;
-  host.setGraph("descr:chop");
-  host.setAttr("chop.size", 200);
+  REQUIRE(host.setGraph("descr:chop"));
+  REQUIRE(host.setAttr("chop.size", 200));
 
   PiPoStreamAttributes sa;
   sa.rate = sr;
