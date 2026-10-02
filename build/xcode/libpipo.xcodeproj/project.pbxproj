@@ -1295,8 +1295,6 @@
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
 				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
@@ -1312,8 +1310,6 @@
 				DEPLOYMENT_LOCATION = YES;
 				DSTROOT = "$(SRCROOT)/../../bin/osx";
 				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
@@ -1342,8 +1338,6 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
@@ -1369,8 +1363,6 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-core/include",
 					"$(PROJECT_DIR)/../../modules/javascript-engine/jerryscript/jerry-ext/include",
 				);
@@ -1405,7 +1397,6 @@
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
 				GCC_DEBUGGING_SYMBOLS = full;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
@@ -1433,18 +1424,12 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_MASTER_OBJECT_FILE = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Accelerate,
 				);
-				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
-				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
 			name = Debug;
 		};
@@ -1472,7 +1457,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(VECLIB_FRAMEWORK_DIR)";
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
@@ -1499,17 +1483,11 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_MASTER_OBJECT_FILE = NO;
-				HEADER_SEARCH_PATHS = (
-					"$(VECLIB_DIR)/Headers",
-					"$(VECLIB_FRAMEWORK_DIR)/vecLib.framework/Headers",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Accelerate,
 				);
-				VECLIB_DIR = /System/Library/Frameworks/Accelerate.framework;
-				VECLIB_FRAMEWORK_DIR = /System/Library/Frameworks/Accelerate.framework/Frameworks;
 			};
 			name = Release;
 		};
